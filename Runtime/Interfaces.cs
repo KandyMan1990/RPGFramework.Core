@@ -1,4 +1,4 @@
-namespace RPGFramework.Core.Shared
+namespace RPGFramework.Core
 {
     public interface IUpdatable
     {

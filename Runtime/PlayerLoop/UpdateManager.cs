@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using RPGFramework.Core.Shared;
 
 namespace RPGFramework.Core.PlayerLoop
 {
