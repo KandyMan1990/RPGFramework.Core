@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace RPGFramework.Core
@@ -33,27 +34,9 @@ namespace RPGFramework.Core
 
     public interface ICoreMenuModule
     {
+        T    GetInstance<T>();
+        object    GetInstance(Type type);
         void ResetModule<TConcrete>() where TConcrete : IMenuModule;
-    }
-    
-    public interface IMenuModule : IModule
-    {
-
-    }
-
-    public interface IMenuModuleArgs : IModuleArgs
-    {
-
-    }
-
-    public struct MenuModuleArgs : IMenuModuleArgs
-    {
-
-    }
-
-    public interface IMenu
-    {
-
     }
     
     public interface IFieldModule : IModule
