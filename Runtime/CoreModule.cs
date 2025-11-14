@@ -45,12 +45,27 @@ namespace RPGFramework.Core
 
         Task IEntryPoint.StartGameAsync()
         {
-            return LoadModuleAsync<IMenuModule>(new MenuModuleArgs());
+            MenuModuleArgs args = new MenuModuleArgs
+                                  {
+                                          MenuType = typeof(IBeginMenu)
+                                  };
+
+            return LoadModuleAsync<IMenuModule>(args);
         }
 
         void ICoreFieldModule.ResetModule<TConcrete>()
         {
             BindSingleton<IFieldModule, TConcrete>();
+        }
+
+        T ICoreMenuModule.GetInstance<T>()
+        {
+            return Resolve<T>();
+        }
+
+        object ICoreMenuModule.GetInstance(Type type)
+        {
+            return Resolve(type);
         }
 
         void ICoreMenuModule.ResetModule<TConcrete>()
