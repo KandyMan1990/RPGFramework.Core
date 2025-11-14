@@ -28,12 +28,12 @@ namespace RPGFramework.Core
 
     public interface ICoreFieldModule
     {
-        void ResetModule<TInterface, TConcrete>() where TConcrete : TInterface;
+        void ResetModule<TConcrete>() where TConcrete : IFieldModule;
     }
 
     public interface ICoreMenuModule
     {
-        void ResetModule<TInterface, TConcrete>() where TConcrete : TInterface;
+        void ResetModule<TConcrete>() where TConcrete : IMenuModule;
     }
     
     public interface IMenuModule : IModule

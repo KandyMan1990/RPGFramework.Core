@@ -48,14 +48,14 @@ namespace RPGFramework.Core
             return LoadModuleAsync<IMenuModule>(new MenuModuleArgs());
         }
 
-        void ICoreFieldModule.ResetModule<TInterface, TConcrete>()
+        void ICoreFieldModule.ResetModule<TConcrete>()
         {
-            BindSingleton<TInterface, TConcrete>();
+            BindSingleton<IFieldModule, TConcrete>();
         }
 
-        void ICoreMenuModule.ResetModule<TInterface, TConcrete>()
+        void ICoreMenuModule.ResetModule<TConcrete>()
         {
-            BindSingleton<TInterface, TConcrete>();
+            BindSingleton<IMenuModule, TConcrete>();
         }
 
         private void BindSingleton<TInterface, TConcrete>()
@@ -91,11 +91,13 @@ namespace RPGFramework.Core
             return creator();
         }
 
-        private Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
+        private async Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
         {
+            await m_CurrentModule.OnExitAsync();
+
             m_CurrentModule = Resolve<T>();
-            
-            return m_CurrentModule.OnEnterAsync(args);
+
+            await m_CurrentModule.OnEnterAsync(args);
         }
     }
 }
