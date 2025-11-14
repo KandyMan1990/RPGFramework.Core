@@ -5,7 +5,8 @@ namespace RPGFramework.Core
 {
     public interface IMenuModule : IModule
     {
-
+        Task PushMenu(IMenuModuleArgs menuModuleArgs);
+        Task PopMenu();
     }
 
     public interface IMenuModuleArgs : IModuleArgs
