@@ -2,7 +2,7 @@
 
 namespace RPGFramework.Core
 {
-    public class NullModule : IModule
+    internal class NullModule : IModule
     {
         Task IModule.OnEnterAsync(IModuleArgs args)
         {
