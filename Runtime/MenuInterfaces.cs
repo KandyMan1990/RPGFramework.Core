@@ -33,7 +33,20 @@ namespace RPGFramework.Core
         Task OnExitAsync();
     }
 
+    public interface IMenuUI
+    {
+        Task OnEnterAsync(VisualElement rootContainer);
+        Task OnSuspendAsync();
+        Task OnResumeAsync();
+        Task OnExitAsync();
+    }
+
     public interface IBeginMenu : IMenu
+    {
+
+    }
+
+    public interface IBeginMenuUI : IMenuUI
     {
 
     }
