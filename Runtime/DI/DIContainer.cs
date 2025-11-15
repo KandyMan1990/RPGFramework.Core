@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace RPGFramework.Core
+namespace RPGFramework.Core.DI
 {
     public class DIContainer
     {
