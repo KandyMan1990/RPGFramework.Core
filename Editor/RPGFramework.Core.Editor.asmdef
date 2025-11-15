@@ -1,0 +1,18 @@
+{
+    "name": "RPGFramework.Core.Editor",
+    "rootNamespace": "RPGFramework.Core.Editor",
+    "references": [
+        "RPGFramework.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
