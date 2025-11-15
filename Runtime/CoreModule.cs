@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using RPGFramework.Core.DI;
 
 namespace RPGFramework.Core
 {
@@ -19,9 +20,21 @@ namespace RPGFramework.Core
             entryPoint.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
         }
 
-        public static IEntryPoint Create()
+        private void InstallGlobalBindings(GlobalInstallerBase globalInstaller)
         {
-            return new CoreModule();
+            globalInstaller.InstallBindings(m_GlobalContainer);
+        }
+
+        public static IEntryPoint Create(GlobalInstallerBase globalInstaller = null)
+        {
+            CoreModule core = new CoreModule();
+
+            if (globalInstaller != null)
+            {
+                core.InstallGlobalBindings(globalInstaller);
+            }
+
+            return core;
         }
 
         void IEntryPoint.BindTransient<TInterface, TConcrete>()
