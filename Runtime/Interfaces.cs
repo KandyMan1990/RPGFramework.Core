@@ -10,7 +10,7 @@ namespace RPGFramework.Core
 
     public interface IEntryPoint
     {
-        void Bind<TInterface, TConcrete>() where TConcrete : TInterface;
+        void BindTransient<TInterface, TConcrete>() where TConcrete : TInterface;
         void BindSingleton<TInterface, TConcrete>() where TConcrete : TInterface;
         void BindSingletonFromInstance<TInterface>(TInterface instance);
         Task StartGameAsync();

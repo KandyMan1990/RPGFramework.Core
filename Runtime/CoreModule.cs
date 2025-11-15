@@ -28,9 +28,9 @@ namespace RPGFramework.Core
             return new CoreModule();
         }
 
-        void IEntryPoint.Bind<TInterface, TConcrete>()
+        void IEntryPoint.BindTransient<TInterface, TConcrete>()
         {
-            m_Bindings[typeof(TInterface)] = () => CreateInstance<TInterface, TConcrete>()!;
+            m_Bindings[typeof(TInterface)] = () => CreateInstance<TInterface, TConcrete>();
         }
 
         void IEntryPoint.BindSingleton<TInterface, TConcrete>()
@@ -40,7 +40,7 @@ namespace RPGFramework.Core
 
         void IEntryPoint.BindSingletonFromInstance<TInterface>(TInterface instance)
         {
-            m_Bindings[typeof(TInterface)] = () => instance!;
+            m_Bindings[typeof(TInterface)] = () => instance;
         }
 
         Task IEntryPoint.StartGameAsync()
@@ -75,8 +75,8 @@ namespace RPGFramework.Core
 
         private void BindSingleton<TInterface, TConcrete>()
         {
-            Lazy<TInterface> lazy = new Lazy<TInterface>(() => CreateInstance<TInterface, TConcrete>()!);
-            m_EntryPoint.BindSingletonFromInstance(lazy.Value);
+            Lazy<TInterface> lazy = new Lazy<TInterface>(CreateInstance<TInterface, TConcrete>);
+            m_Bindings[typeof(TInterface)] = () => lazy.Value;
         }
 
         private TInterface CreateInstance<TInterface, TConcrete>()
@@ -91,7 +91,7 @@ namespace RPGFramework.Core
                                  .Select(p => Resolve(p.ParameterType))
                                  .ToArray();
 
-            return (TInterface)Activator.CreateInstance(typeof(TConcrete), parameters)!;
+            return (TInterface)Activator.CreateInstance(typeof(TConcrete), parameters);
         }
 
         private T Resolve<T>()
