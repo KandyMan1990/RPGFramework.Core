@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using UnityEngine.UIElements;
 
 namespace RPGFramework.Core
 {
@@ -21,12 +22,12 @@ namespace RPGFramework.Core
 
     public interface IMenuUIProvider
     {
-        
+        VisualTreeAsset GetMenuUI<T>() where T : IMenu;
     }
 
     public interface IMenu
     {
-        Task OnEnterAsync();
+        Task OnEnterAsync(VisualElement rootContainer);
         Task OnSuspendAsync();
         Task OnResumeAsync();
         Task OnExitAsync();
