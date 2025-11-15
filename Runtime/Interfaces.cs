@@ -10,9 +10,6 @@ namespace RPGFramework.Core
 
     public interface IEntryPoint
     {
-        void BindTransient<TInterface, TConcrete>() where TConcrete : TInterface;
-        void BindSingleton<TInterface, TConcrete>() where TConcrete : TInterface;
-        void BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance) where TConcrete : TInterface;
         Task StartGameAsync();
     }
 
@@ -34,11 +31,11 @@ namespace RPGFramework.Core
 
     public interface ICoreMenuModule
     {
-        T    GetInstance<T>();
-        object    GetInstance(Type type);
-        void ResetModule<TConcrete>() where TConcrete : IMenuModule;
+        T      GetInstance<T>();
+        object GetInstance(Type type);
+        void   ResetModule<TConcrete>() where TConcrete : IMenuModule;
     }
-    
+
     public interface IFieldModule : IModule
     {
 

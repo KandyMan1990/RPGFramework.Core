@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using RPGFramework.Core.DI;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
@@ -12,12 +15,11 @@ namespace RPGFramework.Core
 
         private CoreModule()
         {
-            m_CurrentModule   = new NullModule();
             m_GlobalContainer = new DIContainer();
-            IEntryPoint entryPoint = this;
+            m_CurrentModule   = new NullModule();
 
-            entryPoint.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
-            entryPoint.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
+            m_GlobalContainer.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
+            m_GlobalContainer.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
         }
 
         private void InstallGlobalBindings(GlobalInstallerBase globalInstaller)
@@ -37,21 +39,6 @@ namespace RPGFramework.Core
             return core;
         }
 
-        void IEntryPoint.BindTransient<TInterface, TConcrete>()
-        {
-            m_GlobalContainer.BindTransient<TInterface, TConcrete>();
-        }
-
-        void IEntryPoint.BindSingleton<TInterface, TConcrete>()
-        {
-            m_GlobalContainer.BindSingleton<TInterface, TConcrete>();
-        }
-
-        void IEntryPoint.BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance)
-        {
-            m_GlobalContainer.BindSingletonFromInstance<TInterface, TConcrete>(instance);
-        }
-
         Task IEntryPoint.StartGameAsync()
         {
             MenuModuleArgs args = new MenuModuleArgs
@@ -64,7 +51,7 @@ namespace RPGFramework.Core
 
         void ICoreFieldModule.ResetModule<TConcrete>()
         {
-            m_GlobalContainer.BindSingleton<IFieldModule, TConcrete>();
+            m_GlobalContainer.BindModule<IFieldModule, TConcrete>();
         }
 
         T ICoreMenuModule.GetInstance<T>()
@@ -79,12 +66,24 @@ namespace RPGFramework.Core
 
         void ICoreMenuModule.ResetModule<TConcrete>()
         {
-            m_GlobalContainer.BindSingleton<IMenuModule, TConcrete>();
+            m_GlobalContainer.BindModule<IMenuModule, TConcrete>();
         }
 
         private async Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
         {
             await m_CurrentModule.OnExitAsync();
+
+            string sceneName = m_GlobalContainer.GetModuleName<T>();
+
+            await SceneManager.LoadSceneAsync(sceneName);
+
+            DIContainer sceneContainer = new DIContainer();
+
+            SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindFirstObjectByType<SceneInstallerMonoBehaviour>();
+            SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
+            sceneInstaller.InstallBindings(sceneContainer);
+
+            m_GlobalContainer.SetFallback(sceneContainer);
 
             m_CurrentModule = m_GlobalContainer.Resolve<T>();
 
