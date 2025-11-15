@@ -1,26 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace RPGFramework.Core
 {
     public class CoreModule : IEntryPoint, ICoreFieldModule, ICoreMenuModule
     {
-        private readonly Dictionary<Type, Func<object>> m_Bindings;
-        private readonly IEntryPoint                    m_EntryPoint;
+        private readonly DIContainer m_GlobalContainer;
 
         private IModule m_CurrentModule;
 
         private CoreModule()
         {
-            m_Bindings      = new Dictionary<Type, Func<object>>();
-            m_CurrentModule = new NullModule();
-            m_EntryPoint    = this;
+            m_CurrentModule   = new NullModule();
+            m_GlobalContainer = new DIContainer();
+            IEntryPoint entryPoint = this;
 
-            m_EntryPoint.BindSingletonFromInstance<ICoreFieldModule>(this);
-            m_EntryPoint.BindSingletonFromInstance<ICoreMenuModule>(this);
+            entryPoint.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
+            entryPoint.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
         }
 
         public static IEntryPoint Create()
@@ -30,17 +26,17 @@ namespace RPGFramework.Core
 
         void IEntryPoint.BindTransient<TInterface, TConcrete>()
         {
-            m_Bindings[typeof(TInterface)] = () => CreateInstance<TInterface, TConcrete>();
+            m_GlobalContainer.BindTransient<TInterface, TConcrete>();
         }
 
         void IEntryPoint.BindSingleton<TInterface, TConcrete>()
         {
-            BindSingleton<TInterface, TConcrete>();
+            m_GlobalContainer.BindSingleton<TInterface, TConcrete>();
         }
 
-        void IEntryPoint.BindSingletonFromInstance<TInterface>(TInterface instance)
+        void IEntryPoint.BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance)
         {
-            m_Bindings[typeof(TInterface)] = () => instance;
+            m_GlobalContainer.BindSingletonFromInstance<TInterface, TConcrete>(instance);
         }
 
         Task IEntryPoint.StartGameAsync()
@@ -55,62 +51,29 @@ namespace RPGFramework.Core
 
         void ICoreFieldModule.ResetModule<TConcrete>()
         {
-            BindSingleton<IFieldModule, TConcrete>();
+            m_GlobalContainer.BindSingleton<IFieldModule, TConcrete>();
         }
 
         T ICoreMenuModule.GetInstance<T>()
         {
-            return Resolve<T>();
+            return m_GlobalContainer.Resolve<T>();
         }
 
         object ICoreMenuModule.GetInstance(Type type)
         {
-            return Resolve(type);
+            return m_GlobalContainer.Resolve(type);
         }
 
         void ICoreMenuModule.ResetModule<TConcrete>()
         {
-            BindSingleton<IMenuModule, TConcrete>();
-        }
-
-        private void BindSingleton<TInterface, TConcrete>()
-        {
-            Lazy<TInterface> lazy = new Lazy<TInterface>(CreateInstance<TInterface, TConcrete>);
-            m_Bindings[typeof(TInterface)] = () => lazy.Value;
-        }
-
-        private TInterface CreateInstance<TInterface, TConcrete>()
-        {
-            ConstructorInfo constructor = typeof(TConcrete)
-                                         .GetConstructors()
-                                         .OrderByDescending(c => c.GetParameters().Length)
-                                         .First();
-
-            object[] parameters = constructor
-                                 .GetParameters()
-                                 .Select(p => Resolve(p.ParameterType))
-                                 .ToArray();
-
-            return (TInterface)Activator.CreateInstance(typeof(TConcrete), parameters);
-        }
-
-        private T Resolve<T>()
-        {
-            return (T)Resolve(typeof(T));
-        }
-
-        private object Resolve(Type type)
-        {
-            Func<object> creator = m_Bindings[type];
-
-            return creator();
+            m_GlobalContainer.BindSingleton<IMenuModule, TConcrete>();
         }
 
         private async Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
         {
             await m_CurrentModule.OnExitAsync();
 
-            m_CurrentModule = Resolve<T>();
+            m_CurrentModule = m_GlobalContainer.Resolve<T>();
 
             await m_CurrentModule.OnEnterAsync(args);
         }

@@ -12,7 +12,7 @@ namespace RPGFramework.Core
     {
         void BindTransient<TInterface, TConcrete>() where TConcrete : TInterface;
         void BindSingleton<TInterface, TConcrete>() where TConcrete : TInterface;
-        void BindSingletonFromInstance<TInterface>(TInterface instance);
+        void BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance) where TConcrete : TInterface;
         Task StartGameAsync();
     }
 
