@@ -19,9 +19,16 @@ namespace RPGFramework.Core
         public Type MenuType { get; set; }
     }
 
+    public interface IMenuUIProvider
+    {
+        
+    }
+
     public interface IMenu
     {
         Task OnEnterAsync();
+        Task OnSuspendAsync();
+        Task OnResumeAsync();
         Task OnExitAsync();
     }
 
