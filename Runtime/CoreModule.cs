@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGFramework.DI;
 using UnityEngine;
@@ -8,23 +7,23 @@ using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
-    public class CoreModule : IEntryPoint, IDIContainer, ICoreFieldModule, ICoreMenuModule
+    public class CoreModule : IEntryPoint, ICoreFieldModule, ICoreMenuModule
     {
-        private readonly IDIContainer             m_GlobalContainer;
-        private readonly Dictionary<Type, string> m_ModuleNames;
-        private readonly IDIContainer             m_CoreModuleDIContainer;
+        private readonly IDIContainer        m_CoreModuleDIContainer;
+        private readonly IModuleNameProvider m_ModuleNameProvider;
 
         private IModule m_CurrentModule;
 
         private CoreModule()
         {
-            m_GlobalContainer       = new DIContainer();
-            m_ModuleNames           = new Dictionary<Type, string>();
-            m_CurrentModule         = new NullModule();
-            m_CoreModuleDIContainer = this;
+            CoreModuleDIContainer coreModuleDIContainer = new CoreModuleDIContainer();
 
-            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
+            m_CoreModuleDIContainer = coreModuleDIContainer;
+            m_ModuleNameProvider    = coreModuleDIContainer;
+            m_CurrentModule         = new NullModule();
+
             m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
+            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
         }
 
         private void InstallGlobalBindings(GlobalInstallerBase globalInstaller)
@@ -78,7 +77,7 @@ namespace RPGFramework.Core
         {
             await m_CurrentModule.OnExitAsync();
 
-            string sceneName = m_ModuleNames[typeof(T)];
+            string sceneName = m_ModuleNameProvider.GetModuleName<T>();
 
             await SceneManager.LoadSceneAsync(sceneName);
 
@@ -93,51 +92,6 @@ namespace RPGFramework.Core
             m_CurrentModule = m_CoreModuleDIContainer.Resolve<T>();
 
             await m_CurrentModule.OnEnterAsync(args);
-        }
-
-        void IDIContainer.SetFallback(IDIContainer fallback)
-        {
-            m_GlobalContainer.SetFallback(fallback);
-        }
-
-        IDIContainer IDIContainer.GetFallback()
-        {
-            return m_GlobalContainer.GetFallback();
-        }
-
-        bool IDIContainer.TryGetBinding(Type type, out Func<object> creator)
-        {
-            return m_GlobalContainer.TryGetBinding(type, out creator);
-        }
-
-        void IDIContainer.BindTransient<TInterface, TConcrete>()
-        {
-            m_GlobalContainer.BindTransient<TInterface, TConcrete>();
-        }
-
-        void IDIContainer.BindSingleton<TInterface, TConcrete>()
-        {
-            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
-            {
-                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
-            }
-
-            m_GlobalContainer.BindSingleton<TInterface, TConcrete>();
-        }
-
-        void IDIContainer.BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance)
-        {
-            m_GlobalContainer.BindSingletonFromInstance<TInterface, TConcrete>(instance);
-        }
-
-        T IDIContainer.Resolve<T>()
-        {
-            return m_GlobalContainer.Resolve<T>();
-        }
-
-        object IDIContainer.Resolve(Type type)
-        {
-            return m_GlobalContainer.Resolve(type);
         }
     }
 }
