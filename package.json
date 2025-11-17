@@ -1,6 +1,6 @@
 {
   "name": "com.rpgframework.core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "RPG Framework Core",
   "description": "Core functionality for the RPG Framework as well as home to the interfaces for other modules to implement or for other users to implement in cases of wanting to extend or replace parts of the framework",
   "unity": "6000.0",
@@ -13,6 +13,6 @@
     "url": "https://github.com/KandyMan1990/RPGFramework.Core"
   },
   "dependencies": {
-    "com.rpgframework.di": "0.1.0"
+    "com.rpgframework.di": "0.1.1"
   }
 }
