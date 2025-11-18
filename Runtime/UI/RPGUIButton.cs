@@ -6,8 +6,8 @@ namespace RPGFramework.Core.UI
     [UxmlElement]
     public partial class RPGUIButton : VisualElement
     {
-        public event Action OnClicked;
-        public event Action OnHoverOrFocus;
+        public static event Action OnClicked;
+        public static event Action OnHighlighted;
 
         [UxmlAttribute]
         public string text
@@ -18,6 +18,8 @@ namespace RPGFramework.Core.UI
 
         private readonly Image m_Icon;
         private readonly Label m_Label;
+
+        private bool m_HoverOrFocus;
 
         public RPGUIButton()
         {
@@ -34,16 +36,22 @@ namespace RPGFramework.Core.UI
             Add(m_Icon);
             Add(m_Label);
 
-            RegisterCallback<AttachToPanelEvent>(OnAttach);
-            RegisterCallback<DetachFromPanelEvent>(OnDetach);
-
             RegisterCallback<AttachToPanelEvent>(evt =>
                                                  {
                                                      focusable   = true;
                                                      pickingMode = PickingMode.Position;
                                                  });
 
-            RegisterCallback<ClickEvent>(evt => OnClicked?.Invoke());
+            RegisterCallback<AttachToPanelEvent>(OnAttach);
+            RegisterCallback<DetachFromPanelEvent>(OnDetach);
+
+            RegisterCallback<PointerEnterEvent>(OnPointerEnter);
+            RegisterCallback<PointerLeaveEvent>(OnPointerLeave);
+            RegisterCallback<FocusInEvent>(OnFocusIn);
+            RegisterCallback<BlurEvent>(OnBlur);
+
+            RegisterCallback<ClickEvent>(OnClick);
+            RegisterCallback<NavigationSubmitEvent>(OnSubmit);
         }
 
         private void OnAttach(AttachToPanelEvent evt)
@@ -76,14 +84,61 @@ namespace RPGFramework.Core.UI
             ShowIcon(showIcon);
         }
 
+        private void OnPointerEnter(PointerEnterEvent evt)
+        {
+            RaiseHighlightedEvent();
+        }
+
+        private void OnPointerLeave(PointerLeaveEvent evt)
+        {
+            ResetHighlightedEvent();
+        }
+
+        private void OnFocusIn(FocusInEvent evt)
+        {
+            RaiseHighlightedEvent();
+        }
+
+        private void OnBlur(BlurEvent evt)
+        {
+            ResetHighlightedEvent();
+        }
+
+        private void RaiseHighlightedEvent()
+        {
+            if (m_HoverOrFocus)
+            {
+                return;
+            }
+            m_HoverOrFocus = true;
+
+            OnHighlighted?.Invoke();
+        }
+
+        private void ResetHighlightedEvent()
+        {
+            m_HoverOrFocus = false;
+        }
+
+        private void OnSubmit(NavigationSubmitEvent evt)
+        {
+            if (focusController.focusedElement == this)
+                RaiseHighlightedEvent();
+
+            OnClicked?.Invoke();
+        }
+
+        private void OnClick(ClickEvent evt)
+        {
+            if (focusController.focusedElement == this)
+                RaiseHighlightedEvent();
+
+            OnClicked?.Invoke();
+        }
+
         private void ShowIcon(bool show)
         {
             m_Icon.style.opacity = show ? 1f : 0f;
-
-            if (show)
-            {
-                OnHoverOrFocus?.Invoke();
-            }
         }
     }
 }
