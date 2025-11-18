@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 
 namespace RPGFramework.Core
@@ -22,37 +21,5 @@ namespace RPGFramework.Core
     {
         Task OnEnterAsync(IModuleArgs args);
         Task OnExitAsync();
-    }
-
-    public interface ICoreFieldModule
-    {
-        void ResetModule<TConcrete>() where TConcrete : IFieldModule;
-    }
-
-    public interface ICoreMenuModule
-    {
-        T      GetInstance<T>();
-        object GetInstance(Type type);
-        void   ResetModule<TConcrete>() where TConcrete : IMenuModule;
-    }
-
-    public interface IFieldModule : IModule
-    {
-
-    }
-
-    public interface IFieldModuleArgs : IModuleArgs
-    {
-
-    }
-
-    public struct FieldModuleArgs : IFieldModuleArgs
-    {
-
-    }
-
-    public interface IField
-    {
-
     }
 }

@@ -4,6 +4,14 @@ using UnityEngine.UIElements;
 
 namespace RPGFramework.Core
 {
+    public interface ICoreMenuModule
+    {
+        Task   LoadFieldModulesAsync(IFieldModuleArgs args);
+        void   ResetModule<TConcrete>() where TConcrete : IMenuModule;
+        T      GetInstance<T>();
+        object GetInstance(Type type);
+    }
+
     public interface IMenuModule : IModule
     {
         Task PushMenu(IMenuModuleArgs menuModuleArgs);
@@ -15,9 +23,14 @@ namespace RPGFramework.Core
         Type MenuType { get; }
     }
 
-    public struct MenuModuleArgs : IMenuModuleArgs
+    public readonly struct MenuModuleArgs : IMenuModuleArgs
     {
-        public Type MenuType { get; set; }
+        public Type MenuType { get; }
+
+        public MenuModuleArgs(Type menuType)
+        {
+            MenuType = menuType;
+        }
     }
 
     public interface IMenuUIProvider
