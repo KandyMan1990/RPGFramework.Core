@@ -55,9 +55,9 @@ namespace RPGFramework.Core
             m_GlobalContainer.BindSingleton<TInterface, TConcrete>();
         }
 
-        void IDIContainer.BindSingletonFromInstance<TInterface, TConcrete>(TConcrete instance)
+        void IDIContainer.BindSingletonFromInstance<TInterface>(TInterface instance)
         {
-            m_GlobalContainer.BindSingletonFromInstance<TInterface, TConcrete>(instance);
+            m_GlobalContainer.BindSingletonFromInstance<TInterface>(instance);
         }
 
         T IDIContainer.Resolve<T>()

@@ -21,8 +21,8 @@ namespace RPGFramework.Core
             m_ModuleNameProvider    = coreModuleDIContainer;
             m_CurrentModule         = new NullModule();
 
-            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreMenuModule, CoreModule>(this);
-            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreFieldModule, CoreModule>(this);
+            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreMenuModule>(this);
+            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreFieldModule>(this);
         }
 
         private void InstallGlobalBindings(GlobalInstallerBase globalInstaller)
