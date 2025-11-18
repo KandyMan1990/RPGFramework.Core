@@ -7,6 +7,7 @@ namespace RPGFramework.Core.UI
     public partial class RPGUIButton : VisualElement
     {
         public event Action OnClicked;
+        public event Action OnHoverOrFocus;
 
         [UxmlAttribute]
         public string text
@@ -70,7 +71,7 @@ namespace RPGFramework.Core.UI
 
         private void OnAnyHover(PointerEnterEvent evt)
         {
-            bool showIcon = evt.target == this || evt.target == m_Icon || evt.target == m_Label;
+            bool showIcon = evt.target == m_Label;
 
             ShowIcon(showIcon);
         }
@@ -78,6 +79,11 @@ namespace RPGFramework.Core.UI
         private void ShowIcon(bool show)
         {
             m_Icon.style.opacity = show ? 1f : 0f;
+
+            if (show)
+            {
+                OnHoverOrFocus?.Invoke();
+            }
         }
     }
 }
