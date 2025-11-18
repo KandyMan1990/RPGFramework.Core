@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
-    public class CoreModule : IEntryPoint, ICoreFieldModule, ICoreMenuModule
+    public partial class CoreModule : IEntryPoint
     {
         private readonly IDIContainer        m_CoreModuleDIContainer;
         private readonly IModuleNameProvider m_ModuleNameProvider;
@@ -45,32 +44,9 @@ namespace RPGFramework.Core
 
         Task IEntryPoint.StartGameAsync()
         {
-            MenuModuleArgs args = new MenuModuleArgs
-                                  {
-                                          MenuType = typeof(IBeginMenu)
-                                  };
+            MenuModuleArgs args = new MenuModuleArgs(typeof(IBeginMenu));
 
             return LoadModuleAsync<IMenuModule>(args);
-        }
-
-        void ICoreFieldModule.ResetModule<TConcrete>()
-        {
-            m_CoreModuleDIContainer.BindSingleton<IFieldModule, TConcrete>();
-        }
-
-        T ICoreMenuModule.GetInstance<T>()
-        {
-            return m_CoreModuleDIContainer.Resolve<T>();
-        }
-
-        object ICoreMenuModule.GetInstance(Type type)
-        {
-            return m_CoreModuleDIContainer.Resolve(type);
-        }
-
-        void ICoreMenuModule.ResetModule<TConcrete>()
-        {
-            m_CoreModuleDIContainer.BindSingleton<IMenuModule, TConcrete>();
         }
 
         private async Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
