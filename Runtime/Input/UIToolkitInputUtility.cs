@@ -31,13 +31,11 @@ namespace RPGFramework.Core.Input
             root.focusController.IgnoreEvent(evt);
         }
 
-        public static void RegisterButtonCallbacks(VisualElement                            root,
-                                                   EventCallback<NavigationMoveEvent>       navigationEventCallback = null,
-                                                   EventCallback<NavigationSubmitEvent>     submitEventCallback     = null,
-                                                   EventCallback<ClickEvent>                clickEventCallback      = null,
-                                                   EventCallback<FocusEvent, Button>        focusEventCallback      = null,
-                                                   EventCallback<BlurEvent, Button>         blurEventCallback       = null,
-                                                   EventCallback<PointerEnterEvent, Button> enterEventCallback      = null)
+        public static void RegisterButtonCallbacks(VisualElement                        root,
+                                                   EventCallback<NavigationMoveEvent>   navigationEventCallback = null,
+                                                   EventCallback<NavigationSubmitEvent> submitEventCallback     = null,
+                                                   EventCallback<ClickEvent>            clickEventCallback      = null,
+                                                   EventCallback<FocusInEvent>          focusInEventCallback    = null)
         {
             if (navigationEventCallback != null)
             {
@@ -54,29 +52,17 @@ namespace RPGFramework.Core.Input
                 root.RegisterCallback(clickEventCallback);
             }
 
-            if (focusEventCallback != null)
+            if (focusInEventCallback != null)
             {
-                root.RegisterCallback(focusEventCallback, (Button)root);
-            }
-
-            if (blurEventCallback != null)
-            {
-                root.RegisterCallback(blurEventCallback, (Button)root);
-            }
-
-            if (enterEventCallback != null)
-            {
-                root.RegisterCallback(enterEventCallback, (Button)root);
+                root.RegisterCallback(focusInEventCallback);
             }
         }
 
-        public static void UnregisterButtonCallbacks(VisualElement                            root,
-                                                     EventCallback<NavigationMoveEvent>       navigationEventCallback = null,
-                                                     EventCallback<NavigationSubmitEvent>     submitEventCallback     = null,
-                                                     EventCallback<ClickEvent>                clickEventCallback      = null,
-                                                     EventCallback<FocusEvent, Button>        focusEventCallback      = null,
-                                                     EventCallback<BlurEvent, Button>         blurEventCallback       = null,
-                                                     EventCallback<PointerEnterEvent, Button> enterEventCallback      = null)
+        public static void UnregisterButtonCallbacks(VisualElement                        root,
+                                                     EventCallback<NavigationMoveEvent>   navigationEventCallback = null,
+                                                     EventCallback<NavigationSubmitEvent> submitEventCallback     = null,
+                                                     EventCallback<ClickEvent>            clickEventCallback      = null,
+                                                     EventCallback<FocusInEvent>          focusEventCallback      = null)
         {
             if (navigationEventCallback != null)
             {
@@ -96,16 +82,6 @@ namespace RPGFramework.Core.Input
             if (focusEventCallback != null)
             {
                 root.UnregisterCallback(focusEventCallback);
-            }
-
-            if (blurEventCallback != null)
-            {
-                root.UnregisterCallback(blurEventCallback);
-            }
-
-            if (enterEventCallback != null)
-            {
-                root.UnregisterCallback(enterEventCallback);
             }
         }
     }
