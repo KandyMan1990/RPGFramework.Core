@@ -16,6 +16,7 @@ namespace RPGFramework.Core
     {
         Task PushMenu(IMenuModuleArgs menuModuleArgs);
         Task PopMenu();
+        void PlaySfx(int id);
     }
 
     public interface IMenuModuleArgs : IModuleArgs
@@ -48,10 +49,11 @@ namespace RPGFramework.Core
 
     public interface IMenuUI
     {
-        Task OnEnterAsync(VisualElement rootContainer);
-        Task OnSuspendAsync();
-        Task OnResumeAsync();
-        Task OnExitAsync();
+        event Action<int> OnPlayAudio;
+        Task              OnEnterAsync(VisualElement rootContainer);
+        Task              OnSuspendAsync();
+        Task              OnResumeAsync();
+        Task              OnExitAsync();
     }
 
     public interface IBeginMenu : IMenu
