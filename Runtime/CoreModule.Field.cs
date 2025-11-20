@@ -11,7 +11,7 @@ namespace RPGFramework.Core
 
         void ICoreFieldModule.ResetModule<TConcrete>()
         {
-            m_CoreModuleDIContainer.BindSingleton<IFieldModule, TConcrete>();
+            m_SceneContainer.BindSingleton<IFieldModule, TConcrete>();
         }
     }
 }

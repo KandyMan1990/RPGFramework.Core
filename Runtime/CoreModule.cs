@@ -11,7 +11,8 @@ namespace RPGFramework.Core
         private readonly IDIContainer        m_CoreModuleDIContainer;
         private readonly IModuleNameProvider m_ModuleNameProvider;
 
-        private IModule m_CurrentModule;
+        private IDIContainer m_SceneContainer;
+        private IModule      m_CurrentModule;
 
         private CoreModule()
         {
@@ -57,15 +58,15 @@ namespace RPGFramework.Core
 
             await SceneManager.LoadSceneAsync(sceneName);
 
-            DIContainer sceneContainer = new DIContainer();
+            m_SceneContainer = new DIContainer();
 
             SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindFirstObjectByType<SceneInstallerMonoBehaviour>();
             SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
-            sceneInstaller.InstallBindings(sceneContainer);
+            sceneInstaller.InstallBindings(m_SceneContainer);
 
-            m_CoreModuleDIContainer.SetFallback(sceneContainer);
+            m_SceneContainer.SetFallback(m_CoreModuleDIContainer);
 
-            m_CurrentModule = m_CoreModuleDIContainer.Resolve<T>();
+            m_CurrentModule = m_SceneContainer.Resolve<T>();
 
             await m_CurrentModule.OnEnterAsync(args);
         }

@@ -12,17 +12,17 @@ namespace RPGFramework.Core
 
         void ICoreMenuModule.ResetModule<TConcrete>()
         {
-            m_CoreModuleDIContainer.BindSingleton<IMenuModule, TConcrete>();
+            m_SceneContainer.BindSingleton<IMenuModule, TConcrete>();
         }
 
         T ICoreMenuModule.GetInstance<T>()
         {
-            return m_CoreModuleDIContainer.Resolve<T>();
+            return m_SceneContainer.Resolve<T>();
         }
 
         object ICoreMenuModule.GetInstance(Type type)
         {
-            return m_CoreModuleDIContainer.Resolve(type);
+            return m_SceneContainer.Resolve(type);
         }
     }
 }
