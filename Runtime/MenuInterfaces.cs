@@ -63,6 +63,9 @@ namespace RPGFramework.Core
 
     public interface IBeginMenuUI : IMenuUI
     {
-
+        event Action OnNewGame;
+        event Action OnLoadGame;
+        event Action OnSettings;
+        event Action OnQuit;
     }
 }
