@@ -2,7 +2,7 @@
     "name": "RPGFramework.Core",
     "rootNamespace": "RPGFramework.Core",
     "references": [
-        "GUID:29e4b4562d80683479a469eef0790820"
+        "RPGFramework.DI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
