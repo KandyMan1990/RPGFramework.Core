@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 namespace RPGFramework.Core
@@ -9,7 +10,15 @@ namespace RPGFramework.Core
 
     public interface IEntryPoint
     {
-        Task StartGameAsync();
+        Task StartGameAsync<T>(IModuleArgs args) where T : IModule;
+    }
+
+    public interface ICoreModule
+    {
+        T      GetInstance<T>();
+        object GetInstance(Type          type);
+        Task   LoadModule<T>(IModuleArgs args) where T : IModule;
+        void   ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
     }
 
     public interface IModuleArgs
