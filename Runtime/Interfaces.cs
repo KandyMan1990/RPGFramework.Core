@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using RPGFramework.Core.SharedTypes;
 
 namespace RPGFramework.Core
 {
@@ -19,16 +20,5 @@ namespace RPGFramework.Core
         object GetInstance(Type          type);
         Task   LoadModule<T>(IModuleArgs args) where T : IModule;
         void   ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
-    }
-
-    public interface IModuleArgs
-    {
-
-    }
-
-    public interface IModule
-    {
-        Task OnEnterAsync(IModuleArgs args);
-        Task OnExitAsync();
     }
 }

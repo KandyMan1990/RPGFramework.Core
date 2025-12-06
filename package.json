@@ -13,6 +13,7 @@
     "url": "https://github.com/KandyMan1990/RPGFramework.Core"
   },
   "dependencies": {
-    "com.rpgframework.di": "0.1.1"
+    "com.rpgframework.di": "0.1.1",
+    "com.rpgframework.core.sharedtypes": "0.1.0"
   }
 }

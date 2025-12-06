@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
 
 namespace RPGFramework.Core

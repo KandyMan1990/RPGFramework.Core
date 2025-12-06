@@ -2,7 +2,8 @@
     "name": "RPGFramework.Core",
     "rootNamespace": "RPGFramework.Core",
     "references": [
-        "RPGFramework.DI"
+        "RPGFramework.DI",
+        "RPGFramework.Core.SharedTypes"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

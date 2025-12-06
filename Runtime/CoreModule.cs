@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
