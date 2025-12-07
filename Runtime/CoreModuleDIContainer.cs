@@ -8,22 +8,30 @@ namespace RPGFramework.Core
     internal interface IModuleNameProvider
     {
         internal string GetModuleName<T>() where T : IModule;
+        internal string GetModuleName(Type type);
     }
 
     internal class CoreModuleDIContainer : IDIContainer, IModuleNameProvider
     {
         private readonly IDIContainer             m_GlobalContainer;
         private readonly Dictionary<Type, string> m_ModuleNames;
+        private readonly IModuleNameProvider      m_ModuleNameProvider;
 
         string IModuleNameProvider.GetModuleName<T>()
         {
-            return m_ModuleNames[typeof(T)];
+            return m_ModuleNameProvider.GetModuleName(typeof(T));
+        }
+
+        string IModuleNameProvider.GetModuleName(Type type)
+        {
+            return m_ModuleNames[type];
         }
 
         internal CoreModuleDIContainer()
         {
-            m_GlobalContainer = new DIContainer();
-            m_ModuleNames     = new Dictionary<Type, string>();
+            m_GlobalContainer    = new DIContainer();
+            m_ModuleNames        = new Dictionary<Type, string>();
+            m_ModuleNameProvider = this;
         }
 
         IDIContainer IDIContainer.GetFallback()

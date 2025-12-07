@@ -17,8 +17,9 @@ namespace RPGFramework.Core
     public interface ICoreModule
     {
         T      GetInstance<T>();
-        object GetInstance(Type          type);
-        Task   LoadModule<T>(IModuleArgs args) where T : IModule;
+        object GetInstance(Type               type);
+        Task   LoadModuleAsync<T>(IModuleArgs args) where T : IModule;
+        Task   LoadModuleAsync(Type           type, IModuleArgs args);
         void   ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
     }
 }

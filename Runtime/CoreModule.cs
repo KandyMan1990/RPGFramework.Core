@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
@@ -54,9 +55,14 @@ namespace RPGFramework.Core
             return m_SceneContainer.Resolve(type);
         }
 
-        Task ICoreModule.LoadModule<T>(IModuleArgs args)
+        Task ICoreModule.LoadModuleAsync<T>(IModuleArgs args)
         {
-            return m_CoreModule.LoadModule<T>(args);
+            return m_CoreModule.LoadModuleAsync<T>(args);
+        }
+
+        Task ICoreModule.LoadModuleAsync(Type type, IModuleArgs args)
+        {
+            return LoadModuleAsync(type, args);
         }
 
         void ICoreModule.ResetModule<TInterface, TConcrete>()
@@ -64,11 +70,21 @@ namespace RPGFramework.Core
             m_CoreModuleDIContainer.BindSingleton<TInterface, TConcrete>();
         }
 
-        private async Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
+        private Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
         {
+            return LoadModuleAsync(typeof(T), args);
+        }
+
+        private async Task LoadModuleAsync(Type type, IModuleArgs args)
+        {
+            if (type.GetInterface(nameof(IModule)) == null)
+            {
+                throw new InvalidDataException($"{nameof(ICoreModule)}::{nameof(LoadModuleAsync)} [{type}] must be assignable from {nameof(IModule)}");
+            }
+            
             await m_CurrentModule.OnExitAsync();
 
-            string sceneName = m_ModuleNameProvider.GetModuleName<T>();
+            string sceneName = m_ModuleNameProvider.GetModuleName(type);
 
             await SceneManager.LoadSceneAsync(sceneName);
 
@@ -80,7 +96,7 @@ namespace RPGFramework.Core
 
             m_SceneContainer.SetFallback(m_CoreModuleDIContainer);
 
-            m_CurrentModule = m_SceneContainer.Resolve<T>();
+            m_CurrentModule = (IModule)m_SceneContainer.Resolve(type);
 
             await m_CurrentModule.OnEnterAsync(args);
         }
