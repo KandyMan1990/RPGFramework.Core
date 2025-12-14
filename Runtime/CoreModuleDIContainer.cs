@@ -11,9 +11,10 @@ namespace RPGFramework.Core
         internal string GetModuleName(Type type);
     }
 
-    internal class CoreModuleDIContainer : IDIContainer, IModuleNameProvider
+    internal class CoreModuleDIContainer : IDIContainer, IDIResolver, IModuleNameProvider
     {
         private readonly IDIContainer             m_GlobalContainer;
+        private readonly IDIResolver              m_GlobalResolver;
         private readonly Dictionary<Type, string> m_ModuleNames;
         private readonly IModuleNameProvider      m_ModuleNameProvider;
 
@@ -29,7 +30,10 @@ namespace RPGFramework.Core
 
         internal CoreModuleDIContainer()
         {
-            m_GlobalContainer    = new DIContainer();
+            DIContainer container = new DIContainer();
+
+            m_GlobalContainer    = container;
+            m_GlobalResolver     = container;
             m_ModuleNames        = new Dictionary<Type, string>();
             m_ModuleNameProvider = this;
         }
@@ -83,30 +87,30 @@ namespace RPGFramework.Core
         {
             m_GlobalContainer.BindSingletonFromInstanceIfNotRegistered<TInterface>(instance);
         }
-        
+
         void IDIContainer.ForceBindTransient<TInterface, TConcrete>()
         {
             m_GlobalContainer.ForceBindTransient<TInterface, TConcrete>();
         }
-        
+
         void IDIContainer.ForceBindSingleton<TInterface, TConcrete>()
         {
             m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
         }
-        
+
         void IDIContainer.ForceBindSingletonFromInstance<TInterface>(TInterface instance)
         {
             m_GlobalContainer.ForceBindSingletonFromInstance<TInterface>(instance);
         }
 
-        T IDIContainer.Resolve<T>()
+        T IDIResolver.Resolve<T>()
         {
-            return m_GlobalContainer.Resolve<T>();
+            return m_GlobalResolver.Resolve<T>();
         }
 
-        object IDIContainer.Resolve(Type type)
+        object IDIResolver.Resolve(Type type)
         {
-            return m_GlobalContainer.Resolve(type);
+            return m_GlobalResolver.Resolve(type);
         }
     }
 }
