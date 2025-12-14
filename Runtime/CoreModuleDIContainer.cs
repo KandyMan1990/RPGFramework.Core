@@ -115,6 +115,21 @@ namespace RPGFramework.Core
             m_GlobalContainer.ForceBindSingletonFromInstance<TInterface>(instance);
         }
 
+        INonLazyBinding IDIContainer.BindInterfacesToSelfSingleton<TConcrete>()
+        {
+            return m_GlobalContainer.BindInterfacesToSelfSingleton<TConcrete>();
+        }
+
+        INonLazyBinding IDIContainer.BindInterfacesToSelfSingletonIfNotRegistered<TConcrete>()
+        {
+            return m_GlobalContainer.BindInterfacesToSelfSingletonIfNotRegistered<TConcrete>();
+        }
+
+        INonLazyBinding IDIContainer.ForceBindInterfacesToSelfSingleton<TConcrete>()
+        {
+            return m_GlobalContainer.ForceBindInterfacesToSelfSingleton<TConcrete>();
+        }
+
         T IDIResolver.Resolve<T>()
         {
             return m_GlobalResolver.Resolve<T>();
