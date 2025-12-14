@@ -11,10 +11,11 @@ namespace RPGFramework.Core
         internal string GetModuleName(Type type);
     }
 
-    internal class CoreModuleDIContainer : IDIContainer, IDIResolver, IModuleNameProvider
+    internal class CoreModuleDIContainer : IDIContainer, IDIResolver, IDIContainerNode, IModuleNameProvider
     {
         private readonly IDIContainer             m_GlobalContainer;
         private readonly IDIResolver              m_GlobalResolver;
+        private readonly IDIContainerNode         m_GlobalContainerNode;
         private readonly Dictionary<Type, string> m_ModuleNames;
         private readonly IModuleNameProvider      m_ModuleNameProvider;
 
@@ -32,25 +33,26 @@ namespace RPGFramework.Core
         {
             DIContainer container = new DIContainer();
 
-            m_GlobalContainer    = container;
-            m_GlobalResolver     = container;
-            m_ModuleNames        = new Dictionary<Type, string>();
-            m_ModuleNameProvider = this;
+            m_GlobalContainer     = container;
+            m_GlobalResolver      = container;
+            m_GlobalContainerNode = container;
+            m_ModuleNames         = new Dictionary<Type, string>();
+            m_ModuleNameProvider  = this;
         }
 
-        IDIContainer IDIContainer.GetFallback()
+        IDIContainerNode IDIContainerNode.GetFallback()
         {
-            return m_GlobalContainer.GetFallback();
+            return m_GlobalContainerNode.GetFallback();
         }
 
-        void IDIContainer.SetFallback(IDIContainer fallback)
+        void IDIContainerNode.SetFallback(IDIContainerNode fallback)
         {
-            m_GlobalContainer.SetFallback(fallback);
+            m_GlobalContainerNode.SetFallback(fallback);
         }
 
-        bool IDIContainer.TryGetBinding(Type type, out Func<object> creator)
+        bool IDIContainerNode.TryGetBinding(Type type, out Func<object> creator)
         {
-            return m_GlobalContainer.TryGetBinding(type, out creator);
+            return m_GlobalContainerNode.TryGetBinding(type, out creator);
         }
 
         void IDIContainer.BindTransient<TInterface, TConcrete>()

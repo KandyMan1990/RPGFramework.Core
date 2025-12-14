@@ -12,20 +12,23 @@ namespace RPGFramework.Core
     public class CoreModule : IEntryPoint, ICoreModule
     {
         private readonly IDIContainer        m_CoreModuleDIContainer;
+        private readonly IDIContainerNode    m_CoreModuleDIContainerNode;
         private readonly IModuleNameProvider m_ModuleNameProvider;
         private readonly ICoreModule         m_CoreModule;
 
-        private IDIContainer m_SceneContainer;
-        private IDIResolver  m_SceneResolver;
-        private IModule      m_CurrentModule;
+        private IDIContainer     m_SceneContainer;
+        private IDIResolver      m_SceneResolver;
+        private IDIContainerNode m_SceneContainerNode;
+        private IModule          m_CurrentModule;
 
         private CoreModule()
         {
             CoreModuleDIContainer coreModuleDIContainer = new CoreModuleDIContainer();
 
-            m_CoreModuleDIContainer = coreModuleDIContainer;
-            m_ModuleNameProvider    = coreModuleDIContainer;
-            m_CurrentModule         = new NullModule();
+            m_CoreModuleDIContainer     = coreModuleDIContainer;
+            m_CoreModuleDIContainerNode = coreModuleDIContainer;
+            m_ModuleNameProvider        = coreModuleDIContainer;
+            m_CurrentModule             = new NullModule();
 
             m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreModule>(this);
 
@@ -81,8 +84,9 @@ namespace RPGFramework.Core
 
             DIContainer sceneContainer = new DIContainer();
 
-            m_SceneContainer = sceneContainer;
-            m_SceneResolver  = sceneContainer;
+            m_SceneContainer     = sceneContainer;
+            m_SceneResolver      = sceneContainer;
+            m_SceneContainerNode = sceneContainer;
 
             SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindFirstObjectByType<SceneInstallerMonoBehaviour>();
             SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
@@ -90,7 +94,7 @@ namespace RPGFramework.Core
 
             m_CoreModuleDIContainer.ForceBindSingletonFromInstance<IDIResolver>(m_SceneResolver);
 
-            m_SceneContainer.SetFallback(m_CoreModuleDIContainer);
+            m_SceneContainerNode.SetFallback(m_CoreModuleDIContainerNode);
 
             m_CurrentModule = (IModule)m_SceneResolver.Resolve(type);
 
