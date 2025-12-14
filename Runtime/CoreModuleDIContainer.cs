@@ -69,6 +69,36 @@ namespace RPGFramework.Core
             m_GlobalContainer.BindSingletonFromInstance<TInterface>(instance);
         }
 
+        void IDIContainer.BindTransientIfNotRegistered<TInterface, TConcrete>()
+        {
+            m_GlobalContainer.BindTransientIfNotRegistered<TInterface, TConcrete>();
+        }
+
+        void IDIContainer.BindSingletonIfNotRegistered<TInterface, TConcrete>()
+        {
+            m_GlobalContainer.BindSingletonIfNotRegistered<TInterface, TConcrete>();
+        }
+
+        void IDIContainer.BindSingletonFromInstanceIfNotRegistered<TInterface>(TInterface instance)
+        {
+            m_GlobalContainer.BindSingletonFromInstanceIfNotRegistered<TInterface>(instance);
+        }
+        
+        void IDIContainer.ForceBindTransient<TInterface, TConcrete>()
+        {
+            m_GlobalContainer.ForceBindTransient<TInterface, TConcrete>();
+        }
+        
+        void IDIContainer.ForceBindSingleton<TInterface, TConcrete>()
+        {
+            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
+        }
+        
+        void IDIContainer.ForceBindSingletonFromInstance<TInterface>(TInterface instance)
+        {
+            m_GlobalContainer.ForceBindSingletonFromInstance<TInterface>(instance);
+        }
+
         T IDIContainer.Resolve<T>()
         {
             return m_GlobalContainer.Resolve<T>();
