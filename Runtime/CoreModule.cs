@@ -58,7 +58,7 @@ namespace RPGFramework.Core
 
         void ICoreModule.ResetModule<TInterface, TConcrete>()
         {
-            m_CoreModuleDIContainer.ForceBindSingleton<TInterface, TConcrete>();
+            m_CoreModuleDIContainer.ForceBindSingletonLazy<TInterface, TConcrete>();
         }
 
         private Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule

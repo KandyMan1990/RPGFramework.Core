@@ -58,14 +58,24 @@ namespace RPGFramework.Core
             m_GlobalContainer.BindTransient<TInterface, TConcrete>();
         }
 
-        void IDIContainer.BindSingleton<TInterface, TConcrete>()
+        void IDIContainer.BindSingletonLazy<TInterface, TConcrete>()
         {
             if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
             {
                 m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
             }
 
-            m_GlobalContainer.BindSingleton<TInterface, TConcrete>();
+            m_GlobalContainer.BindSingletonLazy<TInterface, TConcrete>();
+        }
+
+        void IDIContainer.BindSingletonNonLazy<TInterface, TConcrete>()
+        {
+            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
+            {
+                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
+            }
+
+            m_GlobalContainer.BindSingletonNonLazy<TInterface, TConcrete>();
         }
 
         void IDIContainer.BindSingletonFromInstance<TInterface>(TInterface instance)
@@ -78,9 +88,24 @@ namespace RPGFramework.Core
             m_GlobalContainer.BindTransientIfNotRegistered<TInterface, TConcrete>();
         }
 
-        void IDIContainer.BindSingletonIfNotRegistered<TInterface, TConcrete>()
+        void IDIContainer.BindSingletonIfNotRegisteredLazy<TInterface, TConcrete>()
         {
-            m_GlobalContainer.BindSingletonIfNotRegistered<TInterface, TConcrete>();
+            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
+            {
+                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
+            }
+
+            m_GlobalContainer.BindSingletonIfNotRegisteredLazy<TInterface, TConcrete>();
+        }
+
+        void IDIContainer.BindSingletonIfNotRegisteredNonLazy<TInterface, TConcrete>()
+        {
+            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
+            {
+                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
+            }
+
+            m_GlobalContainer.BindSingletonIfNotRegisteredNonLazy<TInterface, TConcrete>();
         }
 
         void IDIContainer.BindSingletonFromInstanceIfNotRegistered<TInterface>(TInterface instance)
@@ -93,9 +118,24 @@ namespace RPGFramework.Core
             m_GlobalContainer.ForceBindTransient<TInterface, TConcrete>();
         }
 
-        void IDIContainer.ForceBindSingleton<TInterface, TConcrete>()
+        void IDIContainer.ForceBindSingletonLazy<TInterface, TConcrete>()
         {
-            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
+            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
+            {
+                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
+            }
+
+            m_GlobalContainer.ForceBindSingletonLazy<TInterface, TConcrete>();
+        }
+
+        void IDIContainer.ForceBindSingletonNonLazy<TInterface, TConcrete>()
+        {
+            if (typeof(IModule).IsAssignableFrom(typeof(TInterface)))
+            {
+                m_ModuleNames[typeof(TInterface)] = typeof(TConcrete).Name;
+            }
+
+            m_GlobalContainer.ForceBindSingletonNonLazy<TInterface, TConcrete>();
         }
 
         void IDIContainer.ForceBindSingletonFromInstance<TInterface>(TInterface instance)
