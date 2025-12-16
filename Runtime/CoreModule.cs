@@ -29,8 +29,11 @@ namespace RPGFramework.Core
             m_CoreModuleDIContainerNode = coreModuleDIContainer;
             m_ModuleNameProvider        = coreModuleDIContainer;
             m_CurrentModule             = new NullModule();
+            m_SceneContainer            = new NullDIContainer();
 
             m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreModule>(this);
+
+            Application.quitting += OnApplicationQuit;
 
             m_CoreModule = this;
         }
@@ -81,6 +84,8 @@ namespace RPGFramework.Core
             string sceneName = m_ModuleNameProvider.GetModuleName(type);
 
             await SceneManager.LoadSceneAsync(sceneName);
+            
+            m_SceneContainer.Dispose();
 
             DIContainer sceneContainer = new DIContainer();
 
@@ -99,6 +104,12 @@ namespace RPGFramework.Core
             m_CurrentModule = (IModule)m_SceneResolver.Resolve(type);
 
             await m_CurrentModule.OnEnterAsync(args);
+        }
+
+        private void OnApplicationQuit()
+        {
+            m_SceneContainer.Dispose();
+            m_CoreModuleDIContainer.Dispose();
         }
     }
 }
