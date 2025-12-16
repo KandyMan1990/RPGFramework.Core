@@ -16,6 +16,7 @@ namespace RPGFramework.Core
         private readonly IDIContainer             m_GlobalContainer;
         private readonly IDIResolver              m_GlobalResolver;
         private readonly IDIContainerNode         m_GlobalContainerNode;
+        private readonly IDisposable              m_GlobalDisposable;
         private readonly Dictionary<Type, string> m_ModuleNames;
         private readonly IModuleNameProvider      m_ModuleNameProvider;
 
@@ -36,6 +37,7 @@ namespace RPGFramework.Core
             m_GlobalContainer     = container;
             m_GlobalResolver      = container;
             m_GlobalContainerNode = container;
+            m_GlobalDisposable    = container;
             m_ModuleNames         = new Dictionary<Type, string>();
             m_ModuleNameProvider  = this;
         }
@@ -138,6 +140,11 @@ namespace RPGFramework.Core
         object IDIResolver.Resolve(Type type)
         {
             return m_GlobalResolver.Resolve(type);
+        }
+
+        void IDisposable.Dispose()
+        {
+            m_GlobalDisposable.Dispose();
         }
     }
 }
