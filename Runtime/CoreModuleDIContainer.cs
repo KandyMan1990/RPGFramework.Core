@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
+using UnityEngine;
 
 namespace RPGFramework.Core
 {
@@ -122,14 +123,44 @@ namespace RPGFramework.Core
             return m_GlobalContainer.BindInterfacesToSelfSingleton<TConcrete>();
         }
 
+        INonLazyBinding IDIContainer.BindInterfacesAndConcreteToSelfSingleton<TConcrete>()
+        {
+            return m_GlobalContainer.BindInterfacesAndConcreteToSelfSingleton<TConcrete>();
+        }
+
         INonLazyBinding IDIContainer.BindInterfacesToSelfSingletonIfNotRegistered<TConcrete>()
         {
             return m_GlobalContainer.BindInterfacesToSelfSingletonIfNotRegistered<TConcrete>();
         }
 
+        INonLazyBinding IDIContainer.BindInterfacesToAndConcreteSelfSingletonIfNotRegistered<TConcrete>()
+        {
+            return m_GlobalContainer.BindInterfacesToAndConcreteSelfSingletonIfNotRegistered<TConcrete>();
+        }
+
         INonLazyBinding IDIContainer.ForceBindInterfacesToSelfSingleton<TConcrete>()
         {
             return m_GlobalContainer.ForceBindInterfacesToSelfSingleton<TConcrete>();
+        }
+
+        INonLazyBinding IDIContainer.ForceBindInterfacesAndConcreteToSelfSingleton<TConcrete>()
+        {
+            return m_GlobalContainer.ForceBindInterfacesAndConcreteToSelfSingleton<TConcrete>();
+        }
+
+        void IDIContainer.BindPrefab<TInterface, TConcrete>(TConcrete prefab)
+        {
+            m_GlobalContainer.BindPrefab<TInterface, TConcrete>(prefab);
+        }
+
+        void IDIContainer.BindPrefabIfNotRegistered<TInterface, TConcrete>(TConcrete prefab)
+        {
+            m_GlobalContainer.BindPrefabIfNotRegistered<TInterface, TConcrete>(prefab);
+        }
+
+        void IDIContainer.ForceBindPrefab<TInterface, TConcrete>(TConcrete prefab)
+        {
+            m_GlobalContainer.ForceBindPrefab<TInterface, TConcrete>(prefab);
         }
 
         T IDIResolver.Resolve<T>()
@@ -140,6 +171,21 @@ namespace RPGFramework.Core
         object IDIResolver.Resolve(Type type)
         {
             return m_GlobalResolver.Resolve(type);
+        }
+
+        TInterface IDIResolver.ResolvePrefab<TInterface>(Transform parent)
+        {
+            return m_GlobalResolver.ResolvePrefab<TInterface>(parent);
+        }
+
+        void IDIResolver.InjectInto(object instance)
+        {
+            m_GlobalResolver.InjectInto(instance);
+        }
+
+        T IDIResolver.InstantiateAndInject<T>(T prefab, Transform parent)
+        {
+            return m_GlobalResolver.InstantiateAndInject<T>(prefab, parent);
         }
 
         void IDisposable.Dispose()
