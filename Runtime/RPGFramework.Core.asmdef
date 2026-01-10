@@ -3,7 +3,8 @@
     "rootNamespace": "RPGFramework.Core",
     "references": [
         "RPGFramework.DI",
-        "RPGFramework.Core.SharedTypes"
+        "RPGFramework.Core.SharedTypes",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
