@@ -2,6 +2,6 @@
 {
     public interface ISaveFactory
     {
-        object CreateDefaultSaveFile();
+        void CreateDefaultSave(ISaveDataService saveDataService);
     }
 }

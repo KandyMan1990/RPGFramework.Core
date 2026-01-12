@@ -1,60 +1,189 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using RPGFramework.Core.Helpers;
 using UnityEngine;
 
 namespace RPGFramework.Core.SaveDataService
 {
     public interface ISaveDataService
     {
-        object  CreateDefaultSaveFile();
-        Task<T> LoadAsync<T>(string fileName) where T : unmanaged;
-        Task    SaveAsync<T>(string fileName, T data) where T : unmanaged;
-        object  GetCurrentSaveFile();
-        void    SetCurrentSaveFile(object saveFile);
-        // TODO: Task<string[]> GetListOfSaveFilesAsync();
+        void     BeginSave(string filename);
+        void     CommitSave();
+        bool     TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
+        void     SetSection<T>(string    sectionId, uint               version, T data) where T : unmanaged;
+        string[] GetListOfSaveFiles();
+        string   GetUnusedSaveFileName();
     }
 
     public class SaveDataService : ISaveDataService
     {
-        private readonly ISaveFactory m_SaveFactory;
+        private const int TOC_ENTRY_SIZE = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
 
-        private object m_CurrentSaveFile;
-
-        public SaveDataService(ISaveFactory saveFactory)
+        private readonly struct SectionTocEntry
         {
-            m_SaveFactory = saveFactory;
+            public readonly ulong SectionId;
+            public readonly uint  Version;
+            public readonly int   Offset;
+            public readonly int   Size;
+
+            public SectionTocEntry(ulong sectionId, uint version, int offset, int size)
+            {
+                SectionId = sectionId;
+                Version   = version;
+                Offset    = offset;
+                Size      = size;
+            }
         }
 
-        object ISaveDataService.CreateDefaultSaveFile() => m_SaveFactory.CreateDefaultSaveFile();
+        private readonly Dictionary<ulong, SectionBlob> m_Sections;
+        private readonly ISaveDataService               m_SaveDataService;
 
-        async Task<T> ISaveDataService.LoadAsync<T>(string fileName)
+        private string m_CurrentPath;
+
+        public SaveDataService()
         {
-            string path  = Path.Combine(Application.persistentDataPath, fileName);
-            byte[] bytes = await File.ReadAllBytesAsync(path);
-
-            return MemoryMarshal.Read<T>(bytes);
+            m_Sections        = new Dictionary<ulong, SectionBlob>();
+            m_SaveDataService = this;
         }
 
-        Task ISaveDataService.SaveAsync<T>(string fileName, T data)
+        void ISaveDataService.BeginSave(string filename)
         {
-            string path  = Path.Combine(Application.persistentDataPath, fileName);
-            byte[] bytes = DataToBytes(data);
+            m_Sections.Clear();
+            m_CurrentPath = Path.Combine(Application.persistentDataPath, filename);
 
-            return File.WriteAllBytesAsync(path, bytes);
+            if (!File.Exists(m_CurrentPath))
+            {
+                return;
+            }
+
+            using FileStream   fs     = File.OpenRead(m_CurrentPath);
+            using BinaryReader reader = new BinaryReader(fs);
+
+            int sectionCount = reader.ReadInt32();
+
+            SectionTocEntry[] toc = new SectionTocEntry[sectionCount];
+
+            for (int i = 0; i < sectionCount; i++)
+            {
+                ulong id      = reader.ReadUInt64();
+                uint  version = reader.ReadUInt32();
+                int   offset  = reader.ReadInt32();
+                int   size    = reader.ReadInt32();
+
+                toc[i] = new SectionTocEntry(id, version, offset, size);
+            }
+
+            foreach (SectionTocEntry sectionTocEntry in toc)
+            {
+                fs.Position = sectionTocEntry.Offset;
+                byte[] data = reader.ReadBytes(sectionTocEntry.Size);
+
+                m_Sections[sectionTocEntry.SectionId] = new SectionBlob(sectionTocEntry.Version, data);
+            }
         }
 
-        object ISaveDataService.GetCurrentSaveFile() => m_CurrentSaveFile;
-
-        void ISaveDataService.SetCurrentSaveFile(object saveFile) => m_CurrentSaveFile = saveFile;
-
-        private static unsafe byte[] DataToBytes<T>(T data) where T : unmanaged
+        void ISaveDataService.CommitSave()
         {
+            using FileStream   fs     = File.Create(m_CurrentPath);
+            using BinaryWriter writer = new BinaryWriter(fs);
+
+            int sectionCount = m_Sections.Count;
+            writer.Write(sectionCount);
+
+            long tocStart = fs.Position;
+
+            fs.Position += TOC_ENTRY_SIZE * sectionCount;
+
+            List<SectionTocEntry> toc = new List<SectionTocEntry>(sectionCount);
+
+            foreach (KeyValuePair<ulong, SectionBlob> kvp in m_Sections)
+            {
+                ulong  id      = kvp.Key;
+                uint   version = kvp.Value.Version;
+                byte[] data    = kvp.Value.Data;
+
+                int offset = (int)fs.Position;
+                writer.Write(data);
+                int size = data.Length;
+
+                toc.Add(new SectionTocEntry(id, version, offset, size));
+            }
+
+            fs.Position = tocStart;
+            foreach (SectionTocEntry entry in toc)
+            {
+                writer.Write(entry.SectionId);
+                writer.Write(entry.Version);
+                writer.Write(entry.Offset);
+                writer.Write(entry.Size);
+            }
+        }
+
+        bool ISaveDataService.TryGetSection<T>(string sectionId, out SaveSection<T> section)
+        {
+            ulong hash = Fnv1a64.Hash(sectionId);
+            if (!m_Sections.TryGetValue(hash, out SectionBlob sectionBlob))
+            {
+                section = default;
+                return false;
+            }
+
+            T data = MemoryMarshal.Read<T>(sectionBlob.Data);
+            section = new SaveSection<T>(sectionBlob.Version, data);
+            return true;
+        }
+
+        unsafe void ISaveDataService.SetSection<T>(string sectionId, uint version, T data)
+        {
+            ulong hash = Fnv1a64.Hash(sectionId);
+
             byte[] bytes = new byte[sizeof(T)];
             MemoryMarshal.Write(bytes, ref data);
 
-            return bytes;
+            m_Sections[hash] = new SectionBlob(version, bytes);
         }
 
+        string[] ISaveDataService.GetListOfSaveFiles()
+        {
+            string path = Application.persistentDataPath;
+
+            DirectoryInfo directoryInfo = new DirectoryInfo(path);
+
+            FileInfo[] files = directoryInfo.GetFiles("*.sav");
+
+            string[] filenames = new string[files.Length];
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                filenames[i] = files[i].Name;
+            }
+
+            return filenames;
+        }
+
+        string ISaveDataService.GetUnusedSaveFileName()
+        {
+            HashSet<byte> usedIndices = new HashSet<byte>();
+
+            string[] existingFiles = m_SaveDataService.GetListOfSaveFiles();
+
+            foreach (string file in existingFiles)
+            {
+                if (byte.TryParse(file.AsSpan(4, 3), out byte index))
+                {
+                    usedIndices.Add(index);
+                }
+            }
+
+            byte freeIndex = 0;
+            while (usedIndices.Contains(freeIndex))
+            {
+                freeIndex++;
+            }
+
+            return $"save{freeIndex:000}.sav";
+        }
     }
 }
