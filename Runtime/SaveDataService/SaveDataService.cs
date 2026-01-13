@@ -12,7 +12,7 @@ namespace RPGFramework.Core.SaveDataService
         void     BeginSave(string filename);
         void     CommitSave();
         bool     TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
-        void     SetSection<T>(string    sectionId, uint               version, T data) where T : unmanaged;
+        void     SetSection<T>(string    sectionId, SaveSection<T>     section) where T : unmanaged;
         string[] GetListOfSaveFiles();
         string   GetUnusedSaveFileName();
     }
@@ -21,6 +21,7 @@ namespace RPGFramework.Core.SaveDataService
     {
         private const int TOC_ENTRY_SIZE = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private readonly struct SectionTocEntry
         {
             public readonly ulong SectionId;
@@ -135,14 +136,14 @@ namespace RPGFramework.Core.SaveDataService
             return true;
         }
 
-        unsafe void ISaveDataService.SetSection<T>(string sectionId, uint version, T data)
+        unsafe void ISaveDataService.SetSection<T>(string sectionId, SaveSection<T> section)
         {
             ulong hash = Fnv1a64.Hash(sectionId);
 
             byte[] bytes = new byte[sizeof(T)];
-            MemoryMarshal.Write(bytes, ref data);
+            MemoryMarshal.Write(bytes, ref section.Data);
 
-            m_Sections[hash] = new SectionBlob(version, bytes);
+            m_Sections[hash] = new SectionBlob(section.Version, bytes);
         }
 
         string[] ISaveDataService.GetListOfSaveFiles()
