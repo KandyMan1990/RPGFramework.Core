@@ -15,6 +15,8 @@ namespace RPGFramework.Core.SaveDataService
         void     SetSection<T>(string    sectionId, SaveSection<T>     section) where T : unmanaged;
         string[] GetListOfSaveFiles();
         string   GetUnusedSaveFileName();
+        void     ClearSaveDataFromMemory();
+        bool     TryGetLastWrittenSaveFileName(out string filename);
     }
 
     public class SaveDataService : ISaveDataService
@@ -87,6 +89,11 @@ namespace RPGFramework.Core.SaveDataService
 
         void ISaveDataService.CommitSave()
         {
+            if (string.IsNullOrWhiteSpace(m_CurrentPath))
+            {
+                throw new InvalidOperationException($"{nameof(ISaveDataService)}::{nameof(ISaveDataService.CommitSave)} Must call {nameof(ISaveDataService.BeginSave)} before CommitSave");
+            }
+
             using FileStream   fs     = File.Create(m_CurrentPath);
             using BinaryWriter writer = new BinaryWriter(fs);
 
@@ -185,6 +192,39 @@ namespace RPGFramework.Core.SaveDataService
             }
 
             return $"save{freeIndex:000}.sav";
+        }
+
+        void ISaveDataService.ClearSaveDataFromMemory()
+        {
+            m_Sections.Clear();
+            m_CurrentPath = string.Empty;
+        }
+
+        bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)
+        {
+            string path = Application.persistentDataPath;
+
+            DirectoryInfo directoryInfo = new DirectoryInfo(path);
+
+            FileInfo[] files = directoryInfo.GetFiles("*.sav");
+            filename = string.Empty;
+
+            if (files.Length == 0)
+            {
+                return false;
+            }
+
+            DateTime lastAccessedTime = DateTime.MinValue;
+
+            foreach (FileInfo fileInfo in files)
+            {
+                if (fileInfo.LastWriteTimeUtc > lastAccessedTime)
+                {
+                    filename = fileInfo.Name;
+                }
+            }
+
+            return true;
         }
     }
 }
