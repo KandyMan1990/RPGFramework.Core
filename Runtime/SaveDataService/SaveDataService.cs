@@ -10,6 +10,7 @@ namespace RPGFramework.Core.SaveDataService
     public interface ISaveDataService
     {
         void     BeginSave(string filename);
+        bool     HasSaveLoaded();
         void     CommitSave();
         bool     TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
         void     SetSection<T>(string    sectionId, SaveSection<T>     section) where T : unmanaged;
@@ -85,6 +86,11 @@ namespace RPGFramework.Core.SaveDataService
 
                 m_Sections[sectionTocEntry.SectionId] = new SectionBlob(sectionTocEntry.Version, data);
             }
+        }
+
+        bool ISaveDataService.HasSaveLoaded()
+        {
+            return m_Sections.Count > 0 && m_CurrentPath != string.Empty;
         }
 
         void ISaveDataService.CommitSave()
