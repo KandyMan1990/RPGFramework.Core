@@ -4,10 +4,6 @@ using System.Text;
 
 namespace RPGFramework.Core.Data
 {
-    public static class Versions
-    {
-        public static uint GLOBAL_CONFIG = 1;
-    }
 
     /// <summary>
     /// Example config data using the settings in Menu.ConfigMenu.  If a custom ConfigMenu is created with more options, just clone this struct with the additional properties added and use it instead
