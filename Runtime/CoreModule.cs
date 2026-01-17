@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using RPGFramework.Core.Data;
+using RPGFramework.Core.SaveDataService;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
 using UnityEngine;
@@ -67,6 +69,24 @@ namespace RPGFramework.Core
             m_CoreModuleDIContainer.ForceBindSingleton<TInterface, TConcrete>();
         }
 
+        Task ICoreModule.ResumeModuleAsync()
+        {
+            ISaveDataService saveDataService = m_SceneResolver.Resolve<ISaveDataService>();
+            IModuleResumeMap moduleResumeMap = m_SceneResolver.Resolve<IModuleResumeMap>();
+
+            if (!saveDataService.TryGetSection(FrameworkSaveSectionDatabase.RESUME_DATA, out SaveSection<RuntimeResumeData> runtimeResumeDataSection))
+            {
+                throw new InvalidDataException($"{nameof(ICoreModule)}::{nameof(ICoreModule.ResumeModuleAsync)} Config data not found in save data");
+            }
+
+            RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
+
+            Type        moduleType = moduleResumeMap.GetModuleType(runtimeResumeData.ModuleId);
+            IModuleArgs args       = moduleResumeMap.CreateArgs(runtimeResumeData.ModuleId, runtimeResumeData.Arg0, runtimeResumeData.Arg1, runtimeResumeData.Arg2, runtimeResumeData.Arg3);
+
+            return LoadModuleAsync(moduleType, args);
+        }
+
         private Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
         {
             return LoadModuleAsync(typeof(T), args);
@@ -84,7 +104,7 @@ namespace RPGFramework.Core
             string sceneName = m_ModuleNameProvider.GetModuleName(type);
 
             await SceneManager.LoadSceneAsync(sceneName);
-            
+
             m_SceneContainer.Dispose();
 
             DIContainer sceneContainer = new DIContainer();
