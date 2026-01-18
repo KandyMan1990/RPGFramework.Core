@@ -56,7 +56,7 @@ namespace RPGFramework.Core
 
         Task ICoreModule.LoadModuleAsync<T>(IModuleArgs args)
         {
-            return m_CoreModule.LoadModuleAsync<T>(args);
+            return LoadModuleAsync<T>(args);
         }
 
         Task ICoreModule.LoadModuleAsync(Type type, IModuleArgs args)
