@@ -4,10 +4,10 @@ namespace RPGFramework.Core.Input
 {
     public interface IInputRouter
     {
-        void Push(IInputContext context);
-        void Pop(IInputContext  context);
-        void Clear();
-        void Route(ControlSlot slot);
+        void          Push(IInputContext context);
+        IInputContext Pop(IInputContext  context);
+        void          Clear();
+        void          Route(ControlSlot slot);
     }
 
     public sealed class InputRouter : IInputRouter
@@ -24,12 +24,14 @@ namespace RPGFramework.Core.Input
             m_Stack.Push(context);
         }
 
-        void IInputRouter.Pop(IInputContext context)
+        IInputContext IInputRouter.Pop(IInputContext context)
         {
             if (m_Stack.Count > 0 && m_Stack.Peek() == context)
             {
-                m_Stack.Pop();
+                return m_Stack.Pop();
             }
+
+            return null;
         }
 
         void IInputRouter.Clear()
