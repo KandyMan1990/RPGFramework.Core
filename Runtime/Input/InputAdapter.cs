@@ -6,6 +6,7 @@ namespace RPGFramework.Core.Input
 {
     public sealed class InputAdapter : MonoBehaviour
     {
+        [SerializeField] private InputActionReference m_Movement;
         [SerializeField] private InputActionReference m_Primary;
         [SerializeField] private InputActionReference m_Secondary;
         [SerializeField] private InputActionReference m_Tertiary;
@@ -27,6 +28,12 @@ namespace RPGFramework.Core.Input
 
         public void Enable()
         {
+            if (m_Movement != null)
+            {
+                m_Movement.action.performed += RouteMovement;
+                m_Movement.action.canceled  += RouteMovement;
+                m_Movement.action.Enable();
+            }
             if (m_Primary != null)
             {
                 m_Primary.action.performed += RoutePrimary;
@@ -81,6 +88,12 @@ namespace RPGFramework.Core.Input
 
         public void Disable()
         {
+            if (m_Movement != null)
+            {
+                m_Movement.action.Disable();
+                m_Movement.action.canceled  -= RouteMovement;
+                m_Movement.action.performed -= RouteMovement;
+            }
             if (m_Primary != null)
             {
                 m_Primary.action.Disable();
@@ -131,6 +144,11 @@ namespace RPGFramework.Core.Input
                 m_Select.action.Disable();
                 m_Select.action.performed -= RouteSelect;
             }
+        }
+
+        private void RouteMovement(InputAction.CallbackContext context)
+        {
+            m_InputRouter.RouteMovement(context.ReadValue<Vector2>());
         }
 
         private void RoutePrimary(InputAction.CallbackContext context)

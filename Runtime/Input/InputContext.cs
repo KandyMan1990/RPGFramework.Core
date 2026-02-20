@@ -1,4 +1,6 @@
-﻿namespace RPGFramework.Core.Input
+﻿using UnityEngine;
+
+namespace RPGFramework.Core.Input
 {
     public enum ControlSlot
     {
@@ -17,5 +19,6 @@
     public interface IInputContext
     {
         bool Handle(ControlSlot slot);
+        void HandleMove(Vector2 move);
     }
 }

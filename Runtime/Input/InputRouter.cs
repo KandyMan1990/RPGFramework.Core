@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace RPGFramework.Core.Input
 {
@@ -7,7 +8,8 @@ namespace RPGFramework.Core.Input
         void          Push(IInputContext context);
         IInputContext Pop(IInputContext  context);
         void          Clear();
-        void          Route(ControlSlot slot);
+        void          Route(ControlSlot     slot);
+        void          RouteMovement(Vector2 move);
     }
 
     public sealed class InputRouter : IInputRouter
@@ -48,6 +50,16 @@ namespace RPGFramework.Core.Input
                     break;
                 }
             }
+        }
+
+        void IInputRouter.RouteMovement(Vector2 move)
+        {
+            if (m_Stack.Count == 0)
+            {
+                return;
+            }
+            
+            m_Stack.Peek().HandleMove(move);
         }
     }
 }
