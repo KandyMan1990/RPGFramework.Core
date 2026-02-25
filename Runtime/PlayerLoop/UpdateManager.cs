@@ -13,14 +13,14 @@ namespace RPGFramework.Core.PlayerLoop
 
         public static void UpdateListeners()
         {
-            foreach (IUpdatable player in m_Updatables)
-            {
-                player.Update();
-            }
-
             while (m_Queue.Count > 0)
             {
                 UnregisterUpdatable(m_Queue.Dequeue());
+            }
+
+            foreach (IUpdatable player in m_Updatables)
+            {
+                player.Update();
             }
         }
 
