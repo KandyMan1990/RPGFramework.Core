@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using RPGFramework.Core.Helpers;
+using RPGFramework.Hashing;
 using UnityEngine;
 
 namespace RPGFramework.Core.SaveDataService

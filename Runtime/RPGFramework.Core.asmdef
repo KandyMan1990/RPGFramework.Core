@@ -4,6 +4,7 @@
     "references": [
         "RPGFramework.DI",
         "RPGFramework.Core.SharedTypes",
+        "RPGFramework.Hashing",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],
