@@ -30,7 +30,14 @@ namespace RPGFramework.Core.Input
         {
             if (m_Stack.Count > 0 && m_Stack.Peek() == context)
             {
-                return m_Stack.Pop();
+                m_Stack.Pop();
+
+                if (m_Stack.Count == 0)
+                {
+                    return null;
+                }
+
+                return m_Stack.Peek();
             }
 
             return null;
@@ -58,7 +65,7 @@ namespace RPGFramework.Core.Input
             {
                 return;
             }
-            
+
             m_Stack.Peek().HandleMove(move);
         }
     }
