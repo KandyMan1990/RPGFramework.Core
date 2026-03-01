@@ -5,7 +5,8 @@
         "RPGFramework.DI",
         "RPGFramework.Core.SharedTypes",
         "RPGFramework.Hashing",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

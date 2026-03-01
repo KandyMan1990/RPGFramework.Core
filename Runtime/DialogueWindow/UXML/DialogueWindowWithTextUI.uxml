@@ -1,0 +1,5 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="Root" style="width: 256px; height: 256px; background-color: rgb(68, 68, 68); position: absolute;">
+        <ui:Label text="Text" name="Text" class="rpg-ui-label" style="width: 100%; height: 100%; white-space: pre-wrap; font-size: 24px; -unity-text-align: upper-left; -unity-text-generator: advanced;"/>
+    </ui:VisualElement>
+</ui:UXML>

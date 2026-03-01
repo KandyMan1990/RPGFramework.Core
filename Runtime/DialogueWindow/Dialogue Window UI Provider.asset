@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4904f66c80b04929a9bfdb0a47e3097a, type: 3}
+  m_Name: Dialogue Window UI Provider
+  m_EditorClassIdentifier: RPGFramework.Core::RPGFramework.Core.DialogueWindow.DialogueWindowUiProvider
+  m_GetTextSpeed: 40
+  m_GetWindowSpeed: 3
+  m_DialogueWindowWithChoice: {fileID: 9197481963319205126, guid: 18f9572174a3c544bb39d4a94c44eacf, type: 3}
+  m_DialogueWindowWithText: {fileID: 9197481963319205126, guid: cc1918abec692ef43960ef4afd117a8d, type: 3}
