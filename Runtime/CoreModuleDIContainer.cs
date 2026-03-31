@@ -53,7 +53,7 @@ namespace RPGFramework.Core
             m_GlobalContainerNode.SetFallback(fallback);
         }
 
-        bool IDIContainerNode.TryGetBinding(Type type, out Func<object> creator)
+        bool IDIContainerNode.TryGetBinding(Type type, out Func<IDIContainerNode, object> creator)
         {
             return m_GlobalContainerNode.TryGetBinding(type, out creator);
         }
