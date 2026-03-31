@@ -114,15 +114,14 @@ namespace RPGFramework.Core.DialogueWindow.UI
 
             while (m_CurrentVisibleCharacters <= textLength)
             {
-                m_CurrentVisibleCharacters += Time.deltaTime * m_TextSpeed;
-                m_Text.MarkDirtyRepaint();
-
-                await Awaitable.NextFrameAsync();
-
                 if (m_SkipRequested)
                 {
                     m_CurrentVisibleCharacters = textLength;
                 }
+
+                m_CurrentVisibleCharacters += Time.deltaTime * m_TextSpeed;
+                m_Text.MarkDirtyRepaint();
+                await Awaitable.NextFrameAsync();
             }
 
             m_Text.PostProcessTextVertices -= PostProcessTextVertices;
@@ -144,7 +143,8 @@ namespace RPGFramework.Core.DialogueWindow.UI
             }
             sb.AppendLine(dialoguePage.Text);
 
-            m_Text.text = sb.ToString();
+            m_Text.text     = sb.ToString();
+            m_SkipRequested = false;
         }
 
         void IDialogueWindowUI.SkipToAnimationEnd()
