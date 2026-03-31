@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Text;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -113,14 +114,15 @@ namespace RPGFramework.Core.DialogueWindow.UI
 
             while (m_CurrentVisibleCharacters <= textLength)
             {
+                m_CurrentVisibleCharacters += Time.deltaTime * m_TextSpeed;
+                m_Text.MarkDirtyRepaint();
+
+                await Awaitable.NextFrameAsync();
+
                 if (m_SkipRequested)
                 {
                     m_CurrentVisibleCharacters = textLength;
                 }
-
-                m_CurrentVisibleCharacters += Time.deltaTime * m_TextSpeed;
-                m_Text.MarkDirtyRepaint();
-                await Awaitable.NextFrameAsync();
             }
 
             m_Text.PostProcessTextVertices -= PostProcessTextVertices;
@@ -131,9 +133,18 @@ namespace RPGFramework.Core.DialogueWindow.UI
             m_Rect = rect;
         }
 
-        void IDialogueWindowUI.SetText(string text)
+        void IDialogueWindowUI.SetText(DialoguePage dialoguePage)
         {
-            m_Text.text = text;
+            int           capacity = dialoguePage.SpeakerId.Length + dialoguePage.Text.Length + 1;
+            StringBuilder sb       = new StringBuilder(capacity);
+
+            if (!string.IsNullOrWhiteSpace(dialoguePage.SpeakerId))
+            {
+                sb.AppendLine(dialoguePage.SpeakerId);
+            }
+            sb.AppendLine(dialoguePage.Text);
+
+            m_Text.text = sb.ToString();
         }
 
         void IDialogueWindowUI.SkipToAnimationEnd()

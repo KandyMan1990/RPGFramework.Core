@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Threading.Tasks;
 using RPGFramework.Core.DialogueWindow.UI;
 using UnityEngine;
@@ -8,13 +8,15 @@ namespace RPGFramework.Core.DialogueWindow
 {
     public class DialogueWindowWithText : IDialogueWindowWithText
     {
+        private const string NEW_PAGE_MARKER = "{NewPage}";
+
         private readonly IDialogueWindowWithTextUI m_UiInstance;
 
         public DialogueWindowWithText(IDialogueWindowWithTextUI uiInstance)
         {
             m_UiInstance = uiInstance;
         }
-        
+
         Task IDialogueWindow.AnimateWindowClosedAsync()
         {
             return m_UiInstance.AnimateWindowClosedAsync();
@@ -37,11 +39,11 @@ namespace RPGFramework.Core.DialogueWindow
 
         async Task IDialogueWindow.RunAsync(string dialogue, DialogueInputContext inputContext)
         {
-            List<string> pages = ParseIntoPages(dialogue);
+            DialogueBlock dialogueBlock = ParseIntoPages(dialogue);
 
-            for (int i = 0; i < pages.Count; i++)
+            for (int i = 0; i < dialogueBlock.Pages.Length; i++)
             {
-                await RunPageAsync(pages[i], inputContext);
+                await RunPageAsync(dialogueBlock.Pages[i], inputContext);
             }
         }
 
@@ -50,27 +52,44 @@ namespace RPGFramework.Core.DialogueWindow
             m_UiInstance.SetRect(rect);
         }
 
-        // TODO: separation of pages not implemented
-        private List<string> ParseIntoPages(string dialogue)
+        private static DialogueBlock ParseIntoPages(string dialogue)
         {
-            List<string> pages = new List<string>();
+            string[]      pages = dialogue.Split(NEW_PAGE_MARKER);
+            DialogueBlock block = new DialogueBlock(pages.Length);
 
-            pages.Add(dialogue);
+            for (int i = 0; i < pages.Length; i++)
+            {
+                string trimmed = pages[i].Trim();
 
-            return pages;
+                string speaker = string.Empty;
+                if (trimmed.StartsWith("["))
+                {
+                    int end = trimmed.IndexOf("]", StringComparison.Ordinal);
+                    if (end > 0)
+                    {
+                        speaker = trimmed[1..end];
+                        trimmed = trimmed[(end + 1)..].TrimStart();
+                    }
+                }
+
+                DialoguePage item = new DialoguePage(speaker, trimmed);
+                block.AddPage(i, item);
+            }
+
+            return block;
         }
 
-        private async Task RunPageAsync(string dialogue, DialogueInputContext inputContext)
+        private async Task RunPageAsync(DialoguePage dialoguePage, DialogueInputContext inputContext)
         {
-            m_UiInstance.SetText(dialogue);
-            
+            m_UiInstance.SetText(dialoguePage);
+
             inputContext.Reset();
-            
+
             Task animationTask = m_UiInstance.RunAsync();
             Task confirmTask   = inputContext.WaitForConfirmAsync();
-            
+
             Task completed = await Task.WhenAny(animationTask, confirmTask);
-            
+
             if (completed == confirmTask)
             {
                 m_UiInstance.SkipToAnimationEnd();

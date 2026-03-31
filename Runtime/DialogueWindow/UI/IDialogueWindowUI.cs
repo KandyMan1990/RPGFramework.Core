@@ -11,8 +11,8 @@ namespace RPGFramework.Core.DialogueWindow.UI
         void Destroy();
         void Init(VisualElement container, ulong id);
         Task RunAsync();
-        void SetRect(RectInt rect);
-        void SetText(string  text);
+        void SetRect(RectInt      rect);
+        void SetText(DialoguePage dialoguePage);
         void SkipToAnimationEnd();
     }
 }
