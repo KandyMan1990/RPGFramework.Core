@@ -113,7 +113,7 @@ namespace RPGFramework.Core
             m_SceneResolver      = sceneContainer;
             m_SceneContainerNode = sceneContainer;
 
-            SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindFirstObjectByType<SceneInstallerMonoBehaviour>();
+            SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindAnyObjectByType<SceneInstallerMonoBehaviour>();
             SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
             sceneInstaller.InstallBindings(m_SceneContainer);
 
