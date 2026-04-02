@@ -12,11 +12,10 @@ namespace RPGFramework.Core
         internal string GetModuleName(Type type);
     }
 
-    internal class CoreModuleDIContainer : IDIContainer, IDIResolver, IDIContainerNode, IModuleNameProvider
+    internal class CoreModuleDIContainer : IDIContainer, IDIResolver, IModuleNameProvider
     {
         private readonly IDIContainer             m_GlobalContainer;
         private readonly IDIResolver              m_GlobalResolver;
-        private readonly IDIContainerNode         m_GlobalContainerNode;
         private readonly IDisposable              m_GlobalDisposable;
         private readonly Dictionary<Type, string> m_ModuleNames;
         private readonly IModuleNameProvider      m_ModuleNameProvider;
@@ -35,28 +34,23 @@ namespace RPGFramework.Core
         {
             DIContainer container = new DIContainer();
 
-            m_GlobalContainer     = container;
-            m_GlobalResolver      = container;
-            m_GlobalContainerNode = container;
-            m_GlobalDisposable    = container;
-            m_ModuleNames         = new Dictionary<Type, string>();
-            m_ModuleNameProvider  = this;
+            m_GlobalContainer    = container;
+            m_GlobalResolver     = container;
+            m_GlobalDisposable   = container;
+            m_ModuleNames        = new Dictionary<Type, string>();
+            m_ModuleNameProvider = this;
         }
 
-        IDIContainerNode IDIContainerNode.GetFallback()
+        IDIContainer IDIContainer.GetFallback => m_GlobalContainer.GetFallback;
+
+        void IDIContainer.SetFallback(IDIContainer fallback)
         {
-            return m_GlobalContainerNode.GetFallback();
+            m_GlobalContainer.SetFallback(fallback);
         }
 
-        void IDIContainerNode.SetFallback(IDIContainerNode fallback)
-        {
-            m_GlobalContainerNode.SetFallback(fallback);
-        }
+        IReadOnlyDictionary<Type, Func<IDIContainer, object>> IDIContainer.GetBindings => m_GlobalContainer.GetBindings;
 
-        bool IDIContainerNode.TryGetBinding(Type type, out Func<IDIContainerNode, object> creator)
-        {
-            return m_GlobalContainerNode.TryGetBinding(type, out creator);
-        }
+        IReadOnlyDictionary<Type, Func<Transform, ResolutionContext, object>> IDIContainer.GetPrefabBindings => m_GlobalContainer.GetPrefabBindings;
 
         void IDIContainer.BindTransient<TInterface, TConcrete>()
         {
@@ -173,9 +167,9 @@ namespace RPGFramework.Core
             return m_GlobalResolver.Resolve(type);
         }
 
-        TInterface IDIResolver.ResolvePrefab<TInterface>(Transform parent)
+        TInterface IDIResolver.InstantiatePrefab<TInterface>(Transform parent)
         {
-            return m_GlobalResolver.ResolvePrefab<TInterface>(parent);
+            return m_GlobalResolver.InstantiatePrefab<TInterface>(parent);
         }
 
         void IDIResolver.InjectInto(object instance)
@@ -183,9 +177,14 @@ namespace RPGFramework.Core
             m_GlobalResolver.InjectInto(instance);
         }
 
-        T IDIResolver.InstantiateAndInject<T>(T prefab, Transform parent)
+        void IDIResolver.InjectInto(object instance, IDIContainer context)
         {
-            return m_GlobalResolver.InstantiateAndInject<T>(prefab, parent);
+            m_GlobalResolver.InjectInto(instance, context);
+        }
+
+        T IDIResolver.InstantiatePrefabAndInject<T>(T prefab, Transform parent)
+        {
+            return m_GlobalResolver.InstantiatePrefabAndInject<T>(prefab, parent);
         }
 
         void IDisposable.Dispose()
