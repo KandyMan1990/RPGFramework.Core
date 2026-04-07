@@ -2,7 +2,7 @@
 using RPGFramework.Core.Input;
 using UnityEngine;
 
-namespace RPGFramework.Core.DialogueWindow
+namespace RPGFramework.Core.Dialogue
 {
     public class DialogueInputContext : IInputContext
     {

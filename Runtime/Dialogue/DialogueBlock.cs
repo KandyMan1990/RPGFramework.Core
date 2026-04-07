@@ -1,4 +1,4 @@
-﻿namespace RPGFramework.Core.DialogueWindow
+﻿namespace RPGFramework.Core.Dialogue
 {
     internal sealed class DialogueBlock
     {
