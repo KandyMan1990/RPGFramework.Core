@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Dialogue.UI
 {
-    public class DialogueWindowUI : IDialogueWindowUI
+    internal sealed class DialogueWindowUI : IDialogueWindowUI
     {
         private const string TEXT = "Text";
 
@@ -25,7 +25,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private Label         m_Text;
         private VisualElement m_UiInstance;
         private RPGUIButton[] m_Choices;
-        private int           m_SelectedIndex;
+        private byte          m_SelectedIndex;
         private float         m_CurrentTextLength;
 
         public DialogueWindowUI(IDialogueWindowUiProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
@@ -39,11 +39,11 @@ namespace RPGFramework.Core.Dialogue.UI
 
         async Task IDialogueWindowUI.AnimateWindowClosedAsync()
         {
-            for (int i = 0; i < m_Choices.Length; i++)
+            for (byte i = 0; i < m_Choices.Length; i++)
             {
-                m_Choices[i].UnregisterCallback<ClickEvent, int>(OnChoiceChosenBtnClicked);
-                m_Choices[i].UnregisterCallback<NavigationSubmitEvent, int>(OnChoiceChosenBtnSubmitted);
-                m_Choices[i].UnregisterCallback<NavigationMoveEvent, int>(OnChoiceChosenBtnNavigate);
+                m_Choices[i].UnregisterCallback<ClickEvent, byte>(OnChoiceChosenBtnClicked);
+                m_Choices[i].UnregisterCallback<NavigationSubmitEvent, byte>(OnChoiceChosenBtnSubmitted);
+                m_Choices[i].UnregisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate);
 
                 m_Choices[i].RemoveFromHierarchy();
                 m_Choices[i] = null;
@@ -110,7 +110,7 @@ namespace RPGFramework.Core.Dialogue.UI
             m_UiInstance = null;
         }
 
-        int IDialogueWindowUI.GetSelectedChoice()
+        byte IDialogueWindowUI.GetSelectedChoice()
         {
             m_Choices[m_SelectedIndex].SendEvent(new NavigationSubmitEvent());
 
@@ -153,7 +153,7 @@ namespace RPGFramework.Core.Dialogue.UI
 
             m_Choices = new RPGUIButton[length];
 
-            for (int i = 0; i < length; i++)
+            for (byte i = 0; i < length; i++)
             {
                 RPGUIButton button = new RPGUIButton
                                      {
@@ -164,9 +164,9 @@ namespace RPGFramework.Core.Dialogue.UI
                                              }
                                      };
 
-                button.RegisterCallback<NavigationMoveEvent, int>(OnChoiceChosenBtnNavigate, i);
-                button.RegisterCallback<NavigationSubmitEvent, int>(OnChoiceChosenBtnSubmitted, i);
-                button.RegisterCallback<ClickEvent, int>(OnChoiceChosenBtnClicked, i);
+                button.RegisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate, i);
+                button.RegisterCallback<NavigationSubmitEvent, byte>(OnChoiceChosenBtnSubmitted, i);
+                button.RegisterCallback<ClickEvent, byte>(OnChoiceChosenBtnClicked, i);
                 button.SetEnabledAndVisible(false);
 
                 m_UiInstance.Add(button);
@@ -199,7 +199,7 @@ namespace RPGFramework.Core.Dialogue.UI
             m_SkipRequested = true;
         }
 
-        private void OnChoiceChosenBtnNavigate(NavigationMoveEvent evt, int index)
+        private void OnChoiceChosenBtnNavigate(NavigationMoveEvent evt, byte index)
         {
             RPGUIButton root = m_Choices[index];
             RPGUIButton up   = m_Choices[(index - 1 + m_Choices.Length) % m_Choices.Length];
@@ -211,17 +211,17 @@ namespace RPGFramework.Core.Dialogue.UI
             }
         }
 
-        private void OnChoiceChosenBtnSubmitted(NavigationSubmitEvent evt, int index)
+        private void OnChoiceChosenBtnSubmitted(NavigationSubmitEvent evt, byte index)
         {
             OnChoiceChosen(index);
         }
 
-        private void OnChoiceChosenBtnClicked(ClickEvent evt, int index)
+        private void OnChoiceChosenBtnClicked(ClickEvent evt, byte index)
         {
             OnChoiceChosen(index);
         }
 
-        private void OnChoiceChosen(int index)
+        private void OnChoiceChosen(byte index)
         {
             m_SelectedIndex = index;
             m_AudioIntentPlayer.Play(AudioIntent.Confirm, AudioContext.Field);

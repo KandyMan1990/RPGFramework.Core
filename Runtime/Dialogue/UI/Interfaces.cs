@@ -10,7 +10,7 @@ namespace RPGFramework.Core.Dialogue.UI
         Task AnimateWindowClosedAsync();
         Task AnimateWindowOpenAsync();
         void Destroy();
-        int  GetSelectedChoice();
+        byte GetSelectedChoice();
         void Init(VisualElement container);
         Task RunAsync();
         void SetChoices(ReadOnlySpan<string> choices);

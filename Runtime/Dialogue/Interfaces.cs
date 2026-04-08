@@ -15,7 +15,7 @@ namespace RPGFramework.Core.Dialogue
         Task AnimateWindowClosedAsync();
         Task AnimateWindowOpenAsync();
         void Destroy();
-        int  GetSelectedChoice();
+        byte GetSelectedChoice();
         void Init(VisualElement     container);
         Task RunAsync(IDialogueFlow dialogueFlow, string[] dialogues, DialogueInputContext inputContext);
         void SetRect(RectInt        rect);

@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Dialogue
 {
-    public class DialogueWindow : IDialogueWindow
+    internal sealed class DialogueWindow : IDialogueWindow
     {
         private readonly IDialogueWindowUI m_UiInstance;
 
@@ -29,7 +29,7 @@ namespace RPGFramework.Core.Dialogue
             m_UiInstance.Destroy();
         }
 
-        int IDialogueWindow.GetSelectedChoice()
+        byte IDialogueWindow.GetSelectedChoice()
         {
             return m_UiInstance.GetSelectedChoice();
         }

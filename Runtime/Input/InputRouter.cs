@@ -12,7 +12,7 @@ namespace RPGFramework.Core.Input
         void          RouteMovement(Vector2 move);
     }
 
-    public sealed class InputRouter : IInputRouter
+    internal sealed class InputRouter : IInputRouter
     {
         private readonly Stack<IInputContext> m_Stack;
 
