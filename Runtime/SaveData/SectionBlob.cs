@@ -1,4 +1,4 @@
-﻿namespace RPGFramework.Core.SaveDataService
+﻿namespace RPGFramework.Core.SaveData
 {
     internal readonly struct SectionBlob
     {

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace RPGFramework.Core.SaveDataService
+namespace RPGFramework.Core.SaveData
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct SaveSection<T> where T : unmanaged

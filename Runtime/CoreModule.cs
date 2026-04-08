@@ -2,7 +2,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using RPGFramework.Core.Data;
-using RPGFramework.Core.SaveDataService;
+using RPGFramework.Core.Dialogue;
+using RPGFramework.Core.Dialogue.UI;
+using RPGFramework.Core.Input;
+using RPGFramework.Core.SaveData;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
 using UnityEngine;
@@ -37,6 +40,8 @@ namespace RPGFramework.Core
         public static IEntryPoint Create(GlobalInstallerBase globalInstaller)
         {
             CoreModule core = new CoreModule();
+
+            InstallCoreBindings(core.m_CoreModuleDIContainer);
 
             globalInstaller.InstallBindings(core.m_CoreModuleDIContainer);
 
@@ -123,6 +128,17 @@ namespace RPGFramework.Core
         {
             m_SceneContainer.Dispose();
             m_CoreModuleDIContainer.Dispose();
+        }
+
+        private static void InstallCoreBindings(IDIContainer container)
+        {
+            container.BindSingleton<IInputRouter, InputRouter>();
+
+            container.BindSingleton<ISaveDataService, SaveDataService>();
+            container.BindSingleton<IMemoryService, MemoryService>();
+
+            container.BindSingleton<IDialogueWindow, DialogueWindow>();
+            container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using RPGFramework.Hashing;
 using UnityEngine;
 
-namespace RPGFramework.Core.SaveDataService
+namespace RPGFramework.Core.SaveData
 {
     public interface ISaveDataService
     {
@@ -20,7 +20,7 @@ namespace RPGFramework.Core.SaveDataService
         bool     TryGetLastWrittenSaveFileName(out string filename);
     }
 
-    public class SaveDataService : ISaveDataService
+    internal sealed class SaveDataService : ISaveDataService
     {
         private const int TOC_ENTRY_SIZE = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
 
