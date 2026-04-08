@@ -10,26 +10,54 @@ namespace RPGFramework.Core.Dialogue
 
         internal static DialogueBlock ParseIntoPages(string dialogue)
         {
-            string[]      pages = dialogue.Split(NEW_PAGE_MARKER);
-            DialogueBlock block = new DialogueBlock(pages.Length);
+            ReadOnlySpan<char> span   = dialogue.AsSpan();
+            ReadOnlySpan<char> marker = NEW_PAGE_MARKER.AsSpan();
 
-            for (int i = 0; i < pages.Length; i++)
+            int pageCount = 1;
+            int idx       = 0;
+
+            while ((idx = span.IndexOf(marker)) >= 0)
             {
-                string trimmed = pages[i].Trim();
+                pageCount++;
+                span = span[(idx + marker.Length)..];
+            }
 
-                string speaker = string.Empty;
-                if (trimmed.StartsWith("["))
+            DialogueBlock block = new DialogueBlock(pageCount);
+
+            span = dialogue.AsSpan();
+            int pageIndex = 0;
+
+            while (true)
+            {
+                int splitIndex = span.IndexOf(marker);
+
+                ReadOnlySpan<char> pageSpan = splitIndex >= 0 ? span[..splitIndex] : span;
+
+                pageSpan = Trim(pageSpan);
+
+                ReadOnlySpan<char> speakerSpan = default;
+
+                if (!pageSpan.IsEmpty && pageSpan[0] == '[')
                 {
-                    int end = trimmed.IndexOf("]", StringComparison.Ordinal);
+                    int end = pageSpan.IndexOf(']');
                     if (end > 0)
                     {
-                        speaker = trimmed[1..end];
-                        trimmed = trimmed[(end + 1)..].TrimStart();
+                        speakerSpan = pageSpan[1..end];
+                        pageSpan    = TrimStart(pageSpan[(end + 1)..]);
                     }
                 }
 
-                DialoguePage item = new DialoguePage(speaker, trimmed);
-                block.AddPage(i, item);
+                string speaker = speakerSpan.IsEmpty ? string.Empty : speakerSpan.ToString();
+                string text    = pageSpan.ToString();
+
+                block.AddPage(pageIndex++, new DialoguePage(speaker, text));
+
+                if (splitIndex < 0)
+                {
+                    break;
+                }
+
+                span = span[(splitIndex + marker.Length)..];
             }
 
             return block;
@@ -54,6 +82,33 @@ namespace RPGFramework.Core.Dialogue
 
             inputContext.Reset();
             await inputContext.WaitForConfirmAsync();
+        }
+
+        private static ReadOnlySpan<char> Trim(ReadOnlySpan<char> span)
+        {
+            return TrimEnd(TrimStart(span));
+        }
+
+        private static ReadOnlySpan<char> TrimStart(ReadOnlySpan<char> span)
+        {
+            int i = 0;
+            while (i < span.Length && char.IsWhiteSpace(span[i]))
+            {
+                i++;
+            }
+
+            return span[i..];
+        }
+
+        private static ReadOnlySpan<char> TrimEnd(ReadOnlySpan<char> span)
+        {
+            int i = span.Length - 1;
+            while (i >= 0 && char.IsWhiteSpace(span[i]))
+            {
+                i--;
+            }
+
+            return span[..(i + 1)];
         }
     }
 }
