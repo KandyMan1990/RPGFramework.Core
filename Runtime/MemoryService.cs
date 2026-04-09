@@ -12,11 +12,10 @@ namespace RPGFramework.Core
         private readonly byte[]         m_Session;
         private readonly IMemoryService m_This;
 
-        public MemoryService()
+        internal MemoryService(IMemoryServiceArgs args)
         {
-            // TODO: allow game to determine size of arrays
-            m_Global  = new byte[1024];
-            m_Session = new byte[1024];
+            m_Global  = new byte[args.GlobalBytes];
+            m_Session = new byte[args.SessionBytes];
             m_This    = this;
         }
 
