@@ -32,8 +32,6 @@ namespace RPGFramework.Core
             m_CurrentModule         = new NullModule();
             m_SceneContainer        = new NullDIContainer();
 
-            m_CoreModuleDIContainer.BindSingletonFromInstance<ICoreModule>(this);
-
             Application.quitting += OnApplicationQuit;
         }
 
@@ -41,7 +39,7 @@ namespace RPGFramework.Core
         {
             CoreModule core = new CoreModule();
 
-            InstallCoreBindings(core.m_CoreModuleDIContainer);
+            InstallCoreBindings(core, core.m_CoreModuleDIContainer);
 
             globalInstaller.InstallBindings(core.m_CoreModuleDIContainer);
 
@@ -130,8 +128,10 @@ namespace RPGFramework.Core
             m_CoreModuleDIContainer.Dispose();
         }
 
-        private static void InstallCoreBindings(IDIContainer container)
+        private static void InstallCoreBindings(ICoreModule core, IDIContainer container)
         {
+            container.BindSingletonFromInstance<ICoreModule>(core);
+            
             container.BindSingleton<IInputRouter, InputRouter>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();
