@@ -24,8 +24,8 @@ namespace RPGFramework.Core
 
     public interface IModuleResumeMap
     {
-        Type        GetModuleType(byte moduleId);
-        IModuleArgs CreateArgs(byte    moduleId, int arg0, int arg1, int arg2, int arg3);
+        Type        GetModuleType(byte           moduleId);
+        IModuleArgs CreateArgs(RuntimeResumeData runtimeResumeData);
     }
 
     /// <summary>
@@ -49,6 +49,8 @@ namespace RPGFramework.Core
         void   WriteFloat(MemoryBank  bank, ushort address, float value);
         ulong  ReadUlong(MemoryBank   bank, ushort address);
         void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
+        T      GetTempModuleData<T>();
+        void   SetTempModuleData(object data);
     }
 
     /// <summary>

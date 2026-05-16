@@ -5,12 +5,11 @@ namespace RPGFramework.Core
 {
     internal sealed class MemoryService : IMemoryService
     {
-        // TODO: possibly add some consts for fixed memory addresses
-        // e.g. field to load, last battle result, etc
-
         private readonly byte[]         m_Global;
         private readonly byte[]         m_Session;
         private readonly IMemoryService m_This;
+
+        private object m_TempModuleData;
 
         internal MemoryService(IMemoryServiceArgs args)
         {
@@ -127,6 +126,24 @@ namespace RPGFramework.Core
             mem[address + 5] = (byte)(value >> 40 & 0xFF);
             mem[address + 6] = (byte)(value >> 48 & 0xFF);
             mem[address + 7] = (byte)(value >> 56 & 0xFF);
+        }
+
+        T IMemoryService.GetTempModuleData<T>()
+        {
+            if (m_TempModuleData == null)
+            {
+                throw new NullReferenceException($"{nameof(IMemoryService)}::{nameof(IMemoryService.GetTempModuleData)} Temporary data not set");
+            }
+
+            object data = m_TempModuleData;
+            m_TempModuleData = null;
+
+            return (T)data;
+        }
+
+        void IMemoryService.SetTempModuleData(object data)
+        {
+            m_TempModuleData = data;
         }
 
         private byte[] GetBank(MemoryBank bank)

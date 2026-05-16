@@ -79,7 +79,7 @@ namespace RPGFramework.Core
             RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
 
             Type        moduleType = moduleResumeMap.GetModuleType(runtimeResumeData.ModuleId);
-            IModuleArgs args       = moduleResumeMap.CreateArgs(runtimeResumeData.ModuleId, runtimeResumeData.Arg0, runtimeResumeData.Arg1, runtimeResumeData.Arg2, runtimeResumeData.Arg3);
+            IModuleArgs args       = moduleResumeMap.CreateArgs(runtimeResumeData);
 
             return LoadModuleAsync(moduleType, args);
         }
