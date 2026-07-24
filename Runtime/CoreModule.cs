@@ -14,7 +14,15 @@ using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
-    public class CoreModule : IEntryPoint, ICoreModule
+    public static class CoreModuleBuilder
+    {
+        public static IEntryPoint Create(GlobalInstallerBase globalInstaller)
+        {
+            return CoreModule.Create(globalInstaller);
+        }
+    }
+
+    internal class CoreModule : IEntryPoint, ICoreModule
     {
         private readonly IDIContainer        m_CoreModuleDIContainer;
         private readonly IModuleNameProvider m_ModuleNameProvider;
