@@ -29,8 +29,9 @@ namespace RPGFramework.Core
 
             m_CoreModuleDIContainer = coreModuleDIContainer;
             m_ModuleNameProvider    = coreModuleDIContainer;
-            m_CurrentModule         = new NullModule();
             m_SceneContainer        = new NullDIContainer();
+            m_SceneResolver         = coreModuleDIContainer;
+            m_CurrentModule         = new NullModule();
 
             Application.quitting += OnApplicationQuit;
         }
@@ -42,6 +43,8 @@ namespace RPGFramework.Core
             InstallCoreBindings(core, core.m_CoreModuleDIContainer);
 
             globalInstaller.InstallBindings(core.m_CoreModuleDIContainer);
+
+            globalInstaller.Bootstrap(core.m_SceneResolver);
 
             return core;
         }
