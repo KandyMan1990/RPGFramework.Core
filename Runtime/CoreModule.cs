@@ -5,6 +5,7 @@ using RPGFramework.Core.Data;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
+using RPGFramework.Core.Rendering;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.DI;
@@ -142,8 +143,9 @@ namespace RPGFramework.Core
         private static void InstallCoreBindings(ICoreModule core, IDIContainer container)
         {
             container.BindSingletonFromInstance<ICoreModule>(core);
-            
+
             container.BindSingleton<IInputRouter, InputRouter>();
+            container.BindSingleton<IScreenFadeService, ScreenFadeService>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();
             container.BindSingleton<IMemoryService, MemoryService>();
