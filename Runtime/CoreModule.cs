@@ -6,6 +6,7 @@ using RPGFramework.Core.Databases;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
+using RPGFramework.Core.Providers;
 using RPGFramework.Core.Rendering;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.SharedTypes;
@@ -28,7 +29,8 @@ namespace RPGFramework.Core
     {
         private readonly IDIContainer m_GlobalContainer;
 
-        private ISceneDatabase m_SceneDatabase;
+        private ISceneDatabase            m_SceneDatabase;
+        private IResumeModuleArgsProvider m_ResumeModuleArgsProvider;
 
         private IDIContainer m_SceneContainer;
         private IDIResolver  m_SceneResolver;
@@ -56,7 +58,8 @@ namespace RPGFramework.Core
 
             globalInstaller.Bootstrap(core.m_SceneResolver);
 
-            core.m_SceneDatabase = core.m_SceneResolver.Resolve<ISceneDatabase>();
+            core.m_SceneDatabase            = core.m_SceneResolver.Resolve<ISceneDatabase>();
+            core.m_ResumeModuleArgsProvider = core.m_SceneResolver.Resolve<IResumeModuleArgsProvider>();
 
             return core;
         }
@@ -93,7 +96,8 @@ namespace RPGFramework.Core
 
             RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
 
-            Type moduleType = moduleResumeMap.GetModuleType(runtimeResumeData.ModuleId);
+            byte moduleId   = m_ResumeModuleArgsProvider.GetModuleToResume;
+            Type moduleType = moduleResumeMap.GetModuleType(moduleId);
             moduleResumeMap.SetArgs(runtimeResumeData);
 
             return LoadModuleAsync(moduleType);
@@ -157,6 +161,8 @@ namespace RPGFramework.Core
 
             container.BindSingleton<IDialogueWindow, DialogueWindow>();
             container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
+            
+            container.BindSingleton<IResumeModuleArgsProvider, ResumeModuleArgsProvider>();
         }
     }
 }
