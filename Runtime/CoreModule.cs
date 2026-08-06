@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using RPGFramework.Core.Data;
+using RPGFramework.Core.Databases;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
@@ -25,8 +26,9 @@ namespace RPGFramework.Core
 
     internal class CoreModule : IEntryPoint, ICoreModule
     {
-        private readonly IDIContainer        m_CoreModuleDIContainer;
-        private readonly IModuleNameProvider m_ModuleNameProvider;
+        private readonly IDIContainer m_GlobalContainer;
+
+        private ISceneDatabase m_SceneDatabase;
 
         private IDIContainer m_SceneContainer;
         private IDIResolver  m_SceneResolver;
@@ -34,13 +36,12 @@ namespace RPGFramework.Core
 
         private CoreModule()
         {
-            CoreModuleDIContainer coreModuleDIContainer = new CoreModuleDIContainer();
+            DIContainer diContainer = new DIContainer();
 
-            m_CoreModuleDIContainer = coreModuleDIContainer;
-            m_ModuleNameProvider    = coreModuleDIContainer;
-            m_SceneContainer        = new NullDIContainer();
-            m_SceneResolver         = coreModuleDIContainer;
-            m_CurrentModule         = new NullModule();
+            m_GlobalContainer = diContainer;
+            m_SceneContainer  = new NullDIContainer();
+            m_SceneResolver   = diContainer;
+            m_CurrentModule   = new NullModule();
 
             Application.quitting += OnApplicationQuit;
         }
@@ -49,11 +50,13 @@ namespace RPGFramework.Core
         {
             CoreModule core = new CoreModule();
 
-            InstallCoreBindings(core, core.m_CoreModuleDIContainer);
+            InstallCoreBindings(core, core.m_GlobalContainer);
 
-            globalInstaller.InstallBindings(core.m_CoreModuleDIContainer);
+            globalInstaller.InstallBindings(core.m_GlobalContainer);
 
             globalInstaller.Bootstrap(core.m_SceneResolver);
+
+            core.m_SceneDatabase = core.m_SceneResolver.Resolve<ISceneDatabase>();
 
             return core;
         }
@@ -75,7 +78,7 @@ namespace RPGFramework.Core
 
         void ICoreModule.ResetModule<TInterface, TConcrete>()
         {
-            m_CoreModuleDIContainer.ForceBindSingleton<TInterface, TConcrete>();
+            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
         }
 
         Task ICoreModule.ResumeModuleAsync()
@@ -110,7 +113,7 @@ namespace RPGFramework.Core
 
             await m_CurrentModule.OnExitAsync();
 
-            string sceneName = m_ModuleNameProvider.GetModuleName(type);
+            string sceneName = m_SceneDatabase.GetSceneNameForModule(type);
 
             await SceneManager.LoadSceneAsync(sceneName);
 
@@ -125,9 +128,9 @@ namespace RPGFramework.Core
             SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
             sceneInstaller.InstallBindings(m_SceneContainer);
 
-            m_CoreModuleDIContainer.ForceBindSingletonFromInstance<IDIResolver>(m_SceneResolver);
+            m_GlobalContainer.ForceBindSingletonFromInstance<IDIResolver>(m_SceneResolver);
 
-            m_SceneContainer.SetFallback(m_CoreModuleDIContainer);
+            m_SceneContainer.SetFallback(m_GlobalContainer);
 
             m_CurrentModule = (IModule)m_SceneResolver.Resolve(type);
 
@@ -137,7 +140,7 @@ namespace RPGFramework.Core
         private void OnApplicationQuit()
         {
             m_SceneContainer.Dispose();
-            m_CoreModuleDIContainer.Dispose();
+            m_GlobalContainer.Dispose();
         }
 
         private static void InstallCoreBindings(ICoreModule core, IDIContainer container)
