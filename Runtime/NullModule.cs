@@ -5,7 +5,7 @@ namespace RPGFramework.Core
 {
     internal class NullModule : IModule
     {
-        Task IModule.OnEnterAsync(IModuleArgs args)
+        Task IModule.OnEnterAsync()
         {
             return Task.CompletedTask;
         }

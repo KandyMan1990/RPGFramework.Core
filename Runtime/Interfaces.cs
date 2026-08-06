@@ -11,21 +11,21 @@ namespace RPGFramework.Core
 
     public interface IEntryPoint
     {
-        Task StartGameAsync<T>(IModuleArgs args) where T : IModule;
+        Task StartGameAsync<T>() where T : IModule;
     }
 
     public interface ICoreModule
     {
-        Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule;
-        Task LoadModuleAsync(Type           type, IModuleArgs args);
+        Task LoadModuleAsync<T>() where T : IModule;
+        Task LoadModuleAsync(Type type);
         void ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
         Task ResumeModuleAsync();
     }
 
     public interface IModuleResumeMap
     {
-        Type        GetModuleType(byte           moduleId);
-        IModuleArgs CreateArgs(RuntimeResumeData runtimeResumeData);
+        Type GetModuleType(byte        moduleId);
+        void SetArgs(RuntimeResumeData runtimeResumeData);
     }
 
     /// <summary>

@@ -61,19 +61,19 @@ namespace RPGFramework.Core
             return core;
         }
 
-        Task IEntryPoint.StartGameAsync<T>(IModuleArgs args)
+        Task IEntryPoint.StartGameAsync<T>()
         {
-            return LoadModuleAsync<T>(args);
+            return LoadModuleAsync<T>();
         }
 
-        Task ICoreModule.LoadModuleAsync<T>(IModuleArgs args)
+        Task ICoreModule.LoadModuleAsync<T>()
         {
-            return LoadModuleAsync<T>(args);
+            return LoadModuleAsync<T>();
         }
 
-        Task ICoreModule.LoadModuleAsync(Type type, IModuleArgs args)
+        Task ICoreModule.LoadModuleAsync(Type type)
         {
-            return LoadModuleAsync(type, args);
+            return LoadModuleAsync(type);
         }
 
         void ICoreModule.ResetModule<TInterface, TConcrete>()
@@ -93,18 +93,18 @@ namespace RPGFramework.Core
 
             RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
 
-            Type        moduleType = moduleResumeMap.GetModuleType(runtimeResumeData.ModuleId);
-            IModuleArgs args       = moduleResumeMap.CreateArgs(runtimeResumeData);
+            Type moduleType = moduleResumeMap.GetModuleType(runtimeResumeData.ModuleId);
+            moduleResumeMap.SetArgs(runtimeResumeData);
 
-            return LoadModuleAsync(moduleType, args);
+            return LoadModuleAsync(moduleType);
         }
 
-        private Task LoadModuleAsync<T>(IModuleArgs args) where T : IModule
+        private Task LoadModuleAsync<T>() where T : IModule
         {
-            return LoadModuleAsync(typeof(T), args);
+            return LoadModuleAsync(typeof(T));
         }
 
-        private async Task LoadModuleAsync(Type type, IModuleArgs args)
+        private async Task LoadModuleAsync(Type type)
         {
             if (type.GetInterface(nameof(IModule)) == null)
             {
@@ -134,7 +134,9 @@ namespace RPGFramework.Core
 
             m_CurrentModule = (IModule)m_SceneResolver.Resolve(type);
 
-            await m_CurrentModule.OnEnterAsync(args);
+            // TODO: allow a module to register its own internal types so we don't have to make them public and registered in scene installers
+
+            await m_CurrentModule.OnEnterAsync();
         }
 
         private void OnApplicationQuit()
