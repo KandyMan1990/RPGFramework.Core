@@ -1,15 +1,13 @@
 ﻿using System;
-using System.IO;
 using System.Threading.Tasks;
-using RPGFramework.Core.Data;
 using RPGFramework.Core.Databases;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
-using RPGFramework.Core.Providers;
 using RPGFramework.Core.Rendering;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.SharedTypes;
+using RPGFramework.Core.Store;
 using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,20 +17,21 @@ namespace RPGFramework.Core
 {
     public static class CoreModuleBuilder
     {
-        public static IEntryPoint Create(GlobalInstallerBase globalInstaller)
+        public static ICoreModule Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
-            return CoreModule.Create(globalInstaller);
+            return CoreModule.Create(globalInstaller, initialModuleId);
         }
     }
 
-    internal class CoreModule : IEntryPoint, ICoreModule
+    internal class CoreModule : ICoreModule
     {
         private readonly IDIContainer m_GlobalContainer;
 
-        private ISceneDatabase            m_SceneDatabase;
-        private IResumeModuleArgsProvider m_ResumeModuleArgsProvider;
-        private ISaveDataService          m_SaveDataService;
-        private IModuleResumeMap          m_ResumeModuleMap;
+        private ISceneDatabase     m_SceneDatabase;
+        private ISaveDataService   m_SaveDataService;
+        private IModuleResumeMap   m_ResumeModuleMap;
+        private IChangeModuleStore m_ChangeModuleStore;
+        private IModuleDatabase    m_ModuleDatabase;
 
         private IDIContainer m_SceneContainer;
         private IDIResolver  m_SceneResolver;
@@ -50,7 +49,7 @@ namespace RPGFramework.Core
             Application.quitting += OnApplicationQuit;
         }
 
-        public static IEntryPoint Create(GlobalInstallerBase globalInstaller)
+        public static ICoreModule Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
             CoreModule core = new CoreModule();
 
@@ -60,65 +59,24 @@ namespace RPGFramework.Core
 
             globalInstaller.Bootstrap(core.m_SceneResolver);
 
-            core.m_SceneDatabase            = core.m_SceneResolver.Resolve<ISceneDatabase>();
-            core.m_ResumeModuleArgsProvider = core.m_SceneResolver.Resolve<IResumeModuleArgsProvider>();
-            core.m_SaveDataService          = core.m_SceneResolver.Resolve<ISaveDataService>();
-            core.m_ResumeModuleMap          = core.m_SceneResolver.Resolve<IModuleResumeMap>();
+            core.m_SceneDatabase     = core.m_SceneResolver.Resolve<ISceneDatabase>();
+            core.m_SaveDataService   = core.m_SceneResolver.Resolve<ISaveDataService>();
+            core.m_ResumeModuleMap   = core.m_SceneResolver.Resolve<IModuleResumeMap>();
+            core.m_ChangeModuleStore = core.m_SceneResolver.Resolve<IChangeModuleStore>();
+            core.m_ModuleDatabase    = core.m_SceneResolver.Resolve<IModuleDatabase>();
+
+            core.m_ChangeModuleStore.SetModuleId(initialModuleId);
 
             return core;
         }
 
-        Task IEntryPoint.StartGameAsync<T>()
+        async Task ICoreModule.RequestModuleChangeAsync()
         {
-            return LoadModuleAsync<T>();
-        }
-
-        Task ICoreModule.LoadModuleAsync<T>()
-        {
-            return LoadModuleAsync<T>();
-        }
-
-        Task ICoreModule.LoadModuleAsync(Type type)
-        {
-            return LoadModuleAsync(type);
-        }
-
-        void ICoreModule.ResetModule<TInterface, TConcrete>()
-        {
-            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
-        }
-
-        Task ICoreModule.ResumeModuleAsync()
-        {
-            if (!m_SaveDataService.TryGetSection(FrameworkSaveSectionDatabase.RESUME_DATA, out SaveSection<RuntimeResumeData> runtimeResumeDataSection))
-            {
-                throw new InvalidDataException($"{nameof(ICoreModule)}::{nameof(ICoreModule.ResumeModuleAsync)} Config data not found in save data");
-            }
-
-            RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
-
-            byte moduleId   = m_ResumeModuleArgsProvider.GetModuleIdToResume;
-            Type moduleType = m_ResumeModuleMap.GetModuleType(moduleId);
-            m_ResumeModuleMap.SetArgs(runtimeResumeData);
-
-            return LoadModuleAsync(moduleType);
-        }
-
-        private Task LoadModuleAsync<T>() where T : IModule
-        {
-            return LoadModuleAsync(typeof(T));
-        }
-
-        private async Task LoadModuleAsync(Type type)
-        {
-            if (type.GetInterface(nameof(IModule)) == null)
-            {
-                throw new InvalidDataException($"{nameof(ICoreModule)}::{nameof(LoadModuleAsync)} [{type}] must be assignable from {nameof(IModule)}");
-            }
-
             await m_CurrentModule.OnExitAsync();
 
-            string sceneName = m_SceneDatabase.GetSceneNameForModule(type);
+            byte   moduleId   = m_ChangeModuleStore.GetModuleId;
+            Type   moduleType = m_ModuleDatabase.GetModuleType(moduleId);
+            string sceneName  = m_SceneDatabase.GetSceneNameForModule(moduleType);
 
             await SceneManager.LoadSceneAsync(sceneName);
 
@@ -137,11 +95,16 @@ namespace RPGFramework.Core
 
             m_SceneContainer.SetFallback(m_GlobalContainer);
 
-            m_CurrentModule = (IModule)m_SceneResolver.Resolve(type);
+            m_CurrentModule = (IModule)m_SceneResolver.Resolve(moduleType);
 
             // TODO: allow a module to register its own internal types so we don't have to make them public and registered in scene installers
 
             await m_CurrentModule.OnEnterAsync();
+        }
+
+        void ICoreModule.ResetModule<TInterface, TConcrete>()
+        {
+            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
         }
 
         private void OnApplicationQuit()
@@ -163,7 +126,8 @@ namespace RPGFramework.Core
             container.BindSingleton<IDialogueWindow, DialogueWindow>();
             container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
 
-            container.BindSingleton<IResumeModuleArgsProvider, ResumeModuleArgsProvider>();
+            container.BindSingleton<IChangeModuleStore, ChangeModuleStore>();
+            container.BindSingleton<IResumeModuleStore, ResumeModuleStore>();
         }
     }
 }
