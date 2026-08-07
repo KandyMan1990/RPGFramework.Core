@@ -31,6 +31,8 @@ namespace RPGFramework.Core
 
         private ISceneDatabase            m_SceneDatabase;
         private IResumeModuleArgsProvider m_ResumeModuleArgsProvider;
+        private ISaveDataService          m_SaveDataService;
+        private IModuleResumeMap          m_ResumeModuleMap;
 
         private IDIContainer m_SceneContainer;
         private IDIResolver  m_SceneResolver;
@@ -60,6 +62,8 @@ namespace RPGFramework.Core
 
             core.m_SceneDatabase            = core.m_SceneResolver.Resolve<ISceneDatabase>();
             core.m_ResumeModuleArgsProvider = core.m_SceneResolver.Resolve<IResumeModuleArgsProvider>();
+            core.m_SaveDataService          = core.m_SceneResolver.Resolve<ISaveDataService>();
+            core.m_ResumeModuleMap          = core.m_SceneResolver.Resolve<IModuleResumeMap>();
 
             return core;
         }
@@ -86,19 +90,16 @@ namespace RPGFramework.Core
 
         Task ICoreModule.ResumeModuleAsync()
         {
-            ISaveDataService saveDataService = m_SceneResolver.Resolve<ISaveDataService>();
-            IModuleResumeMap moduleResumeMap = m_SceneResolver.Resolve<IModuleResumeMap>();
-
-            if (!saveDataService.TryGetSection(FrameworkSaveSectionDatabase.RESUME_DATA, out SaveSection<RuntimeResumeData> runtimeResumeDataSection))
+            if (!m_SaveDataService.TryGetSection(FrameworkSaveSectionDatabase.RESUME_DATA, out SaveSection<RuntimeResumeData> runtimeResumeDataSection))
             {
                 throw new InvalidDataException($"{nameof(ICoreModule)}::{nameof(ICoreModule.ResumeModuleAsync)} Config data not found in save data");
             }
 
             RuntimeResumeData runtimeResumeData = runtimeResumeDataSection.Data;
 
-            byte moduleId   = m_ResumeModuleArgsProvider.GetModuleToResume;
-            Type moduleType = moduleResumeMap.GetModuleType(moduleId);
-            moduleResumeMap.SetArgs(runtimeResumeData);
+            byte moduleId   = m_ResumeModuleArgsProvider.GetModuleIdToResume;
+            Type moduleType = m_ResumeModuleMap.GetModuleType(moduleId);
+            m_ResumeModuleMap.SetArgs(runtimeResumeData);
 
             return LoadModuleAsync(moduleType);
         }
@@ -161,7 +162,7 @@ namespace RPGFramework.Core
 
             container.BindSingleton<IDialogueWindow, DialogueWindow>();
             container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
-            
+
             container.BindSingleton<IResumeModuleArgsProvider, ResumeModuleArgsProvider>();
         }
     }
