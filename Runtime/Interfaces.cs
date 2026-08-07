@@ -50,7 +50,7 @@ namespace RPGFramework.Core
         ulong  ReadUlong(MemoryBank   bank, ushort address);
         void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
         T      GetTempModuleData<T>();
-        void   SetTempModuleData(object data);
+        void   SetTempModuleData<T>(T data);
     }
 
     /// <summary>

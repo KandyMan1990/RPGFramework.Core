@@ -132,7 +132,7 @@ namespace RPGFramework.Core
         {
             if (m_TempModuleData == null)
             {
-                throw new NullReferenceException($"{nameof(IMemoryService)}::{nameof(IMemoryService.GetTempModuleData)} Temporary data not set");
+                throw new InvalidOperationException($"{nameof(IMemoryService)}::{nameof(IMemoryService.GetTempModuleData)} Temporary data not set");
             }
 
             object data = m_TempModuleData;
@@ -141,7 +141,7 @@ namespace RPGFramework.Core
             return (T)data;
         }
 
-        void IMemoryService.SetTempModuleData(object data)
+        void IMemoryService.SetTempModuleData<T>(T data)
         {
             m_TempModuleData = data;
         }
