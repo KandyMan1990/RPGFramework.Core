@@ -14,11 +14,6 @@ namespace RPGFramework.Core
         void ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
     }
 
-    public interface IModuleResumeMap
-    {
-        void SetArgs(RuntimeResumeData runtimeResumeData);
-    }
-
     /// <summary>
     /// This service is used to read and write data to persistant and temporary memory.<br /><br />
     /// <see cref="MemoryBank.Global" /> will be written to and loaded from the save file.<br /><br />
@@ -40,8 +35,6 @@ namespace RPGFramework.Core
         void   WriteFloat(MemoryBank  bank, ushort address, float value);
         ulong  ReadUlong(MemoryBank   bank, ushort address);
         void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
-        T      GetTempModuleData<T>();
-        void   SetTempModuleData<T>(T data);
     }
 
     /// <summary>

@@ -128,24 +128,6 @@ namespace RPGFramework.Core
             mem[address + 7] = (byte)(value >> 56 & 0xFF);
         }
 
-        T IMemoryService.GetTempModuleData<T>()
-        {
-            if (m_TempModuleData == null)
-            {
-                throw new InvalidOperationException($"{nameof(IMemoryService)}::{nameof(IMemoryService.GetTempModuleData)} Temporary data not set");
-            }
-
-            object data = m_TempModuleData;
-            m_TempModuleData = null;
-
-            return (T)data;
-        }
-
-        void IMemoryService.SetTempModuleData<T>(T data)
-        {
-            m_TempModuleData = data;
-        }
-
         private byte[] GetBank(MemoryBank bank)
         {
             return bank switch

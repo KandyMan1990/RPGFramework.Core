@@ -28,8 +28,6 @@ namespace RPGFramework.Core
         private readonly IDIContainer m_GlobalContainer;
 
         private ISceneDatabase     m_SceneDatabase;
-        private ISaveDataService   m_SaveDataService;
-        private IModuleResumeMap   m_ResumeModuleMap;
         private IChangeModuleStore m_ChangeModuleStore;
         private IModuleDatabase    m_ModuleDatabase;
 
@@ -60,8 +58,6 @@ namespace RPGFramework.Core
             globalInstaller.Bootstrap(core.m_SceneResolver);
 
             core.m_SceneDatabase     = core.m_SceneResolver.Resolve<ISceneDatabase>();
-            core.m_SaveDataService   = core.m_SceneResolver.Resolve<ISaveDataService>();
-            core.m_ResumeModuleMap   = core.m_SceneResolver.Resolve<IModuleResumeMap>();
             core.m_ChangeModuleStore = core.m_SceneResolver.Resolve<IChangeModuleStore>();
             core.m_ModuleDatabase    = core.m_SceneResolver.Resolve<IModuleDatabase>();
 
