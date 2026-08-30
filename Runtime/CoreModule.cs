@@ -76,6 +76,8 @@ namespace RPGFramework.Core
 
             await SceneManager.LoadSceneAsync(sceneName);
 
+            IDIResolver previousResolver = m_SceneResolver;
+
             m_SceneContainer.Dispose();
 
             DIContainer sceneContainer = new DIContainer();
@@ -87,7 +89,8 @@ namespace RPGFramework.Core
             SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
             sceneInstaller.InstallBindings(m_SceneContainer);
 
-            m_GlobalContainer.ForceBindSingletonFromInstance<IDIResolver>(m_SceneResolver);
+            m_GlobalContainer.Unbind<IDIResolver>(previousResolver);
+            m_GlobalContainer.BindSingletonFromInstance<IDIResolver>(m_SceneResolver);
 
             m_SceneContainer.SetFallback(m_GlobalContainer);
 
