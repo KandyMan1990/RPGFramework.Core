@@ -17,7 +17,7 @@ namespace RPGFramework.Core
 {
     public static class CoreModuleBuilder
     {
-        public static ICoreModule Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
+        public static Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
             return CoreModule.Create(globalInstaller, initialModuleId);
         }
@@ -47,7 +47,7 @@ namespace RPGFramework.Core
             Application.quitting += OnApplicationQuit;
         }
 
-        public static ICoreModule Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
+        public static async Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
             CoreModule core = new CoreModule();
 
@@ -55,7 +55,7 @@ namespace RPGFramework.Core
 
             globalInstaller.InstallBindings(core.m_GlobalContainer);
 
-            globalInstaller.Bootstrap(core.m_SceneResolver);
+            await globalInstaller.Bootstrap(core.m_SceneResolver);
 
             core.m_SceneDatabase     = core.m_SceneResolver.Resolve<ISceneDatabase>();
             core.m_ChangeModuleStore = core.m_SceneResolver.Resolve<IChangeModuleStore>();
