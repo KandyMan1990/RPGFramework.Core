@@ -101,11 +101,6 @@ namespace RPGFramework.Core
             await m_CurrentModule.OnEnterAsync();
         }
 
-        void ICoreModule.ResetModule<TInterface, TConcrete>()
-        {
-            m_GlobalContainer.ForceBindSingleton<TInterface, TConcrete>();
-        }
-
         private void OnApplicationQuit()
         {
             m_SceneContainer.Dispose();

@@ -11,7 +11,6 @@ namespace RPGFramework.Core
     public interface ICoreModule
     {
         Task RequestModuleChangeAsync();
-        void ResetModule<TInterface, TConcrete>() where TConcrete : TInterface where TInterface : IModule;
     }
 
     /// <summary>
