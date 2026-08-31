@@ -13,8 +13,12 @@
     "url": "https://github.com/KandyMan1990/RPGFramework.Core"
   },
   "dependencies": {
-    "com.rpgframework.di": "2.1.0",
-    "com.rpgframework.core.sharedtypes": "0.1.0",
-    "com.rpgframework.hashing": "1.0.0"
+    "com.rpgframework.core.sharedtypes": "0.2.0",
+    "com.rpgframework.di": "3.0.0",
+    "com.rpgframework.hashing": "2.0.1",
+    "com.unity.inputsystem": "1.20.0",
+    "com.unity.mathematics": "1.4.0",
+    "com.unity.render-pipelines.core": "17.5.0",
+    "com.unity.render-pipelines.universal": "17.5.0"
   }
 }
