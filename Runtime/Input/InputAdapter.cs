@@ -19,6 +19,7 @@ namespace RPGFramework.Core.Input
         [SerializeField] private InputActionReference m_Select;
 
         private IInputRouter m_InputRouter;
+        private bool         m_Subscribed;
 
         [Inject]
         public void Inject(IInputRouter inputRouter)
@@ -26,8 +27,20 @@ namespace RPGFramework.Core.Input
             m_InputRouter = inputRouter;
         }
 
+        private void OnDisable()
+        {
+            Disable();
+        }
+
         public void Enable()
         {
+            if (m_Subscribed)
+            {
+                return;
+            }
+
+            m_Subscribed = true;
+
             if (m_Movement != null)
             {
                 m_Movement.action.performed += RouteMovement;
@@ -88,6 +101,13 @@ namespace RPGFramework.Core.Input
 
         public void Disable()
         {
+            if (!m_Subscribed)
+            {
+                return;
+            }
+
+            m_Subscribed = false;
+
             if (m_Movement != null)
             {
                 m_Movement.action.Disable();

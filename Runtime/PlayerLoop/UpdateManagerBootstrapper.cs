@@ -4,12 +4,12 @@ using UnityEngine.PlayerLoop;
 
 namespace RPGFramework.Core.PlayerLoop
 {
-    public static class UpdateManagerBootstrapper
+    public static partial class UpdateManagerBootstrapper
     {
         private static PlayerLoopSystem m_UpdatePlayerLoopSystem;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-        private static void Initialize()
+        [OnEnteringPlayMode]
+        private static void OnEnteringPlayMode()
         {
             PlayerLoopSystem currentPlayerLoop = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop();
 
@@ -21,23 +21,6 @@ namespace RPGFramework.Core.PlayerLoop
 
             UnityEngine.LowLevel.PlayerLoop.SetPlayerLoop(currentPlayerLoop);
             //PlayerLoopUtils.PrintPlayerLoop(currentPlayerLoop);
-
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-
-            static void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange playModeStateChange)
-            {
-                if (playModeStateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode)
-                {
-                    PlayerLoopSystem currentPlayerLoop = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop();
-                    RemoveUpdateManagerPlayerLoop<Update>(ref currentPlayerLoop);
-                    UnityEngine.LowLevel.PlayerLoop.SetPlayerLoop(currentPlayerLoop);
-
-                    UpdateManager.ClearListeners();
-                }
-            }
-#endif
         }
 
         private static bool InsertUpdateManagerPlayerLoop<T>(ref PlayerLoopSystem loop, int index)
@@ -55,6 +38,16 @@ namespace RPGFramework.Core.PlayerLoop
         private static void RemoveUpdateManagerPlayerLoop<T>(ref PlayerLoopSystem loop)
         {
             PlayerLoopUtils.RemoveSystem<T>(ref loop, in m_UpdatePlayerLoopSystem);
+        }
+
+        [OnExitingPlayMode]
+        private static void OnExitingPlayMode()
+        {
+            PlayerLoopSystem currentPlayerLoop = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop();
+            RemoveUpdateManagerPlayerLoop<Update>(ref currentPlayerLoop);
+            UnityEngine.LowLevel.PlayerLoop.SetPlayerLoop(currentPlayerLoop);
+
+            UpdateManager.ClearListeners();
         }
     }
 }

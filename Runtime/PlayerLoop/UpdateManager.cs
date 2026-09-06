@@ -1,29 +1,41 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 
 namespace RPGFramework.Core.PlayerLoop
 {
-    public static class UpdateManager
+    [AutoStaticsCleanup]
+    public static partial class UpdateManager
     {
-        private static readonly List<IUpdatable>  m_Updatables = new List<IUpdatable>();
-        private static readonly Queue<IUpdatable> m_Queue      = new Queue<IUpdatable>();
+        private static readonly List<IUpdatable>  m_Updatables      = new List<IUpdatable>();
+        private static readonly Queue<IUpdatable> m_RegisterQueue   = new Queue<IUpdatable>();
+        private static readonly Queue<IUpdatable> m_UnregisterQueue = new Queue<IUpdatable>();
 
-        public static void RegisterUpdatable(IUpdatable           player) => m_Updatables.Add(player);
-        public static void UnregisterUpdatable(IUpdatable         player) => m_Updatables.Remove(player);
-        public static void QueueForUnregisterUpdatable(IUpdatable player) => m_Queue.Enqueue(player);
+        public static void RegisterUpdatable(IUpdatable   player) => m_RegisterQueue.Enqueue(player);
+        public static void UnregisterUpdatable(IUpdatable player) => m_UnregisterQueue.Enqueue(player);
 
-        public static void UpdateListeners()
+        internal static void UpdateListeners()
         {
-            while (m_Queue.Count > 0)
+            for (int i = 0; i < m_Updatables.Count; i++)
             {
-                UnregisterUpdatable(m_Queue.Dequeue());
+                m_Updatables[i].Update();
             }
 
-            foreach (IUpdatable player in m_Updatables)
+            while (m_UnregisterQueue.Count > 0)
             {
-                player.Update();
+                m_Updatables.Remove(m_UnregisterQueue.Dequeue());
+            }
+
+            while (m_RegisterQueue.Count > 0)
+            {
+                m_Updatables.Add(m_RegisterQueue.Dequeue());
             }
         }
 
-        public static void ClearListeners() => m_Updatables.Clear();
+        internal static void ClearListeners()
+        {
+            m_Updatables.Clear();
+            m_RegisterQueue.Clear();
+            m_UnregisterQueue.Clear();
+        }
     }
 }
