@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using RPGFramework.Core.Data;
+using RPGFramework.Core.Memory;
 using RPGFramework.Hashing;
 using UnityEngine;
 
@@ -43,13 +45,17 @@ namespace RPGFramework.Core.SaveData
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly ISaveDataService               m_SaveDataService;
+        private readonly IMemoryBankAccess              m_MemoryBankAccess;
+        private readonly ulong                          m_GlobalMemorySectionId;
 
         private string m_CurrentPath;
 
-        public SaveDataService()
+        public SaveDataService(IMemoryBankAccess memoryBankAccess)
         {
-            m_Sections        = new Dictionary<ulong, SectionBlob>();
-            m_SaveDataService = this;
+            m_Sections              = new Dictionary<ulong, SectionBlob>();
+            m_SaveDataService       = this;
+            m_MemoryBankAccess      = memoryBankAccess;
+            m_GlobalMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.GLOBAL_MEMORY);
         }
 
         void ISaveDataService.BeginSave(string filename)
@@ -59,6 +65,9 @@ namespace RPGFramework.Core.SaveData
 
             if (!File.Exists(m_CurrentPath))
             {
+                // A new save. The bank still has the previous playthrough's variables in it, so clear it
+                // rather than letting them leak into this one.
+                m_MemoryBankAccess.ClearGlobal();
                 return;
             }
 
@@ -86,6 +95,8 @@ namespace RPGFramework.Core.SaveData
 
                 m_Sections[sectionTocEntry.SectionId] = new SectionBlob(sectionTocEntry.Version, data);
             }
+
+            RestoreGlobalMemory();
         }
 
         bool ISaveDataService.HasSaveLoaded()
@@ -99,6 +110,8 @@ namespace RPGFramework.Core.SaveData
             {
                 throw new InvalidOperationException($"{nameof(ISaveDataService)}::{nameof(ISaveDataService.CommitSave)} Must call {nameof(ISaveDataService.BeginSave)} before CommitSave");
             }
+
+            CaptureGlobalMemory();
 
             using FileStream   fs     = File.Create(m_CurrentPath);
             using BinaryWriter writer = new BinaryWriter(fs);
@@ -204,6 +217,36 @@ namespace RPGFramework.Core.SaveData
         {
             m_Sections.Clear();
             m_CurrentPath = string.Empty;
+
+            m_MemoryBankAccess.ClearGlobal();
+        }
+
+        /// <summary>
+        /// Copy the global memory bank into its reserved section, so <see cref="ISaveDataService.CommitSave" />
+        /// writes the variables as they stand right now. The bank is a raw blob rather than a
+        /// <see cref="SaveSection{T}" /> because its length is decided by the variable map at build time,
+        /// not by an unmanaged struct.
+        /// </summary>
+        private void CaptureGlobalMemory()
+        {
+            byte[] global = m_MemoryBankAccess.CopyGlobal();
+
+            m_Sections[m_GlobalMemorySectionId] = new SectionBlob(Versions.GLOBAL_MEMORY, global);
+        }
+
+        /// <summary>
+        /// Push the loaded global memory section back into the bank. A save written before any variables
+        /// existed has no such section, in which case the bank is cleared — the same state a new game gets.
+        /// </summary>
+        private void RestoreGlobalMemory()
+        {
+            if (!m_Sections.TryGetValue(m_GlobalMemorySectionId, out SectionBlob globalMemory))
+            {
+                m_MemoryBankAccess.ClearGlobal();
+                return;
+            }
+
+            m_MemoryBankAccess.RestoreGlobal(globalMemory.Data);
         }
 
         bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)
@@ -226,7 +269,8 @@ namespace RPGFramework.Core.SaveData
             {
                 if (fileInfo.LastWriteTimeUtc > lastAccessedTime)
                 {
-                    filename = fileInfo.Name;
+                    lastAccessedTime = fileInfo.LastWriteTimeUtc;
+                    filename         = fileInfo.Name;
                 }
             }
 

@@ -1,15 +1,14 @@
 ﻿using System;
+using RPGFramework.Core.Memory;
 using RPGFramework.Core.SharedTypes;
 
 namespace RPGFramework.Core
 {
-    internal sealed class MemoryService : IMemoryService
+    internal sealed class MemoryService : IMemoryService, IMemoryBankAccess
     {
         private readonly byte[]         m_Global;
         private readonly byte[]         m_Session;
         private readonly IMemoryService m_This;
-
-        private object m_TempModuleData;
 
         internal MemoryService(IMemoryServiceArgs args)
         {
@@ -18,13 +17,43 @@ namespace RPGFramework.Core
             m_This    = this;
         }
 
+        int IMemoryBankAccess.GlobalByteCount => m_Global.Length;
+
+        byte[] IMemoryBankAccess.CopyGlobal()
+        {
+            byte[] copy = new byte[m_Global.Length];
+
+            Buffer.BlockCopy(m_Global, 0, copy, 0, m_Global.Length);
+
+            return copy;
+        }
+
+        void IMemoryBankAccess.RestoreGlobal(byte[] source)
+        {
+            Array.Clear(m_Global, 0, m_Global.Length);
+
+            if (source == null)
+            {
+                return;
+            }
+
+            int copyLength = Math.Min(source.Length, m_Global.Length);
+
+            Buffer.BlockCopy(source, 0, m_Global, 0, copyLength);
+        }
+
+        void IMemoryBankAccess.ClearGlobal()
+        {
+            Array.Clear(m_Global, 0, m_Global.Length);
+        }
+
         byte IMemoryService.ReadByte(MemoryBank bank, ushort address)
         {
             return bank switch
                    {
-                           MemoryBank.Global  => m_Global[address],
-                           MemoryBank.Session => m_Session[address],
-                           _                  => throw new InvalidOperationException()
+                       MemoryBank.Global  => m_Global[address],
+                       MemoryBank.Session => m_Session[address],
+                       _                  => throw new InvalidOperationException()
                    };
         }
 
@@ -132,10 +161,9 @@ namespace RPGFramework.Core
         {
             return bank switch
                    {
-
-                           MemoryBank.Global  => m_Global,
-                           MemoryBank.Session => m_Session,
-                           _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
+                       MemoryBank.Global  => m_Global,
+                       MemoryBank.Session => m_Session,
+                       _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }
     }

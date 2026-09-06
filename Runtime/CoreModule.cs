@@ -115,7 +115,7 @@ namespace RPGFramework.Core
             container.BindSingleton<IScreenFadeService, ScreenFadeService>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();
-            container.BindSingleton<IMemoryService, MemoryService>();
+            container.BindInterfacesToSelfSingleton<MemoryService>();
 
             container.BindSingleton<IDialogueWindow, DialogueWindow>();
             container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
