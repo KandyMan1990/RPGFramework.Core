@@ -10,8 +10,8 @@ namespace RPGFramework.Core.Editor
     /// <summary>
     /// Inspector for <see cref="VariableMapAsset" />.<br /><br />
     /// The point of this inspector is that <b>offsets are never typed</b>. A variable is declared by name,
-    /// bank and width, and the map decides where it goes. Hand-assigned offsets are how a savemap ends up
-    /// with variables silently sharing bytes.
+    /// bank and width, and the map decides where it goes. Hand-assigned offsets are how a memory map
+    /// ends up with variables silently sharing bytes.
     /// </summary>
     [CustomEditor(typeof(VariableMapAsset))]
     public sealed class VariableMapAssetEditor : UnityEditor.Editor
