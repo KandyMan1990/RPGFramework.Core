@@ -25,6 +25,10 @@ namespace RPGFramework.Core.Memory
         [Tooltip("Spare bytes added to the session bank beyond what the map needs. Session is never saved, so this is cheap")]
         private int m_AdditionalSessionBytes;
 
+        [SerializeField]
+        [Tooltip("Spare bytes added to the temp bank beyond what the map needs. Temp is script scratch and is never saved, so leave headroom here rather than in Global")]
+        private int m_AdditionalTempBytes = 64;
+
         int IMemoryServiceArgs.GlobalBytes
         {
             get
@@ -42,6 +46,16 @@ namespace RPGFramework.Core.Memory
                 int sessionBytes = GetBankBytes(MemoryBank.Session, m_AdditionalSessionBytes);
 
                 return sessionBytes;
+            }
+        }
+
+        int IMemoryServiceArgs.TempBytes
+        {
+            get
+            {
+                int tempBytes = GetBankBytes(MemoryBank.Temp, m_AdditionalTempBytes);
+
+                return tempBytes;
             }
         }
 

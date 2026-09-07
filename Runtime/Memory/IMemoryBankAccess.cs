@@ -34,5 +34,13 @@
         /// one playthrough's variables cannot leak into the next.
         /// </summary>
         void ClearGlobal();
+
+        /// <summary>
+        /// Zero the session bank. Session state is what should survive a module change but not a
+        /// restart — where an NPC was left standing, which of its lines have already been heard.
+        /// Beginning a new game and loading a save are both a restart as far as that state is
+        /// concerned, so the save system clears it alongside the global bank.
+        /// </summary>
+        void ClearSession();
     }
 }

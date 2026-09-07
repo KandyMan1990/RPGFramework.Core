@@ -8,16 +8,23 @@ namespace RPGFramework.Core
     {
         private readonly byte[]         m_Global;
         private readonly byte[]         m_Session;
+        private readonly byte[]         m_Temp;
         private readonly IMemoryService m_This;
 
         internal MemoryService(IMemoryServiceArgs args)
         {
             m_Global  = new byte[args.GlobalBytes];
             m_Session = new byte[args.SessionBytes];
+            m_Temp    = new byte[args.TempBytes];
             m_This    = this;
         }
 
         int IMemoryBankAccess.GlobalByteCount => m_Global.Length;
+
+        void IMemoryService.ClearTemp()
+        {
+            Array.Clear(m_Temp, 0, m_Temp.Length);
+        }
 
         byte[] IMemoryBankAccess.CopyGlobal()
         {
@@ -47,13 +54,19 @@ namespace RPGFramework.Core
             Array.Clear(m_Global, 0, m_Global.Length);
         }
 
+        void IMemoryBankAccess.ClearSession()
+        {
+            Array.Clear(m_Session, 0, m_Session.Length);
+        }
+
         byte IMemoryService.ReadByte(MemoryBank bank, ushort address)
         {
             return bank switch
                    {
                        MemoryBank.Global  => m_Global[address],
                        MemoryBank.Session => m_Session[address],
-                       _                  => throw new InvalidOperationException()
+                       MemoryBank.Temp    => m_Temp[address],
+                       _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }
 
@@ -66,6 +79,9 @@ namespace RPGFramework.Core
                     break;
                 case MemoryBank.Session:
                     m_Session[address] = value;
+                    break;
+                case MemoryBank.Temp:
+                    m_Temp[address] = value;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(bank), bank, null);
@@ -163,6 +179,7 @@ namespace RPGFramework.Core
                    {
                        MemoryBank.Global  => m_Global,
                        MemoryBank.Session => m_Session,
+                       MemoryBank.Temp    => m_Temp,
                        _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }

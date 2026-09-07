@@ -67,15 +67,15 @@ namespace RPGFramework.Core.Editor
             VisualElement section = MakeSection("Declare a variable");
 
             m_NameField        = new TextField("Name");
-            m_BankField        = new EnumField("Bank", MemoryBank.Global);
+            m_BankField        = new EnumField("Bank",  MemoryBank.Global);
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
             m_DescriptionField = new TextField("Description") { multiline = true };
 
-            m_NextOffsetLabel = new Label();
+            m_NextOffsetLabel                    = new Label();
             m_NextOffsetLabel.style.marginTop    = 4;
             m_NextOffsetLabel.style.marginBottom = 4;
 
-            m_DeclarationProblem = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+            m_DeclarationProblem               = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
             m_DeclarationProblem.style.display = DisplayStyle.None;
 
             m_AllocateButton = new Button(OnAllocateClicked) { text = "Allocate" };
@@ -150,25 +150,24 @@ namespace RPGFramework.Core.Editor
 
             m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, width)}";
 
-            string name       = m_NameField.value;
-            bool   hasName    = !string.IsNullOrWhiteSpace(name);
-            bool   nameTaken  = hasName && m_Map.TryGetVariable(name, out VariableDefinition _);
-            bool   bankIsTemp = bank == MemoryBank.Temp;
+            string name      = m_NameField.value;
+            bool   hasName   = !string.IsNullOrWhiteSpace(name);
+            bool   nameTaken = hasName && m_Map.TryGetVariable(name, out VariableDefinition _);
 
             string problem = null;
 
-            if (bankIsTemp)
-            {
-                problem = "The Temp bank is not implemented — MemoryService throws for it. Use Session for state that should not be saved.";
-            }
-            else if (nameTaken)
+            if (nameTaken)
             {
                 problem = $"'{name}' is already declared in this map.";
             }
+            else if (bank == MemoryBank.Temp)
+            {
+                problem = "Temp is script scratch and is cleared on every field and module load. Declare a variable here only if scripts need a named scratch slot; anything that must survive belongs in Session or Global.";
+            }
 
-            SetProblem(problem, bankIsTemp ? HelpBoxMessageType.Error : HelpBoxMessageType.Warning);
+            SetProblem(problem, nameTaken ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);
 
-            m_AllocateButton.SetEnabled(hasName && !nameTaken && !bankIsTemp);
+            m_AllocateButton.SetEnabled(hasName && !nameTaken);
         }
 
         private void SetProblem(string message, HelpBoxMessageType messageType)

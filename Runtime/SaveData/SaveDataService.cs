@@ -65,9 +65,10 @@ namespace RPGFramework.Core.SaveData
 
             if (!File.Exists(m_CurrentPath))
             {
-                // A new save. The bank still has the previous playthrough's variables in it, so clear it
-                // rather than letting them leak into this one.
+                // A new save. The banks still hold the previous playthrough's state, so clear them
+                // rather than letting it leak into this one.
                 m_MemoryBankAccess.ClearGlobal();
+                m_MemoryBankAccess.ClearSession();
                 return;
             }
 
@@ -95,6 +96,11 @@ namespace RPGFramework.Core.SaveData
 
                 m_Sections[sectionTocEntry.SectionId] = new SectionBlob(sectionTocEntry.Version, data);
             }
+
+            // Session state is what survives a module change but not a restart, and loading a save is a
+            // restart — NPC positions and "have I already heard this line" belong to the playthrough
+            // being left, not the one being entered.
+            m_MemoryBankAccess.ClearSession();
 
             RestoreGlobalMemory();
         }
@@ -219,6 +225,7 @@ namespace RPGFramework.Core.SaveData
             m_CurrentPath = string.Empty;
 
             m_MemoryBankAccess.ClearGlobal();
+            m_MemoryBankAccess.ClearSession();
         }
 
         /// <summary>

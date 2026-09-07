@@ -30,6 +30,7 @@ namespace RPGFramework.Core
         private ISceneDatabase     m_SceneDatabase;
         private IChangeModuleStore m_ChangeModuleStore;
         private IModuleDatabase    m_ModuleDatabase;
+        private IMemoryService     m_MemoryService;
 
         private IDIContainer m_SceneContainer;
         private IDIResolver  m_SceneResolver;
@@ -60,6 +61,7 @@ namespace RPGFramework.Core
             core.m_SceneDatabase     = core.m_SceneResolver.Resolve<ISceneDatabase>();
             core.m_ChangeModuleStore = core.m_SceneResolver.Resolve<IChangeModuleStore>();
             core.m_ModuleDatabase    = core.m_SceneResolver.Resolve<IModuleDatabase>();
+            core.m_MemoryService     = core.m_SceneResolver.Resolve<IMemoryService>();
 
             core.m_ChangeModuleStore.SetModuleId(initialModuleId);
 
@@ -69,6 +71,8 @@ namespace RPGFramework.Core
         async Task ICoreModule.RequestModuleChangeAsync()
         {
             await m_CurrentModule.OnExitAsync();
+
+            m_MemoryService.ClearTemp();
 
             byte   moduleId   = m_ChangeModuleStore.GetModuleId;
             Type   moduleType = m_ModuleDatabase.GetModuleType(moduleId);

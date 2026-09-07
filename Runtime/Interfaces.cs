@@ -34,6 +34,17 @@ namespace RPGFramework.Core
         void   WriteFloat(MemoryBank  bank, ushort address, float value);
         ulong  ReadUlong(MemoryBank   bank, ushort address);
         void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
+
+        /// <summary>
+        /// Zero the <see cref="MemoryBank.Temp" /> bank.<br /><br />
+        /// Core does this on every module change and Field on every field load, so a module rarely needs
+        /// to call it. It is exposed so a module with a finer-grained notion of "a fresh start" — a
+        /// battle beginning, say — can reset scratch itself.<br /><br />
+        /// There is deliberately no equivalent for the other two banks:
+        /// <see cref="MemoryBank.Global" /> belongs to the save system, and
+        /// <see cref="MemoryBank.Session" /> is reset when a save is begun.
+        /// </summary>
+        void ClearTemp();
     }
 
     /// <summary>
@@ -51,5 +62,12 @@ namespace RPGFramework.Core
         /// How many bytes will be available in the session array (new byte[SessionBytes])
         /// </summary>
         int SessionBytes { get; }
+
+        /// <summary>
+        /// How many bytes will be available in the temp array (new byte[TempBytes]).<br /><br />
+        /// Temp is script scratch, so this only has to be big enough for the working values a single
+        /// field's scripts hold at once. It is never saved, so it costs nothing but memory.
+        /// </summary>
+        int TempBytes { get; }
     }
 }
