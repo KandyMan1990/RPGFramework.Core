@@ -7,6 +7,7 @@ namespace RPGFramework.Core.PlayerLoop
     public static partial class UpdateManagerBootstrapper
     {
         private static PlayerLoopSystem m_UpdatePlayerLoopSystem;
+        private static PlayerLoopSystem m_FixedUpdatePlayerLoopSystem;
 
         [OnEnteringPlayMode]
         private static void OnEnteringPlayMode()
@@ -16,6 +17,12 @@ namespace RPGFramework.Core.PlayerLoop
             if (!InsertUpdateManagerPlayerLoop<Update>(ref currentPlayerLoop, 0))
             {
                 Debug.LogWarning($"{nameof(UpdateManagerBootstrapper)} couldn't initialize {nameof(UpdateManager)} player loop system.");
+                return;
+            }
+
+            if (!InsertFixedUpdateManagerPlayerLoop<FixedUpdate>(ref currentPlayerLoop, 0))
+            {
+                Debug.LogWarning($"{nameof(UpdateManagerBootstrapper)} couldn't initialize {nameof(UpdateManager)} fixed update player loop system.");
                 return;
             }
 
@@ -35,6 +42,18 @@ namespace RPGFramework.Core.PlayerLoop
             return PlayerLoopUtils.InsertSystem<T>(ref loop, in m_UpdatePlayerLoopSystem, index);
         }
 
+        private static bool InsertFixedUpdateManagerPlayerLoop<T>(ref PlayerLoopSystem loop, int index)
+        {
+            m_FixedUpdatePlayerLoopSystem = new PlayerLoopSystem
+                                            {
+                                                    type           = typeof(UpdateManager),
+                                                    updateDelegate = UpdateManager.FixedUpdateListeners,
+                                                    subSystemList  = null
+                                            };
+
+            return PlayerLoopUtils.InsertSystem<T>(ref loop, in m_FixedUpdatePlayerLoopSystem, index);
+        }
+
         private static void RemoveUpdateManagerPlayerLoop<T>(ref PlayerLoopSystem loop)
         {
             PlayerLoopUtils.RemoveSystem<T>(ref loop, in m_UpdatePlayerLoopSystem);
@@ -45,6 +64,7 @@ namespace RPGFramework.Core.PlayerLoop
         {
             PlayerLoopSystem currentPlayerLoop = UnityEngine.LowLevel.PlayerLoop.GetCurrentPlayerLoop();
             RemoveUpdateManagerPlayerLoop<Update>(ref currentPlayerLoop);
+            PlayerLoopUtils.RemoveSystem<FixedUpdate>(ref currentPlayerLoop, in m_FixedUpdatePlayerLoopSystem);
             UnityEngine.LowLevel.PlayerLoop.SetPlayerLoop(currentPlayerLoop);
 
             UpdateManager.ClearListeners();

@@ -8,6 +8,11 @@ namespace RPGFramework.Core
         void Update();
     }
 
+    public interface IFixedUpdatable
+    {
+        void FixedUpdate();
+    }
+
     public interface ICoreModule
     {
         Task RequestModuleChangeAsync();
