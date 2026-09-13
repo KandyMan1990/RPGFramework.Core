@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using RPGFramework.Core.Data;
@@ -25,6 +26,13 @@ namespace RPGFramework.Core.SaveData
     internal sealed class SaveDataService : ISaveDataService
     {
         private const int TOC_ENTRY_SIZE = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
+
+        private const string SAVE_FILE_PREFIX    = "save";
+        private const string SAVE_FILE_EXTENSION = ".sav";
+        private const int    SAVE_INDEX_DIGITS   = 3;
+
+        private static readonly int    SAVE_FILE_NAME_LENGTH  = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS + SAVE_FILE_EXTENSION.Length;
+        private static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private readonly struct SectionTocEntry
@@ -180,17 +188,13 @@ namespace RPGFramework.Core.SaveData
 
         string[] ISaveDataService.GetListOfSaveFiles()
         {
-            string path = Application.persistentDataPath;
+            List<FileInfo> saveFiles = GetSaveFiles();
 
-            DirectoryInfo directoryInfo = new DirectoryInfo(path);
+            string[] filenames = new string[saveFiles.Count];
 
-            FileInfo[] files = directoryInfo.GetFiles("*.sav");
-
-            string[] filenames = new string[files.Length];
-
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < saveFiles.Count; i++)
             {
-                filenames[i] = files[i].Name;
+                filenames[i] = saveFiles[i].Name;
             }
 
             return filenames;
@@ -198,25 +202,89 @@ namespace RPGFramework.Core.SaveData
 
         string ISaveDataService.GetUnusedSaveFileName()
         {
+            HashSet<byte> usedIndices = GetUsedSaveSlotIndices();
+
+            for (int index = 0; index <= byte.MaxValue; index++)
+            {
+                if (usedIndices.Contains((byte)index))
+                {
+                    continue;
+                }
+
+                string filename = BuildSaveFileName((byte)index);
+
+                return filename;
+            }
+
+            throw new InvalidOperationException($"{nameof(SaveDataService)}::{nameof(ISaveDataService.GetUnusedSaveFileName)} all {byte.MaxValue + 1} save slots are in use, so there is no unused name to give out. Delete a save first");
+        }
+
+        private static string BuildSaveFileName(byte index)
+        {
+            string filename = SAVE_FILE_PREFIX + index.ToString("D" + SAVE_INDEX_DIGITS, CultureInfo.InvariantCulture) + SAVE_FILE_EXTENSION;
+
+            return filename;
+        }
+
+        private static HashSet<byte> GetUsedSaveSlotIndices()
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Application.persistentDataPath);
+
             HashSet<byte> usedIndices = new HashSet<byte>();
 
-            string[] existingFiles = m_SaveDataService.GetListOfSaveFiles();
-
-            foreach (string file in existingFiles)
+            foreach (FileInfo file in directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN))
             {
-                if (byte.TryParse(file.AsSpan(4, 3), out byte index))
+                if (TryGetSaveSlotIndex(file.Name, out byte index))
                 {
                     usedIndices.Add(index);
                 }
             }
 
-            byte freeIndex = 0;
-            while (usedIndices.Contains(freeIndex))
+            return usedIndices;
+        }
+
+        private static List<FileInfo> GetSaveFiles()
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Application.persistentDataPath);
+
+            FileInfo[] candidates = directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN);
+
+            List<FileInfo> saveFiles = new List<FileInfo>(candidates.Length);
+
+            foreach (FileInfo candidate in candidates)
             {
-                freeIndex++;
+                if (TryGetSaveSlotIndex(candidate.Name, out byte _))
+                {
+                    saveFiles.Add(candidate);
+                }
             }
 
-            return $"save{freeIndex:000}.sav";
+            return saveFiles;
+        }
+
+        private static bool TryGetSaveSlotIndex(string filename, out byte index)
+        {
+            index = 0;
+
+            if (filename.Length != SAVE_FILE_NAME_LENGTH)
+            {
+                return false;
+            }
+
+            if (!filename.StartsWith(SAVE_FILE_PREFIX, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!filename.EndsWith(SAVE_FILE_EXTENSION, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            bool parsed = byte.TryParse(filename.AsSpan(SAVE_FILE_PREFIX.Length, SAVE_INDEX_DIGITS),
+                                        NumberStyles.None, CultureInfo.InvariantCulture, out index);
+
+            return parsed;
         }
 
         void ISaveDataService.ClearSaveDataFromMemory()
@@ -258,14 +326,11 @@ namespace RPGFramework.Core.SaveData
 
         bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)
         {
-            string path = Application.persistentDataPath;
+            List<FileInfo> files = GetSaveFiles();
 
-            DirectoryInfo directoryInfo = new DirectoryInfo(path);
-
-            FileInfo[] files = directoryInfo.GetFiles("*.sav");
             filename = string.Empty;
 
-            if (files.Length == 0)
+            if (files.Count == 0)
             {
                 return false;
             }
