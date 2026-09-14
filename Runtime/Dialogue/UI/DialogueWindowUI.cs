@@ -256,17 +256,18 @@ namespace RPGFramework.Core.Dialogue.UI
             int index = 0;
             foreach (TextElement.Glyph glyph in glyphs)
             {
-                NativeSlice<Vertex> verts = glyph.vertices;
-
-                for (int i = 0; i < verts.Length; i++)
+                if (index >= visibleGlyphs)
                 {
-                    Vertex  v    = verts[i];
-                    Color32 tint = v.tint;
+                    NativeSlice<Vertex> vertices = glyph.vertices;
 
-                    tint.a = index < visibleGlyphs ? (byte)255 : (byte)0;
+                    for (int i = 0; i < vertices.Length; i++)
+                    {
+                        Vertex vertex = vertices[i];
+                        vertex.tint.a = 0;
+                        vertices[i]   = vertex;
+                    }
 
-                    v.tint   = tint;
-                    verts[i] = v;
+                    glyph.SetTints(Color.clear, Color.clear);
                 }
 
                 index++;
