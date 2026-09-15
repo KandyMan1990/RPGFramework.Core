@@ -121,8 +121,8 @@ namespace RPGFramework.Core
             container.BindSingleton<ISaveDataService, SaveDataService>();
             container.BindInterfacesToSelfSingleton<MemoryService>();
 
-            container.BindSingleton<IDialogueWindow, DialogueWindow>();
-            container.BindSingleton<IDialogueWindowUI, DialogueWindowUI>();
+            container.BindTransient<IDialogueWindow, DialogueWindow>();
+            container.BindTransient<IDialogueWindowUI, DialogueWindowUI>();
 
             container.BindSingleton<IChangeModuleStore, ChangeModuleStore>();
             container.BindSingleton<IResumeModuleStore, ResumeModuleStore>();
