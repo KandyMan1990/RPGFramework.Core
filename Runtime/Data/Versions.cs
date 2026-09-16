@@ -3,6 +3,6 @@
     public static class Versions
     {
         public static uint GLOBAL_CONFIG = 1;
-        public static uint GLOBAL_MEMORY = 1;
+        public static uint PERSISTENT_MEMORY = 1;
     }
 }

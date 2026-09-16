@@ -18,7 +18,7 @@ namespace RPGFramework.Core.Editor
     {
         private VariableMapAsset m_Map;
 
-        private Label     m_GlobalSizeLabel;
+        private Label     m_PersistentSizeLabel;
         private Label     m_SessionSizeLabel;
         private Label     m_NextOffsetLabel;
         private TextField m_NameField;
@@ -53,10 +53,10 @@ namespace RPGFramework.Core.Editor
         {
             VisualElement section = MakeSection("Bank sizes");
 
-            m_GlobalSizeLabel  = new Label();
-            m_SessionSizeLabel = new Label();
+            m_PersistentSizeLabel = new Label();
+            m_SessionSizeLabel    = new Label();
 
-            section.Add(m_GlobalSizeLabel);
+            section.Add(m_PersistentSizeLabel);
             section.Add(m_SessionSizeLabel);
 
             return section;
@@ -67,7 +67,7 @@ namespace RPGFramework.Core.Editor
             VisualElement section = MakeSection("Declare a variable");
 
             m_NameField        = new TextField("Name");
-            m_BankField        = new EnumField("Bank",  MemoryBank.Global);
+            m_BankField        = new EnumField("Bank",  MemoryBank.Persistent);
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
             m_DescriptionField = new TextField("Description") { multiline = true };
 
@@ -142,8 +142,8 @@ namespace RPGFramework.Core.Editor
                 return;
             }
 
-            m_GlobalSizeLabel.text  = $"Global (saved):  {m_Map.GetRequiredBytes(MemoryBank.Global)} bytes";
-            m_SessionSizeLabel.text = $"Session (not saved):  {m_Map.GetRequiredBytes(MemoryBank.Session)} bytes";
+            m_PersistentSizeLabel.text = $"Persistent (saved):  {m_Map.GetRequiredBytes(MemoryBank.Persistent)} bytes";
+            m_SessionSizeLabel.text    = $"Session (not saved):  {m_Map.GetRequiredBytes(MemoryBank.Session)} bytes";
 
             MemoryBank    bank  = (MemoryBank)m_BankField.value;
             VariableWidth width = (VariableWidth)m_WidthField.value;
@@ -162,7 +162,7 @@ namespace RPGFramework.Core.Editor
             }
             else if (bank == MemoryBank.Temp)
             {
-                problem = "Temp is script scratch and is cleared on every field and module load. Declare a variable here only if scripts need a named scratch slot; anything that must survive belongs in Session or Global.";
+                problem = "Temp is script scratch: each running script has its own, zeroed when it starts. Declare a variable here only if scripts need a named scratch slot; anything that must outlast the script belongs in Session or Persistent.";
             }
 
             SetProblem(problem, nameTaken ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);

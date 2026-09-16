@@ -6,52 +6,45 @@ namespace RPGFramework.Core
 {
     internal sealed class MemoryService : IMemoryService, IMemoryBankAccess
     {
-        private readonly byte[]         m_Global;
+        private readonly byte[]         m_Persistent;
         private readonly byte[]         m_Session;
-        private readonly byte[]         m_Temp;
         private readonly IMemoryService m_This;
 
         internal MemoryService(IMemoryServiceArgs args)
         {
-            m_Global  = new byte[args.GlobalBytes];
-            m_Session = new byte[args.SessionBytes];
-            m_Temp    = new byte[args.TempBytes];
-            m_This    = this;
+            m_Persistent = new byte[args.PersistentBytes];
+            m_Session    = new byte[args.SessionBytes];
+            m_This       = this;
         }
 
-        int IMemoryBankAccess.GlobalByteCount => m_Global.Length;
+        int IMemoryBankAccess.PersistentByteCount => m_Persistent.Length;
 
-        void IMemoryService.ClearTemp()
+        byte[] IMemoryBankAccess.CopyPersistent()
         {
-            Array.Clear(m_Temp, 0, m_Temp.Length);
-        }
+            byte[] copy = new byte[m_Persistent.Length];
 
-        byte[] IMemoryBankAccess.CopyGlobal()
-        {
-            byte[] copy = new byte[m_Global.Length];
-
-            Buffer.BlockCopy(m_Global, 0, copy, 0, m_Global.Length);
+            Buffer.BlockCopy(m_Persistent, 0, copy, 0, m_Persistent.Length);
 
             return copy;
         }
 
-        void IMemoryBankAccess.RestoreGlobal(byte[] source)
+        void IMemoryBankAccess.RestorePersistent(byte[] source)
         {
-            Array.Clear(m_Global, 0, m_Global.Length);
+            Array.Clear(m_Persistent, 0, m_Persistent.Length);
 
             if (source == null)
             {
                 return;
             }
 
-            int copyLength = Math.Min(source.Length, m_Global.Length);
+            int copyLength = Math.Min(source.Length, m_Persistent.Length);
 
-            Buffer.BlockCopy(source, 0, m_Global, 0, copyLength);
+            Buffer.BlockCopy(source, 0, m_Persistent, 0, copyLength);
         }
 
-        void IMemoryBankAccess.ClearGlobal()
+        void IMemoryBankAccess.ClearPersistent()
         {
-            Array.Clear(m_Global, 0, m_Global.Length);
+            Array.Clear(m_Persistent, 0, m_Persistent.Length);
         }
 
         void IMemoryBankAccess.ClearSession()
@@ -63,10 +56,9 @@ namespace RPGFramework.Core
         {
             return bank switch
                    {
-                       MemoryBank.Global  => m_Global[address],
-                       MemoryBank.Session => m_Session[address],
-                       MemoryBank.Temp    => m_Temp[address],
-                       _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
+                       MemoryBank.Persistent => m_Persistent[address],
+                       MemoryBank.Session    => m_Session[address],
+                       _                     => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }
 
@@ -74,14 +66,11 @@ namespace RPGFramework.Core
         {
             switch (bank)
             {
-                case MemoryBank.Global:
-                    m_Global[address] = value;
+                case MemoryBank.Persistent:
+                    m_Persistent[address] = value;
                     break;
                 case MemoryBank.Session:
                     m_Session[address] = value;
-                    break;
-                case MemoryBank.Temp:
-                    m_Temp[address] = value;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(bank), bank, null);
@@ -100,37 +89,22 @@ namespace RPGFramework.Core
 
         ushort IMemoryService.ReadUshort(MemoryBank bank, ushort address)
         {
-            byte[] mem = GetBank(bank);
-
-            return (ushort)(mem[address] | mem[address + 1] << 8);
+            return MemoryEncoding.ReadUshort(GetBank(bank), address);
         }
 
         void IMemoryService.WriteUshort(MemoryBank bank, ushort address, ushort value)
         {
-            byte[] mem = GetBank(bank);
-
-            mem[address]     = (byte)(value & 0xFF);
-            mem[address + 1] = (byte)(value >> 8);
+            MemoryEncoding.WriteUshort(GetBank(bank), address, value);
         }
 
         int IMemoryService.ReadInt(MemoryBank bank, ushort address)
         {
-            byte[] mem = GetBank(bank);
-
-            return mem[address]           |
-                   mem[address + 1] << 8  |
-                   mem[address + 2] << 16 |
-                   mem[address + 3] << 24;
+            return MemoryEncoding.ReadInt(GetBank(bank), address);
         }
 
         void IMemoryService.WriteInt(MemoryBank bank, ushort address, int value)
         {
-            byte[] mem = GetBank(bank);
-
-            mem[address]     = (byte)(value       & 0xFF);
-            mem[address + 1] = (byte)(value >> 8  & 0xFF);
-            mem[address + 2] = (byte)(value >> 16 & 0xFF);
-            mem[address + 3] = (byte)(value >> 24 & 0xFF);
+            MemoryEncoding.WriteInt(GetBank(bank), address, value);
         }
 
         float IMemoryService.ReadFloat(MemoryBank bank, ushort address)
@@ -147,40 +121,21 @@ namespace RPGFramework.Core
 
         ulong IMemoryService.ReadUlong(MemoryBank bank, ushort address)
         {
-            byte[] mem = GetBank(bank);
-
-            return mem[address]                  |
-                   (ulong)mem[address + 1] << 8  |
-                   (ulong)mem[address + 2] << 16 |
-                   (ulong)mem[address + 3] << 24 |
-                   (ulong)mem[address + 4] << 32 |
-                   (ulong)mem[address + 5] << 40 |
-                   (ulong)mem[address + 6] << 48 |
-                   (ulong)mem[address + 7] << 56;
+            return MemoryEncoding.ReadUlong(GetBank(bank), address);
         }
 
         void IMemoryService.WriteUlong(MemoryBank bank, ushort address, ulong value)
         {
-            byte[] mem = GetBank(bank);
-
-            mem[address]     = (byte)(value       & 0xFF);
-            mem[address + 1] = (byte)(value >> 8  & 0xFF);
-            mem[address + 2] = (byte)(value >> 16 & 0xFF);
-            mem[address + 3] = (byte)(value >> 24 & 0xFF);
-            mem[address + 4] = (byte)(value >> 32 & 0xFF);
-            mem[address + 5] = (byte)(value >> 40 & 0xFF);
-            mem[address + 6] = (byte)(value >> 48 & 0xFF);
-            mem[address + 7] = (byte)(value >> 56 & 0xFF);
+            MemoryEncoding.WriteUlong(GetBank(bank), address, value);
         }
 
         private byte[] GetBank(MemoryBank bank)
         {
             return bank switch
                    {
-                       MemoryBank.Global  => m_Global,
-                       MemoryBank.Session => m_Session,
-                       MemoryBank.Temp    => m_Temp,
-                       _                  => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
+                       MemoryBank.Persistent => m_Persistent,
+                       MemoryBank.Session    => m_Session,
+                       _                     => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }
     }

@@ -19,11 +19,11 @@ namespace RPGFramework.Core
     }
 
     /// <summary>
-    /// This service is used to read and write data to persistant and temporary memory.<br /><br />
-    /// <see cref="MemoryBank.Global" /> will be written to and loaded from the save file.<br /><br />
+    /// This service is used to read and write data to persistent and session memory.<br /><br />
+    /// <see cref="MemoryBank.Persistent" /> will be written to and loaded from the save file.<br /><br />
     /// <see cref="MemoryBank.Session" /> will be temporary storage for use during the game session.<br /><br />
     /// When creating the args object for the service, remember not to under allocate or overallocate too much memory.<br /><br />
-    /// Since global is stored in the save file, over allocating will bloat the save file.
+    /// Since persistent memory is stored in the save file, over allocating will bloat the save file.
     /// </summary>
     public interface IMemoryService
     {
@@ -39,39 +39,33 @@ namespace RPGFramework.Core
         void   WriteFloat(MemoryBank  bank, ushort address, float value);
         ulong  ReadUlong(MemoryBank   bank, ushort address);
         void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
-
-        /// <summary>
-        /// Zero the <see cref="MemoryBank.Temp" /> bank.<br /><br />
-        /// Core does this on every module change and Field on every field load, so a module rarely needs
-        /// to call it. It is exposed so a module with a finer-grained notion of "a fresh start" — a
-        /// battle beginning, say — can reset scratch itself.<br /><br />
-        /// There is deliberately no equivalent for the other two banks:
-        /// <see cref="MemoryBank.Global" /> belongs to the save system, and
-        /// <see cref="MemoryBank.Session" /> is reset when a save is begun.
-        /// </summary>
-        void ClearTemp();
     }
 
     /// <summary>
-    /// This args object is used to determine how big the global and session memory arrays are in bytes.<br /><br />
+    /// This args object is used to determine how big the persistent and session memory arrays are in bytes.<br /><br />
     /// Make sure they are big enough to handle the game but not so big that you overallocate memory for the game.
     /// </summary>
     public interface IMemoryServiceArgs
     {
         /// <summary>
-        /// How many bytes will be available in the global array (new byte[GlobalBytes])
+        /// How many bytes will be available in the persistent array (new byte[PersistentBytes])
         /// </summary>
-        int GlobalBytes { get; }
+        int PersistentBytes { get; }
 
         /// <summary>
         /// How many bytes will be available in the session array (new byte[SessionBytes])
         /// </summary>
         int SessionBytes { get; }
+    }
 
+    /// <summary>
+    /// How big each running script's <see cref="Memory.TempMemory" /> is.
+    /// </summary>
+    public interface ITempMemoryArgs
+    {
         /// <summary>
-        /// How many bytes will be available in the temp array (new byte[TempBytes]).<br /><br />
-        /// Temp is script scratch, so this only has to be big enough for the working values a single
-        /// field's scripts hold at once. It is never saved, so it costs nothing but memory.
+        /// How many bytes one script's temp memory holds. Each running script has its own, so this only has to
+        /// fit the working values one script holds. It is never saved.
         /// </summary>
         int TempBytes { get; }
     }

@@ -15,7 +15,7 @@
         /// <summary>
         /// Called once an existing save has been read, before the module change. The game reads back
         /// whatever it needs from the loaded sections and from
-        /// <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Global" />, then sets the module to resume
+        /// <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Persistent" />, then sets the module to resume
         /// into and its arguments.
         /// </summary>
         void OnSaveLoaded(ISaveDataService saveDataService);

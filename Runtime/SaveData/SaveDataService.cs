@@ -31,8 +31,8 @@ namespace RPGFramework.Core.SaveData
         private const string SAVE_FILE_EXTENSION = ".sav";
         private const int    SAVE_INDEX_DIGITS   = 3;
 
-        private static readonly int    SAVE_FILE_NAME_LENGTH  = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS + SAVE_FILE_EXTENSION.Length;
-        private static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
+        private static readonly int    SAVE_FILE_NAME_LENGTH    = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS                  + SAVE_FILE_EXTENSION.Length;
+        private static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX        + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private readonly struct SectionTocEntry
@@ -52,18 +52,16 @@ namespace RPGFramework.Core.SaveData
         }
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
-        private readonly ISaveDataService               m_SaveDataService;
         private readonly IMemoryBankAccess              m_MemoryBankAccess;
-        private readonly ulong                          m_GlobalMemorySectionId;
+        private readonly ulong                          m_PersistentMemorySectionId;
 
         private string m_CurrentPath;
 
         public SaveDataService(IMemoryBankAccess memoryBankAccess)
         {
-            m_Sections              = new Dictionary<ulong, SectionBlob>();
-            m_SaveDataService       = this;
-            m_MemoryBankAccess      = memoryBankAccess;
-            m_GlobalMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.GLOBAL_MEMORY);
+            m_Sections                  = new Dictionary<ulong, SectionBlob>();
+            m_MemoryBankAccess          = memoryBankAccess;
+            m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY);
         }
 
         void ISaveDataService.BeginSave(string filename)
@@ -75,7 +73,7 @@ namespace RPGFramework.Core.SaveData
             {
                 // A new save. The banks still hold the previous playthrough's state, so clear them
                 // rather than letting it leak into this one.
-                m_MemoryBankAccess.ClearGlobal();
+                m_MemoryBankAccess.ClearPersistent();
                 m_MemoryBankAccess.ClearSession();
                 return;
             }
@@ -110,7 +108,7 @@ namespace RPGFramework.Core.SaveData
             // being left, not the one being entered.
             m_MemoryBankAccess.ClearSession();
 
-            RestoreGlobalMemory();
+            RestorePersistentMemory();
         }
 
         bool ISaveDataService.HasSaveLoaded()
@@ -125,7 +123,7 @@ namespace RPGFramework.Core.SaveData
                 throw new InvalidOperationException($"{nameof(ISaveDataService)}::{nameof(ISaveDataService.CommitSave)} Must call {nameof(ISaveDataService.BeginSave)} before CommitSave");
             }
 
-            CaptureGlobalMemory();
+            CapturePersistentMemory();
 
             using FileStream   fs     = File.Create(m_CurrentPath);
             using BinaryWriter writer = new BinaryWriter(fs);
@@ -292,36 +290,36 @@ namespace RPGFramework.Core.SaveData
             m_Sections.Clear();
             m_CurrentPath = string.Empty;
 
-            m_MemoryBankAccess.ClearGlobal();
+            m_MemoryBankAccess.ClearPersistent();
             m_MemoryBankAccess.ClearSession();
         }
 
         /// <summary>
-        /// Copy the global memory bank into its reserved section, so <see cref="ISaveDataService.CommitSave" />
+        /// Copy the persistent memory bank into its reserved section, so <see cref="ISaveDataService.CommitSave" />
         /// writes the variables as they stand right now. The bank is a raw blob rather than a
         /// <see cref="SaveSection{T}" /> because its length is decided by the variable map at build time,
         /// not by an unmanaged struct.
         /// </summary>
-        private void CaptureGlobalMemory()
+        private void CapturePersistentMemory()
         {
-            byte[] global = m_MemoryBankAccess.CopyGlobal();
+            byte[] persistent = m_MemoryBankAccess.CopyPersistent();
 
-            m_Sections[m_GlobalMemorySectionId] = new SectionBlob(Versions.GLOBAL_MEMORY, global);
+            m_Sections[m_PersistentMemorySectionId] = new SectionBlob(Versions.PERSISTENT_MEMORY, persistent);
         }
 
         /// <summary>
-        /// Push the loaded global memory section back into the bank. A save written before any variables
+        /// Push the loaded persistent memory section back into the bank. A save written before any variables
         /// existed has no such section, in which case the bank is cleared — the same state a new game gets.
         /// </summary>
-        private void RestoreGlobalMemory()
+        private void RestorePersistentMemory()
         {
-            if (!m_Sections.TryGetValue(m_GlobalMemorySectionId, out SectionBlob globalMemory))
+            if (!m_Sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob persistentMemory))
             {
-                m_MemoryBankAccess.ClearGlobal();
+                m_MemoryBankAccess.ClearPersistent();
                 return;
             }
 
-            m_MemoryBankAccess.RestoreGlobal(globalMemory.Data);
+            m_MemoryBankAccess.RestorePersistent(persistentMemory.Data);
         }
 
         bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)

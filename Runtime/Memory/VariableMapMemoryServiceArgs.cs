@@ -6,36 +6,36 @@ namespace RPGFramework.Core.Memory
     /// <summary>
     /// Sizes the memory banks from a <see cref="VariableMapAsset" /> rather than from hand-entered numbers,
     /// so the banks are always exactly big enough for what has been declared.<br /><br />
-    /// Bind this as <see cref="IMemoryServiceArgs" /> in the global installer to keep the authored map and
+    /// Bind this as <see cref="IMemoryServiceArgs" /> and <see cref="ITempMemoryArgs" /> in the global installer to keep the authored map and
     /// the runtime allocation in step. Growing the map between releases is safe: a save written by an older
     /// build restores into the larger bank with the new bytes zeroed.
     /// </summary>
     [CreateAssetMenu(menuName = "RPG Framework/Core/Variable Map Memory Service Args", fileName = "VariableMapMemoryServiceArgs")]
-    public sealed class VariableMapMemoryServiceArgs : ScriptableObject, IMemoryServiceArgs
+    public sealed class VariableMapMemoryServiceArgs : ScriptableObject, IMemoryServiceArgs, ITempMemoryArgs
     {
         [SerializeField]
         [Tooltip("The map that declares what lives in each bank")]
         private VariableMapAsset m_VariableMap;
 
         [SerializeField]
-        [Tooltip("Spare bytes added to the global bank beyond what the map needs. Global is saved, so this bloats every save file — leave at 0 unless something writes global memory without declaring it")]
-        private int m_AdditionalGlobalBytes;
+        [Tooltip("Spare bytes added to the persistent bank beyond what the map needs. Persistent is saved, so this bloats every save file — leave at 0 unless something writes persistent memory without declaring it")]
+        private int m_AdditionalPersistentBytes;
 
         [SerializeField]
         [Tooltip("Spare bytes added to the session bank beyond what the map needs. Session is never saved, so this is cheap")]
         private int m_AdditionalSessionBytes;
 
         [SerializeField]
-        [Tooltip("Spare bytes added to the temp bank beyond what the map needs. Temp is script scratch and is never saved, so leave headroom here rather than in Global")]
+        [Tooltip("Spare bytes added to each script's temp memory beyond what the map needs. Temp is script scratch and is never saved, so leave headroom here rather than in Persistent")]
         private int m_AdditionalTempBytes = 64;
 
-        int IMemoryServiceArgs.GlobalBytes
+        int IMemoryServiceArgs.PersistentBytes
         {
             get
             {
-                int globalBytes = GetBankBytes(MemoryBank.Global, m_AdditionalGlobalBytes);
+                int persistentBytes = GetBankBytes(MemoryBank.Persistent, m_AdditionalPersistentBytes);
 
-                return globalBytes;
+                return persistentBytes;
             }
         }
 
@@ -49,7 +49,7 @@ namespace RPGFramework.Core.Memory
             }
         }
 
-        int IMemoryServiceArgs.TempBytes
+        int ITempMemoryArgs.TempBytes
         {
             get
             {

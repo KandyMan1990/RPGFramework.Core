@@ -17,7 +17,7 @@ namespace RPGFramework.Core.Memory
         private string m_Name;
 
         [SerializeField]
-        [Tooltip("Which bank this variable lives in. Global is saved, Session is not")]
+        [Tooltip("Which bank this variable lives in. Persistent is saved, Session is not")]
         private MemoryBank m_Bank;
 
         [SerializeField]
