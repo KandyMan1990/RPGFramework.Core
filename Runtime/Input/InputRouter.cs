@@ -14,33 +14,30 @@ namespace RPGFramework.Core.Input
 
     internal sealed class InputRouter : IInputRouter
     {
-        private readonly Stack<IInputContext> m_Stack;
+        private readonly List<IInputContext> m_Stack;
 
         public InputRouter()
         {
-            m_Stack = new Stack<IInputContext>();
+            m_Stack = new List<IInputContext>();
         }
 
         void IInputRouter.Push(IInputContext context)
         {
-            m_Stack.Push(context);
+            m_Stack.Add(context);
         }
 
         IInputContext IInputRouter.Pop(IInputContext context)
         {
-            if (m_Stack.Count > 0 && m_Stack.Peek() == context)
+            int index = m_Stack.LastIndexOf(context);
+
+            if (index >= 0)
             {
-                m_Stack.Pop();
-
-                if (m_Stack.Count == 0)
-                {
-                    return null;
-                }
-
-                return m_Stack.Peek();
+                m_Stack.RemoveAt(index);
             }
 
-            return null;
+            IInputContext top = m_Stack.Count == 0 ? null : m_Stack[^1];
+
+            return top;
         }
 
         void IInputRouter.Clear()
@@ -50,9 +47,9 @@ namespace RPGFramework.Core.Input
 
         void IInputRouter.Route(ControlSlot slot)
         {
-            foreach (IInputContext context in m_Stack)
+            for (int i = m_Stack.Count - 1; i >= 0; i--)
             {
-                if (context.Handle(slot))
+                if (m_Stack[i].Handle(slot))
                 {
                     break;
                 }
@@ -61,12 +58,13 @@ namespace RPGFramework.Core.Input
 
         void IInputRouter.RouteMovement(Vector2 move)
         {
-            if (m_Stack.Count == 0)
+            for (int i = m_Stack.Count - 1; i >= 0; i--)
             {
-                return;
+                if (m_Stack[i].HandleMove(move))
+                {
+                    break;
+                }
             }
-
-            m_Stack.Peek().HandleMove(move);
         }
     }
 }

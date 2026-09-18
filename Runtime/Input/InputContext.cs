@@ -19,6 +19,6 @@ namespace RPGFramework.Core.Input
     public interface IInputContext
     {
         bool Handle(ControlSlot slot);
-        void HandleMove(Vector2 move);
+        bool HandleMove(Vector2 move);
     }
 }

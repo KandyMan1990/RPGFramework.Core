@@ -19,3 +19,15 @@
     text-shadow: 4px 3px 0 rgba(0, 0, 0, 0.27);
     -unity-text-align: middle-left;
 }
+
+.dialogue-window {
+    background-color: rgb(68, 68, 68);
+}
+
+.dialogue-window--thought {
+    background-color: rgba(68, 68, 68, 0.55);
+}
+
+.dialogue-window--transparent {
+    background-color: rgba(0, 0, 0, 0);
+}

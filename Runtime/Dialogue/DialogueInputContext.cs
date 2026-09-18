@@ -4,36 +4,55 @@ using UnityEngine;
 
 namespace RPGFramework.Core.Dialogue
 {
-    public class DialogueInputContext : IInputContext
+    public sealed class DialogueInputContext : IInputContext
     {
-        private TaskCompletionSource<bool> m_OnAdvance;
+        private TaskCompletionSource<bool> m_NextConfirm = NewConfirm();
+        private int                        m_Blockers;
+
+        private bool IsBlocking => m_Blockers > 0;
 
         bool IInputContext.Handle(ControlSlot slot)
         {
-            switch (slot)
+            if (slot == ControlSlot.Primary)
             {
-                case ControlSlot.Primary:
-                    m_OnAdvance.TrySetResult(true);
-                    return true;
+                TaskCompletionSource<bool> confirm = m_NextConfirm;
+
+                m_NextConfirm = NewConfirm();
+                confirm.TrySetResult(true);
+
+                return true;
             }
 
-            return false;
+            return IsBlocking;
         }
 
-        void IInputContext.HandleMove(Vector2 move)
+        bool IInputContext.HandleMove(Vector2 move)
         {
-            // noop
+            return IsBlocking;
         }
 
         public Task WaitForConfirmAsync()
         {
-            return m_OnAdvance.Task;
+            Task next = m_NextConfirm.Task;
+
+            return next;
         }
 
-        public void Reset()
+        public void BlockOtherInput()
         {
-            m_OnAdvance?.TrySetCanceled();
-            m_OnAdvance = new TaskCompletionSource<bool>();
+            m_Blockers++;
+        }
+
+        public void UnblockOtherInput()
+        {
+            m_Blockers--;
+        }
+
+        private static TaskCompletionSource<bool> NewConfirm()
+        {
+            TaskCompletionSource<bool> confirm = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            return confirm;
         }
     }
 }

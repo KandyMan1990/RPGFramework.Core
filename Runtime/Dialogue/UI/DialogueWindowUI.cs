@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGFramework.Core.Audio;
 using RPGFramework.Core.Input;
 using RPGFramework.Core.UI;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,18 +14,26 @@ namespace RPGFramework.Core.Dialogue.UI
     {
         private const string TEXT = "Text";
 
+        private const string STYLE_CLASS_PREFIX = "dialogue-window--";
+
         private readonly IDialogueWindowUiProvider m_DialogueWindowUiProvider;
         private readonly IAudioIntentPlayer        m_AudioIntentPlayer;
         private readonly float                     m_TextSpeed;
         private readonly float                     m_WindowSpeed;
+        private readonly DialogueTextStyles        m_TextStyles;
 
-        private RectInt       m_Rect;
-        private bool          m_SkipRequested;
-        private Label         m_Text;
-        private VisualElement m_UiInstance;
-        private RPGUIButton[] m_Choices;
-        private byte          m_SelectedIndex;
-        private float         m_CurrentTextLength;
+        private RectInt                     m_Rect;
+        private bool                        m_SkipRequested;
+        private Label                       m_Text;
+        private DialogueTextView            m_TextView;
+        private VisualElement               m_UiInstance;
+        private RPGUIButton[]               m_Choices;
+        private DialogueTextView[]          m_ChoiceViews;
+        private string[]                    m_ChoiceTexts;
+        private byte                        m_SelectedIndex;
+        private IReadOnlyList<int>          m_MessageVariables;
+        private DialogueWindowStyle         m_Style;
+        private IVisualElementScheduledItem m_Ticker;
 
         public DialogueWindowUI(IDialogueWindowUiProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
         {
@@ -34,7 +41,10 @@ namespace RPGFramework.Core.Dialogue.UI
             m_AudioIntentPlayer        = audioIntentPlayer;
             m_TextSpeed                = uiProvider.GetTextSpeed;
             m_WindowSpeed              = uiProvider.GetWindowSpeed;
+            m_TextStyles               = uiProvider.TextStyles;
             m_Choices                  = Array.Empty<RPGUIButton>();
+            m_ChoiceViews              = Array.Empty<DialogueTextView>();
+            m_ChoiceTexts              = Array.Empty<string>();
         }
 
         async Task IDialogueWindowUI.AnimateWindowClosedAsync()
@@ -45,11 +55,12 @@ namespace RPGFramework.Core.Dialogue.UI
                 m_Choices[i].UnregisterCallback<NavigationSubmitEvent, byte>(OnChoiceChosenBtnSubmitted);
                 m_Choices[i].UnregisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate);
 
+                m_ChoiceViews[i].Clear();
                 m_Choices[i].RemoveFromHierarchy();
                 m_Choices[i] = null;
             }
 
-            m_Text.text = string.Empty;
+            m_TextView.Clear();
 
             float targetX  = m_Rect.x + (m_Rect.width  / 2f);
             float targetY  = m_Rect.y + (m_Rect.height / 2f);
@@ -106,6 +117,7 @@ namespace RPGFramework.Core.Dialogue.UI
 
         void IDialogueWindowUI.Destroy()
         {
+            m_Ticker.Pause();
             m_UiInstance.RemoveFromHierarchy();
             m_UiInstance = null;
         }
@@ -128,18 +140,26 @@ namespace RPGFramework.Core.Dialogue.UI
 
             m_Text      = m_UiInstance.Q<Label>(TEXT);
             m_Text.text = string.Empty;
+            m_TextView  = new DialogueTextView(m_Text);
+
+            ApplyStyle();
+
+            // One tick for the window drives the typing and keeps blinking text flashing while a page waits.
+            m_Ticker = m_UiInstance.schedule.Execute(Tick).Every(0);
         }
 
         async Task IDialogueWindowUI.RunAsync()
         {
-            await RunAsync(m_Text);
+            await TypeAsync(m_TextView);
 
             if (m_Choices.Length > 0)
             {
                 for (int i = 0; i < m_Choices.Length; i++)
                 {
+                    // Each answer is typed after the one before it, so it is shown only when its turn comes.
                     m_Choices[i].SetEnabledAndVisible(true);
-                    await RunAsync(m_Choices[i].Label);
+                    m_ChoiceViews[i].Show(string.Empty, Parse(m_ChoiceTexts[i]));
+                    await TypeAsync(m_ChoiceViews[i]);
                 }
 
                 m_Choices[0].Focus();
@@ -151,17 +171,19 @@ namespace RPGFramework.Core.Dialogue.UI
         {
             int length = choices.Length;
 
-            m_Choices = new RPGUIButton[length];
+            m_Choices     = new RPGUIButton[length];
+            m_ChoiceViews = new DialogueTextView[length];
+            m_ChoiceTexts = choices.ToArray();
 
             for (byte i = 0; i < length; i++)
             {
                 RPGUIButton button = new RPGUIButton
                                      {
-                                             text = choices[i],
-                                             style =
-                                             {
-                                                     fontSize = m_Text.resolvedStyle.fontSize
-                                             }
+                                         text = string.Empty,
+                                         style =
+                                         {
+                                             fontSize = m_Text.resolvedStyle.fontSize
+                                         }
                                      };
 
                 button.RegisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate, i);
@@ -170,8 +192,14 @@ namespace RPGFramework.Core.Dialogue.UI
                 button.SetEnabledAndVisible(false);
 
                 m_UiInstance.Add(button);
-                m_Choices[i] = button;
+                m_Choices[i]     = button;
+                m_ChoiceViews[i] = new DialogueTextView(button.Label);
             }
+        }
+
+        void IDialogueWindowUI.SetMessageVariables(IReadOnlyList<int> variables)
+        {
+            m_MessageVariables = variables;
         }
 
         void IDialogueWindowUI.SetRect(RectInt rect)
@@ -179,24 +207,64 @@ namespace RPGFramework.Core.Dialogue.UI
             m_Rect = rect;
         }
 
+        void IDialogueWindowUI.SetStyle(DialogueWindowStyle style)
+        {
+            m_Style = style;
+
+            if (m_UiInstance != null)
+            {
+                ApplyStyle();
+            }
+        }
+
         void IDialogueWindowUI.SetText(DialoguePage dialoguePage)
         {
-            int           capacity = dialoguePage.SpeakerId.Length + dialoguePage.Text.Length + 1;
-            StringBuilder sb       = new StringBuilder(capacity);
+            // An explicit '\n' rather than a platform line ending, so the character positions the styling is
+            // keyed to are the same everywhere.
+            string speaker = string.IsNullOrWhiteSpace(dialoguePage.SpeakerId) ? string.Empty : dialoguePage.SpeakerId + "\n";
 
-            if (!string.IsNullOrWhiteSpace(dialoguePage.SpeakerId))
-            {
-                sb.AppendLine(dialoguePage.SpeakerId);
-            }
-            sb.AppendLine(dialoguePage.Text);
-
-            m_Text.text     = sb.ToString();
+            m_TextView.Show(speaker, Parse(dialoguePage.Text));
             m_SkipRequested = false;
         }
 
         void IDialogueWindowUI.SkipToAnimationEnd()
         {
             m_SkipRequested = true;
+        }
+
+        private DialogueText Parse(string text)
+        {
+            // Markup mistakes are reported when the text arrives from its sheet, so they are not reported again here.
+            DialogueText parsed = DialogueMarkup.Parse(text, m_MessageVariables, m_TextStyles, null);
+
+            return parsed;
+        }
+
+        private void ApplyStyle()
+        {
+            foreach (DialogueWindowStyle style in (DialogueWindowStyle[])Enum.GetValues(typeof(DialogueWindowStyle)))
+            {
+                m_UiInstance.EnableInClassList(StyleClass(style), style == m_Style);
+            }
+        }
+
+        private static string StyleClass(DialogueWindowStyle style)
+        {
+            string styleClass = STYLE_CLASS_PREFIX + style.ToString().ToLowerInvariant();
+
+            return styleClass;
+        }
+
+        private void Tick(TimerState timerState)
+        {
+            float deltaTime = timerState.deltaTime / 1000f;
+
+            m_TextView.Tick(deltaTime, m_TextSpeed);
+
+            foreach (DialogueTextView choiceView in m_ChoiceViews)
+            {
+                choiceView.Tick(deltaTime, m_TextSpeed);
+            }
         }
 
         private void OnChoiceChosenBtnNavigate(NavigationMoveEvent evt, byte index)
@@ -227,50 +295,17 @@ namespace RPGFramework.Core.Dialogue.UI
             m_AudioIntentPlayer.Play(AudioIntent.Confirm, AudioContext.Field);
         }
 
-        private async Task RunAsync(Label label)
+        private async Task TypeAsync(DialogueTextView view)
         {
-            int textLength = label.text.Length;
-            m_CurrentTextLength = 0;
-
-            label.PostProcessTextVertices += PostProcessTextVertices;
-
-            while (m_CurrentTextLength <= textLength)
+            while (view.IsTyping)
             {
                 if (m_SkipRequested)
                 {
-                    m_CurrentTextLength = textLength;
+                    view.SkipToEnd();
+                    break;
                 }
 
-                m_CurrentTextLength += Time.deltaTime * m_TextSpeed;
-                label.MarkDirtyRepaint();
                 await Awaitable.NextFrameAsync();
-            }
-
-            label.PostProcessTextVertices -= PostProcessTextVertices;
-        }
-
-        private void PostProcessTextVertices(TextElement.GlyphsEnumerable glyphs)
-        {
-            int visibleGlyphs = (int)math.floor(m_CurrentTextLength);
-
-            int index = 0;
-            foreach (TextElement.Glyph glyph in glyphs)
-            {
-                if (index >= visibleGlyphs)
-                {
-                    NativeSlice<Vertex> vertices = glyph.vertices;
-
-                    for (int i = 0; i < vertices.Length; i++)
-                    {
-                        Vertex vertex = vertices[i];
-                        vertex.tint.a = 0;
-                        vertices[i]   = vertex;
-                    }
-
-                    glyph.SetTints(Color.clear, Color.clear);
-                }
-
-                index++;
             }
         }
     }

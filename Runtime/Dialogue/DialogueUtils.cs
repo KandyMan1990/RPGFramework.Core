@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using RPGFramework.Core.Dialogue.UI;
+using UnityEngine;
 
 namespace RPGFramework.Core.Dialogue
 {
@@ -10,31 +13,12 @@ namespace RPGFramework.Core.Dialogue
 
         internal static DialogueBlock ParseIntoPages(string dialogue)
         {
-            ReadOnlySpan<char> span   = dialogue.AsSpan();
-            ReadOnlySpan<char> marker = NEW_PAGE_MARKER.AsSpan();
+            List<string>  pages = SplitPages(dialogue);
+            DialogueBlock block = new DialogueBlock(pages.Count);
 
-            int pageCount = 1;
-            int idx       = 0;
-
-            while ((idx = span.IndexOf(marker)) >= 0)
+            for (int pageIndex = 0; pageIndex < pages.Count; pageIndex++)
             {
-                pageCount++;
-                span = span[(idx + marker.Length)..];
-            }
-
-            DialogueBlock block = new DialogueBlock(pageCount);
-
-            span = dialogue.AsSpan();
-            int pageIndex = 0;
-
-            while (true)
-            {
-                int splitIndex = span.IndexOf(marker);
-
-                ReadOnlySpan<char> pageSpan = splitIndex >= 0 ? span[..splitIndex] : span;
-
-                pageSpan = Trim(pageSpan);
-
+                ReadOnlySpan<char> pageSpan    = Trim(pages[pageIndex].AsSpan());
                 ReadOnlySpan<char> speakerSpan = default;
 
                 if (!pageSpan.IsEmpty && pageSpan[0] == '[')
@@ -50,38 +34,88 @@ namespace RPGFramework.Core.Dialogue
                 string speaker = speakerSpan.IsEmpty ? string.Empty : speakerSpan.ToString();
                 string text    = pageSpan.ToString();
 
-                block.AddPage(pageIndex++, new DialoguePage(speaker, text));
-
-                if (splitIndex < 0)
-                {
-                    break;
-                }
-
-                span = span[(splitIndex + marker.Length)..];
+                block.AddPage(pageIndex, new DialoguePage(speaker, text));
             }
 
             return block;
         }
 
-        internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext)
+        internal static List<string> SplitPages(string dialogue)
+        {
+            List<string> pages = new List<string>();
+            int          start = 0;
+
+            while (true)
+            {
+                int marker = dialogue.IndexOf(NEW_PAGE_MARKER, start, StringComparison.Ordinal);
+
+                if (marker < 0)
+                {
+                    pages.Add(dialogue.Substring(start));
+                    return pages;
+                }
+
+                pages.Add(dialogue.Substring(start, marker - start));
+                start = marker + NEW_PAGE_MARKER.Length;
+            }
+        }
+
+        internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
         {
             uiInstance.SetText(dialoguePage);
 
-            inputContext.Reset();
-
             Task animationTask = uiInstance.RunAsync();
             Task confirmTask   = inputContext.WaitForConfirmAsync();
+            Task closedTask    = WhenClosed(close);
 
-            Task completed = await Task.WhenAny(animationTask, confirmTask);
+            Task completed = await Task.WhenAny(animationTask, confirmTask, closedTask);
 
-            if (completed == confirmTask)
+            if (completed != animationTask)
             {
                 uiInstance.SkipToAnimationEnd();
                 await animationTask;
             }
 
-            inputContext.Reset();
-            await inputContext.WaitForConfirmAsync();
+            if (completed == closedTask)
+            {
+                return;
+            }
+
+            await Task.WhenAny(inputContext.WaitForConfirmAsync(), closedTask);
+        }
+
+        internal static async Task RunUnansweredPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, CancellationToken close)
+        {
+            uiInstance.SetText(dialoguePage);
+
+            Task animationTask = uiInstance.RunAsync();
+            Task closedTask    = WhenClosed(close);
+
+            if (await Task.WhenAny(animationTask, closedTask) == closedTask)
+            {
+                uiInstance.SkipToAnimationEnd();
+            }
+
+            await animationTask;
+            await closedTask;
+        }
+
+        internal static string JoinPages(string dialogue)
+        {
+            string joined = dialogue.Replace(NEW_PAGE_MARKER, "\n");
+
+            return joined;
+        }
+
+        private static Task WhenClosed(CancellationToken close)
+        {
+            TaskCompletionSource<bool> closed = new TaskCompletionSource<bool>();
+
+            close.Register(() => closed.TrySetResult(true));
+
+            Task task = closed.Task;
+
+            return task;
         }
 
         private static ReadOnlySpan<char> Trim(ReadOnlySpan<char> span)

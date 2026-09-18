@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using RPGFramework.Core.Dialogue.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -7,7 +9,7 @@ namespace RPGFramework.Core.Dialogue
 {
     public interface IDialogueFlow
     {
-        Task RunAsync(IDialogueWindowUI uiInstance, string[] dialogues, DialogueInputContext inputContext);
+        Task RunAsync(IDialogueWindowUI uiInstance, string[] dialogues, DialogueInputContext inputContext, CancellationToken close);
     }
 
     public interface IDialogueWindow
@@ -16,8 +18,10 @@ namespace RPGFramework.Core.Dialogue
         Task AnimateWindowOpenAsync();
         void Destroy();
         byte GetSelectedChoice();
-        void Init(VisualElement     container);
-        Task RunAsync(IDialogueFlow dialogueFlow, string[] dialogues, DialogueInputContext inputContext);
-        void SetRect(RectInt        rect);
+        void Init(VisualElement                     container);
+        Task RunAsync(IDialogueFlow                 dialogueFlow, string[] dialogues, DialogueInputContext inputContext, CancellationToken close);
+        void SetMessageVariables(IReadOnlyList<int> variables);
+        void SetRect(RectInt                        rect);
+        void SetStyle(DialogueWindowStyle           style);
     }
 }

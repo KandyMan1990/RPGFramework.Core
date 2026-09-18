@@ -10,6 +10,9 @@ namespace RPGFramework.Core.Dialogue.UI
         [SerializeField] private float           m_GetWindowSpeed;
         [SerializeField] private VisualTreeAsset m_DialogueWindow;
 
+        [Tooltip("The named styles dialogue can use, such as {Location}secret cave{/Location}")]
+        [SerializeField] private DialogueTextStyles m_TextStyles;
+
         VisualTreeAsset IDialogueWindowUiProvider.Get<T>()
         {
             return m_DialogueWindow;
@@ -36,5 +39,7 @@ namespace RPGFramework.Core.Dialogue.UI
 
         float IDialogueWindowUiProvider.GetTextSpeed   => m_GetTextSpeed;
         float IDialogueWindowUiProvider.GetWindowSpeed => m_GetWindowSpeed;
+
+        DialogueTextStyles IDialogueWindowUiProvider.TextStyles => m_TextStyles;
     }
 }

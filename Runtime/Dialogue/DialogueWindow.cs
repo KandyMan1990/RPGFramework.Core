@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using RPGFramework.Core.Dialogue.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -39,14 +41,24 @@ namespace RPGFramework.Core.Dialogue
             m_UiInstance.Init(container);
         }
 
-        Task IDialogueWindow.RunAsync(IDialogueFlow dialogueFlow, string[] dialogues, DialogueInputContext inputContext)
+        Task IDialogueWindow.RunAsync(IDialogueFlow dialogueFlow, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
-            return dialogueFlow.RunAsync(m_UiInstance, dialogues, inputContext);
+            return dialogueFlow.RunAsync(m_UiInstance, dialogues, inputContext, close);
+        }
+
+        void IDialogueWindow.SetMessageVariables(IReadOnlyList<int> variables)
+        {
+            m_UiInstance.SetMessageVariables(variables);
         }
 
         void IDialogueWindow.SetRect(RectInt rect)
         {
             m_UiInstance.SetRect(rect);
+        }
+
+        void IDialogueWindow.SetStyle(DialogueWindowStyle style)
+        {
+            m_UiInstance.SetStyle(style);
         }
     }
 }
