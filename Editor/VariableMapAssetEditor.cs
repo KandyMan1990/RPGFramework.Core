@@ -14,7 +14,7 @@ namespace RPGFramework.Core.Editor
     /// ends up with variables silently sharing bytes.
     /// </summary>
     [CustomEditor(typeof(VariableMapAsset))]
-    public sealed class VariableMapAssetEditor : UnityEditor.Editor
+    internal sealed class VariableMapAssetEditor : UnityEditor.Editor
     {
         private VariableMapAsset m_Map;
 
@@ -29,6 +29,8 @@ namespace RPGFramework.Core.Editor
         private Button    m_AllocateButton;
 
         private VisualElement m_ValidationResults;
+        private HelpBox       m_MissingRequired;
+        private Button        m_AddMissingButton;
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -37,6 +39,7 @@ namespace RPGFramework.Core.Editor
             VisualElement root = new VisualElement();
 
             root.Add(BuildBankSummary());
+            root.Add(BuildRequired());
             root.Add(BuildDeclareNew());
             root.Add(BuildValidation());
             root.Add(BuildDeclaredVariables());
@@ -58,6 +61,20 @@ namespace RPGFramework.Core.Editor
 
             section.Add(m_PersistentSizeLabel);
             section.Add(m_SessionSizeLabel);
+
+            return section;
+        }
+
+        private VisualElement BuildRequired()
+        {
+            VisualElement section = MakeSection("Required by the framework");
+
+            m_MissingRequired  = new HelpBox(string.Empty, HelpBoxMessageType.Warning);
+            m_AddMissingButton = new Button(OnAddMissingClicked) { text = "Add Missing Required Variables" };
+
+            section.Add(new HelpBox("A new game starts every variable at its default. The framework reads some variables itself — the module to start in, and where in it — so every map must declare them; export refuses a map that does not.", HelpBoxMessageType.Info));
+            section.Add(m_MissingRequired);
+            section.Add(m_AddMissingButton);
 
             return section;
         }
@@ -142,6 +159,8 @@ namespace RPGFramework.Core.Editor
                 return;
             }
 
+            RefreshRequired();
+
             m_PersistentSizeLabel.text = $"Persistent (saved):  {m_Map.GetRequiredBytes(MemoryBank.Persistent)} bytes";
             m_SessionSizeLabel.text    = $"Session (not saved):  {m_Map.GetRequiredBytes(MemoryBank.Session)} bytes";
 
@@ -190,7 +209,8 @@ namespace RPGFramework.Core.Editor
             m_Map.Allocate(m_NameField.value,
                            (MemoryBank)m_BankField.value,
                            (VariableWidth)m_WidthField.value,
-                           m_DescriptionField.value);
+                           m_DescriptionField.value,
+                           0);
 
             EditorUtility.SetDirty(m_Map);
             AssetDatabase.SaveAssets();
@@ -201,6 +221,38 @@ namespace RPGFramework.Core.Editor
             m_DescriptionField.value = string.Empty;
 
             m_ValidationResults.Clear();
+
+            RefreshDerivedLabels();
+        }
+
+        private void RefreshRequired()
+        {
+            List<string> missing = new List<string>();
+
+            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            {
+                if (!m_Map.TryGetVariable(required.Name, out VariableDefinition _))
+                {
+                    missing.Add(required.Name);
+                }
+            }
+
+            m_MissingRequired.text          = $"Missing: {string.Join(", ", missing)}";
+            m_MissingRequired.style.display = missing.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+            m_AddMissingButton.SetEnabled(missing.Count > 0);
+        }
+
+        private void OnAddMissingClicked()
+        {
+            Undo.RecordObject(m_Map, "Add missing required variables");
+
+            m_Map.AddMissingRequiredVariables();
+
+            EditorUtility.SetDirty(m_Map);
+            AssetDatabase.SaveAssets();
+
+            serializedObject.Update();
 
             RefreshDerivedLabels();
         }

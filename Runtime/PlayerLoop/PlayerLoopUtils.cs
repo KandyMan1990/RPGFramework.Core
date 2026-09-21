@@ -5,7 +5,7 @@ using UnityEngine.LowLevel;
 
 namespace RPGFramework.Core.PlayerLoop
 {
-    public static class PlayerLoopUtils
+    internal static class PlayerLoopUtils
     {
         public static bool InsertSystem<T>(ref PlayerLoopSystem loop, in PlayerLoopSystem systemToInsert, int index)
         {

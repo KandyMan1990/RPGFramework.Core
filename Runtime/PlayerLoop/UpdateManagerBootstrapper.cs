@@ -4,7 +4,7 @@ using UnityEngine.PlayerLoop;
 
 namespace RPGFramework.Core.PlayerLoop
 {
-    public static partial class UpdateManagerBootstrapper
+    internal static partial class UpdateManagerBootstrapper
     {
         private static PlayerLoopSystem m_UpdatePlayerLoopSystem;
         private static PlayerLoopSystem m_FixedUpdatePlayerLoopSystem;

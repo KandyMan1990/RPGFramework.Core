@@ -1,22 +1,21 @@
 ﻿namespace RPGFramework.Core.SaveData
 {
     /// <summary>
-    /// The game's save policy. The framework reads and writes the file; what a save <i>means</i> — which
-    /// sections exist, and where a loaded one resumes — belongs to the game.
+    /// The game's own save sections. Where a game begins and resumes is not the game's to write: every
+    /// variable starts at its default when a save begins, and the module and field a game is in are
+    /// variables — see <see cref="RPGFramework.Core.Memory.CoreVariables" />.
     /// </summary>
     public interface ISaveFactory
     {
         /// <summary>
-        /// Populate a brand new save: every section the game expects, at its starting values, and the
-        /// module and arguments a new game begins with.
+        /// Populate a brand new save with every section the game expects, at its starting values. Variables
+        /// already hold their defaults.
         /// </summary>
         void CreateDefaultSave(ISaveDataService saveDataService);
 
         /// <summary>
-        /// Called once an existing save has been read, before the module change. The game reads back
-        /// whatever it needs from the loaded sections and from
-        /// <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Persistent" />, then sets the module to resume
-        /// into and its arguments.
+        /// Called once an existing save has been read, before the module change, for the game to read back
+        /// anything it keeps in its own sections. Persistent memory has already been restored.
         /// </summary>
         void OnSaveLoaded(ISaveDataService saveDataService);
     }

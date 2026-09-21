@@ -122,6 +122,7 @@ namespace RPGFramework.Core
 
             container.BindSingleton<IChangeModuleStore, ChangeModuleStore>();
             container.BindSingleton<IResumeModuleStore, ResumeModuleStore>();
+            container.BindSingleton<ICurrentModuleStore, CurrentModuleStore>();
         }
     }
 }

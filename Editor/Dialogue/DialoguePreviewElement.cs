@@ -10,7 +10,7 @@ namespace RPGFramework.Core.Editor.Dialogue
     /// A page of dialogue drawn by the same <see cref="DialogueTextView" /> the game uses, so what the editor shows
     /// is what a player sees: the colours, the flashing and the pauses in the typing.
     /// </summary>
-    public sealed class DialoguePreviewElement : VisualElement
+    internal sealed class DialoguePreviewElement : VisualElement
     {
         private readonly DialogueTextView m_View;
 

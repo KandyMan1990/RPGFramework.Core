@@ -12,7 +12,7 @@ namespace RPGFramework.Core.Editor.Dialogue
     /// with any markup mistakes listed. The same parser and renderer the game uses, so nothing here can disagree
     /// with play.
     /// </summary>
-    public sealed class DialoguePreviewWindow : EditorWindow
+    internal sealed class DialoguePreviewWindow : EditorWindow
     {
         [SerializeField] private string             m_Source    = "You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.";
         [SerializeField] private int[]              m_Variables = new int[DialogueMarkup.MESSAGE_VARIABLE_COUNT];

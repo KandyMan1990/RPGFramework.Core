@@ -17,7 +17,7 @@ namespace RPGFramework.Core.Memory
     /// existing save.
     /// </summary>
     [CreateAssetMenu(menuName = "RPG Framework/Core/Variable Map", fileName = "VariableMap")]
-    public sealed class VariableMapAsset : ScriptableObject
+    public sealed class VariableMapAsset : ScriptableObject, IVariableMap
     {
         [SerializeField]
         private List<VariableDefinition> m_Variables = new List<VariableDefinition>();
@@ -93,14 +93,47 @@ namespace RPGFramework.Core.Memory
 
 #if UNITY_EDITOR
         /// <summary>
+        /// A new map starts holding the variables the framework requires, so an author fills in their defaults
+        /// rather than having to discover their names.
+        /// </summary>
+        private void Reset()
+        {
+            m_Variables.Clear();
+
+            AddMissingRequiredVariables();
+        }
+
+        /// <summary>
+        /// Authoring only. Declares every required variable the map does not have yet, with a default of zero,
+        /// and returns how many were added.
+        /// </summary>
+        public int AddMissingRequiredVariables()
+        {
+            int added = 0;
+
+            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            {
+                if (TryGetVariable(required.Name, out VariableDefinition _))
+                {
+                    continue;
+                }
+
+                Allocate(required.Name, required.Bank, required.Width, required.Description, 0);
+                added++;
+            }
+
+            return added;
+        }
+
+        /// <summary>
         /// Authoring only. Appends a variable at the next free naturally aligned offset in its bank and
         /// returns it. Never reuses a hole left by a deleted variable — see the note on this class.
         /// </summary>
-        public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, string description)
+        public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, string description, ulong defaultValue)
         {
             int offset = GetNextOffset(bank, width);
 
-            VariableDefinition definition = new VariableDefinition(name, bank, width, offset, description);
+            VariableDefinition definition = new VariableDefinition(name, bank, width, offset, description, defaultValue);
 
             m_Variables.Add(definition);
             m_ByName = null;
@@ -125,7 +158,9 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Authoring only. Returns a human-readable problem for every duplicate name, overlapping range,
-        /// negative offset or missing name in the map. An empty list means the map is well formed.
+        /// negative offset or missing name in the map, for a required variable it lacks or declares
+        /// differently, and for a start module default no module answers to. An empty list means the map is
+        /// well formed.
         /// </summary>
         public List<string> Validate()
         {
@@ -163,7 +198,43 @@ namespace RPGFramework.Core.Memory
                 }
             }
 
+            ValidateRequiredVariables(problems);
+
             return problems;
+        }
+
+        private void ValidateRequiredVariables(List<string> problems)
+        {
+            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            {
+                if (!TryGetVariable(required.Name, out VariableDefinition variable))
+                {
+                    problems.Add($"'{required.Name}' is required by the framework and is not declared — use Add Missing Required Variables. {required.Description}");
+                    continue;
+                }
+
+                if (variable.Bank != required.Bank || variable.Width != required.Width)
+                {
+                    problems.Add($"'{required.Name}' is declared as {variable.Bank} {variable.Width}, but the framework reads it as {required.Bank} {required.Width}");
+                }
+            }
+
+            if (!TryGetVariable(CoreVariables.CURRENT_MODULE, out VariableDefinition currentModule))
+            {
+                return;
+            }
+
+            byte startModule = (byte)currentModule.DefaultValue;
+
+            foreach (IStartModule module in RequiredVariables.FindStartModules())
+            {
+                if (module.ModuleId == startModule)
+                {
+                    return;
+                }
+            }
+
+            problems.Add($"'{CoreVariables.CURRENT_MODULE}' defaults to module [{startModule}], which is not a module a game can begin in. Choose one in the Variable Map inspector");
         }
 #endif
     }

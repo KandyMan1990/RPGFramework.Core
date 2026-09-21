@@ -34,7 +34,7 @@ namespace RPGFramework.Core.Dialogue.UI
             m_Label.enableRichText = false;
         }
 
-        public bool IsTyping => m_Text != null && m_Revealed < m_Length;
+        internal bool IsTyping => m_Text != null && m_Revealed < m_Length;
 
         /// <summary>
         /// Show a page, typed from the start. <paramref name="prefix" /> is shown in full and unstyled before it,

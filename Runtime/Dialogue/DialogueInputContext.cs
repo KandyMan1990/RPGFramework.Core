@@ -31,7 +31,7 @@ namespace RPGFramework.Core.Dialogue
             return IsBlocking;
         }
 
-        public Task WaitForConfirmAsync()
+        internal Task WaitForConfirmAsync()
         {
             Task next = m_NextConfirm.Task;
 

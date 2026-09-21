@@ -13,7 +13,7 @@ namespace RPGFramework.Core.Dialogue
         public  IReadOnlyList<DialoguePause>    Pauses { get; }
         private IReadOnlyList<DialogueTextSpan> Spans  { get; }
 
-        public DialogueText(string text, IReadOnlyList<DialoguePause> pauses, IReadOnlyList<DialogueTextSpan> spans)
+        internal DialogueText(string text, IReadOnlyList<DialoguePause> pauses, IReadOnlyList<DialogueTextSpan> spans)
         {
             Text   = text;
             Pauses = pauses;
@@ -60,7 +60,7 @@ namespace RPGFramework.Core.Dialogue
     /// <summary>
     /// Characters <see cref="Start" /> up to, but not including, <see cref="End" />.
     /// </summary>
-    public readonly struct DialogueTextSpan
+    internal readonly struct DialogueTextSpan
     {
         public readonly int    Start;
         public readonly int    End;

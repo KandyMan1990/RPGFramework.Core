@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using RPGFramework.Core.Data;
 using RPGFramework.Core.Memory;
+using RPGFramework.Core.SharedTypes;
 using RPGFramework.Hashing;
 using UnityEngine;
 
@@ -53,14 +54,20 @@ namespace RPGFramework.Core.SaveData
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IMemoryBankAccess              m_MemoryBankAccess;
+        private readonly IMemoryService                 m_MemoryService;
+        private readonly IVariableMap                   m_VariableMap;
         private readonly ulong                          m_PersistentMemorySectionId;
 
         private string m_CurrentPath;
 
-        public SaveDataService(IMemoryBankAccess memoryBankAccess)
+        public SaveDataService(IMemoryBankAccess memoryBankAccess,
+                               IMemoryService    memoryService,
+                               IVariableMap      variableMap)
         {
             m_Sections                  = new Dictionary<ulong, SectionBlob>();
             m_MemoryBankAccess          = memoryBankAccess;
+            m_MemoryService             = memoryService;
+            m_VariableMap               = variableMap;
             m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY);
         }
 
@@ -72,9 +79,12 @@ namespace RPGFramework.Core.SaveData
             if (!File.Exists(m_CurrentPath))
             {
                 // A new save. The banks still hold the previous playthrough's state, so clear them
-                // rather than letting it leak into this one.
+                // rather than letting it leak into this one, then start every variable at its default.
                 m_MemoryBankAccess.ClearPersistent();
                 m_MemoryBankAccess.ClearSession();
+
+                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, 0);
+                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session,    0);
                 return;
             }
 
@@ -107,8 +117,12 @@ namespace RPGFramework.Core.SaveData
             // restart — NPC positions and "have I already heard this line" belong to the playthrough
             // being left, not the one being entered.
             m_MemoryBankAccess.ClearSession();
+            VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session, 0);
 
-            RestorePersistentMemory();
+            int restoredBytes = RestorePersistentMemory();
+
+            // Variables added since this save was written lie past the end of what it holds.
+            VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, restoredBytes);
         }
 
         bool ISaveDataService.HasSaveLoaded()
@@ -311,15 +325,20 @@ namespace RPGFramework.Core.SaveData
         /// Push the loaded persistent memory section back into the bank. A save written before any variables
         /// existed has no such section, in which case the bank is cleared — the same state a new game gets.
         /// </summary>
-        private void RestorePersistentMemory()
+        /// <returns>How many bytes of the bank came from the save; everything after them did not.</returns>
+        private int RestorePersistentMemory()
         {
             if (!m_Sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob persistentMemory))
             {
                 m_MemoryBankAccess.ClearPersistent();
-                return;
+                return 0;
             }
 
             m_MemoryBankAccess.RestorePersistent(persistentMemory.Data);
+
+            int restoredBytes = persistentMemory.Data.Length;
+
+            return restoredBytes;
         }
 
         bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)

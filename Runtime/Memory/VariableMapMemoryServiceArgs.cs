@@ -6,7 +6,8 @@ namespace RPGFramework.Core.Memory
     /// <summary>
     /// Sizes the memory banks from a <see cref="VariableMapAsset" /> rather than from hand-entered numbers,
     /// so the banks are always exactly big enough for what has been declared.<br /><br />
-    /// Bind this as <see cref="IMemoryServiceArgs" /> and <see cref="ITempMemoryArgs" /> in the global installer to keep the authored map and
+    /// Bind this as <see cref="IMemoryServiceArgs" /> and <see cref="ITempMemoryArgs" />, and its
+    /// <see cref="VariableMap" /> as <see cref="IVariableMap" />, in the global installer to keep the authored map and
     /// the runtime allocation in step. Growing the map between releases is safe: a save written by an older
     /// build restores into the larger bank with the new bytes zeroed.
     /// </summary>
@@ -16,6 +17,12 @@ namespace RPGFramework.Core.Memory
         [SerializeField]
         [Tooltip("The map that declares what lives in each bank")]
         private VariableMapAsset m_VariableMap;
+
+        /// <summary>
+        /// The map these banks are sized from, for the game to bind as <see cref="IVariableMap" /> — one
+        /// reference, so the banks and the variables read from them cannot come from different maps.
+        /// </summary>
+        public IVariableMap VariableMap => m_VariableMap;
 
         [SerializeField]
         [Tooltip("Spare bytes added to the persistent bank beyond what the map needs. Persistent is saved, so this bloats every save file — leave at 0 unless something writes persistent memory without declaring it")]

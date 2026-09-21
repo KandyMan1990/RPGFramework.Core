@@ -9,6 +9,6 @@
         /// byte blob. Managed entirely by <see cref="RPGFramework.Core.SaveData.ISaveDataService" /> — a
         /// game neither reads nor writes this section itself, it just reads and writes variables.
         /// </summary>
-        public const string PERSISTENT_MEMORY = "RPGFramework.PersistentMemory";
+        internal const string PERSISTENT_MEMORY = "RPGFramework.PersistentMemory";
     }
 }
