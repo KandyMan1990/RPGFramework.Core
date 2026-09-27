@@ -85,6 +85,7 @@ namespace RPGFramework.Core.SaveData
 
                 VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, 0);
                 VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session,    0);
+                SetLoadedFromSave(false);
                 return;
             }
 
@@ -118,6 +119,7 @@ namespace RPGFramework.Core.SaveData
             // being left, not the one being entered.
             m_MemoryBankAccess.ClearSession();
             VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session, 0);
+            SetLoadedFromSave(true);
 
             int restoredBytes = RestorePersistentMemory();
 
@@ -306,6 +308,13 @@ namespace RPGFramework.Core.SaveData
 
             m_MemoryBankAccess.ClearPersistent();
             m_MemoryBankAccess.ClearSession();
+        }
+
+        private void SetLoadedFromSave(bool loaded)
+        {
+            m_VariableMap.TryGetVariable(CoreVariables.LOADED_FROM_SAVE, out VariableDefinition variable);
+
+            m_MemoryService.WriteBool(MemoryBank.Session, (ushort)variable.Offset, loaded);
         }
 
         /// <summary>
