@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Runtime.InteropServices;
 using RPGFramework.Core.Data;
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.SharedTypes;
@@ -26,31 +25,12 @@ namespace RPGFramework.Core.SaveData
 
     internal sealed class SaveDataService : ISaveDataService
     {
-        private const int TOC_ENTRY_SIZE = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
-
         private const string SAVE_FILE_PREFIX    = "save";
         private const string SAVE_FILE_EXTENSION = ".sav";
         private const int    SAVE_INDEX_DIGITS   = 3;
 
         private static readonly int    SAVE_FILE_NAME_LENGTH    = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS                  + SAVE_FILE_EXTENSION.Length;
         private static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX        + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
-
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        private readonly struct SectionTocEntry
-        {
-            public readonly ulong SectionId;
-            public readonly uint  Version;
-            public readonly int   Offset;
-            public readonly int   Size;
-
-            public SectionTocEntry(ulong sectionId, uint version, int offset, int size)
-            {
-                SectionId = sectionId;
-                Version   = version;
-                Offset    = offset;
-                Size      = size;
-            }
-        }
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IMemoryBankAccess              m_MemoryBankAccess;
@@ -89,30 +69,7 @@ namespace RPGFramework.Core.SaveData
                 return;
             }
 
-            using FileStream   fs     = File.OpenRead(m_CurrentPath);
-            using BinaryReader reader = new BinaryReader(fs);
-
-            int sectionCount = reader.ReadInt32();
-
-            SectionTocEntry[] toc = new SectionTocEntry[sectionCount];
-
-            for (int i = 0; i < sectionCount; i++)
-            {
-                ulong id      = reader.ReadUInt64();
-                uint  version = reader.ReadUInt32();
-                int   offset  = reader.ReadInt32();
-                int   size    = reader.ReadInt32();
-
-                toc[i] = new SectionTocEntry(id, version, offset, size);
-            }
-
-            foreach (SectionTocEntry sectionTocEntry in toc)
-            {
-                fs.Position = sectionTocEntry.Offset;
-                byte[] data = reader.ReadBytes(sectionTocEntry.Size);
-
-                m_Sections[sectionTocEntry.SectionId] = new SectionBlob(sectionTocEntry.Version, data);
-            }
+            SectionFile.Read(m_CurrentPath, m_Sections);
 
             // Session state is what survives a module change but not a restart, and loading a save is a
             // restart — NPC positions and "have I already heard this line" belong to the playthrough
@@ -141,63 +98,19 @@ namespace RPGFramework.Core.SaveData
 
             CapturePersistentMemory();
 
-            using FileStream   fs     = File.Create(m_CurrentPath);
-            using BinaryWriter writer = new BinaryWriter(fs);
-
-            int sectionCount = m_Sections.Count;
-            writer.Write(sectionCount);
-
-            long tocStart = fs.Position;
-
-            fs.Position += TOC_ENTRY_SIZE * sectionCount;
-
-            List<SectionTocEntry> toc = new List<SectionTocEntry>(sectionCount);
-
-            foreach (KeyValuePair<ulong, SectionBlob> kvp in m_Sections)
-            {
-                ulong  id      = kvp.Key;
-                uint   version = kvp.Value.Version;
-                byte[] data    = kvp.Value.Data;
-
-                int offset = (int)fs.Position;
-                writer.Write(data);
-                int size = data.Length;
-
-                toc.Add(new SectionTocEntry(id, version, offset, size));
-            }
-
-            fs.Position = tocStart;
-            foreach (SectionTocEntry entry in toc)
-            {
-                writer.Write(entry.SectionId);
-                writer.Write(entry.Version);
-                writer.Write(entry.Offset);
-                writer.Write(entry.Size);
-            }
+            SectionFile.Write(m_CurrentPath, m_Sections);
         }
 
         bool ISaveDataService.TryGetSection<T>(string sectionId, out SaveSection<T> section)
         {
-            ulong hash = Fnv1a64.Hash(sectionId);
-            if (!m_Sections.TryGetValue(hash, out SectionBlob sectionBlob))
-            {
-                section = default;
-                return false;
-            }
+            bool found = SectionFile.TryGetSection(m_Sections, sectionId, out section);
 
-            T data = MemoryMarshal.Read<T>(sectionBlob.Data);
-            section = new SaveSection<T>(sectionBlob.Version, data);
-            return true;
+            return found;
         }
 
-        unsafe void ISaveDataService.SetSection<T>(string sectionId, SaveSection<T> section)
+        void ISaveDataService.SetSection<T>(string sectionId, SaveSection<T> section)
         {
-            ulong hash = Fnv1a64.Hash(sectionId);
-
-            byte[] bytes = new byte[sizeof(T)];
-            MemoryMarshal.Write(bytes, ref section.Data);
-
-            m_Sections[hash] = new SectionBlob(section.Version, bytes);
+            SectionFile.SetSection(m_Sections, sectionId, section);
         }
 
         string[] ISaveDataService.GetListOfSaveFiles()

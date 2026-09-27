@@ -2,8 +2,6 @@
 {
     public static class FrameworkSaveSectionDatabase
     {
-        public const string CONFIG_DATA = "RPGFramework.ConfigData";
-
         /// <summary>
         /// The whole of <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Persistent" />, written as a raw
         /// byte blob. Managed entirely by <see cref="RPGFramework.Core.SaveData.ISaveDataService" /> — a

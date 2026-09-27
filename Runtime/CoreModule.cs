@@ -6,6 +6,7 @@ using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
 using RPGFramework.Core.Rendering;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Core.Settings;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.Core.Store;
 using RPGFramework.DI;
@@ -115,6 +116,7 @@ namespace RPGFramework.Core
             container.BindSingleton<IScreenFadeService, ScreenFadeService>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();
+            container.BindSingleton<ISettingsService, SettingsService>();
             container.BindInterfacesToSelfSingleton<MemoryService>();
 
             container.BindTransient<IDialogueWindow, DialogueWindow>();
