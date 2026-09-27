@@ -16,6 +16,7 @@ namespace RPGFramework.Core.Dialogue.UI
         Task RunAsync();
         void SetChoices(ReadOnlySpan<string>        choices);
         void SetMessageVariables(IReadOnlyList<int> variables);
+        void SetMessageSpeed(float                  messageSpeed);
         void SetRect(RectInt                        rect);
         void SetStyle(DialogueWindowStyle           style);
         void SetText(DialoguePage                   dialoguePage);

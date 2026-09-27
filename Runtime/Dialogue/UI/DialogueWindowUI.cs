@@ -34,6 +34,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private IReadOnlyList<int>          m_MessageVariables;
         private DialogueWindowStyle         m_Style;
         private IVisualElementScheduledItem m_Ticker;
+        private float                       m_TextSpeedMultiplier = 1f;
 
         public DialogueWindowUI(IDialogueWindowUiProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
         {
@@ -202,6 +203,11 @@ namespace RPGFramework.Core.Dialogue.UI
             m_MessageVariables = variables;
         }
 
+        void IDialogueWindowUI.SetMessageSpeed(float messageSpeed)
+        {
+            m_TextSpeedMultiplier = math.pow(2f, 2f * messageSpeed - 1f);
+        }
+
         void IDialogueWindowUI.SetRect(RectInt rect)
         {
             m_Rect = rect;
@@ -234,7 +240,6 @@ namespace RPGFramework.Core.Dialogue.UI
 
         private DialogueText Parse(string text)
         {
-            // Markup mistakes are reported when the text arrives from its sheet, so they are not reported again here.
             DialogueText parsed = DialogueMarkup.Parse(text, m_MessageVariables, m_TextStyles, null);
 
             return parsed;
@@ -257,13 +262,14 @@ namespace RPGFramework.Core.Dialogue.UI
 
         private void Tick(TimerState timerState)
         {
-            float deltaTime = timerState.deltaTime / 1000f;
+            float deltaTime           = timerState.deltaTime / 1000f;
+            float charactersPerSecond = m_TextSpeed * m_TextSpeedMultiplier;
 
-            m_TextView.Tick(deltaTime, m_TextSpeed);
+            m_TextView.Tick(deltaTime, charactersPerSecond);
 
             foreach (DialogueTextView choiceView in m_ChoiceViews)
             {
-                choiceView.Tick(deltaTime, m_TextSpeed);
+                choiceView.Tick(deltaTime, charactersPerSecond);
             }
         }
 

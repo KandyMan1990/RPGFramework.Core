@@ -51,6 +51,11 @@ namespace RPGFramework.Core.Dialogue
             m_UiInstance.SetMessageVariables(variables);
         }
 
+        void IDialogueWindow.SetMessageSpeed(float messageSpeed)
+        {
+            m_UiInstance.SetMessageSpeed(messageSpeed);
+        }
+
         void IDialogueWindow.SetRect(RectInt rect)
         {
             m_UiInstance.SetRect(rect);
