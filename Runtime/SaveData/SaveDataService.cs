@@ -12,15 +12,24 @@ namespace RPGFramework.Core.SaveData
 {
     public interface ISaveDataService
     {
-        void     BeginSave(string filename);
-        bool     HasSaveLoaded();
-        void     CommitSave();
-        bool     TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
-        void     SetSection<T>(string    sectionId, SaveSection<T>     section) where T : unmanaged;
-        string[] GetListOfSaveFiles();
-        string   GetUnusedSaveFileName();
-        void     ClearSaveDataFromMemory();
-        bool     TryGetLastWrittenSaveFileName(out string filename);
+        /// <summary>
+        /// Begin a playthrough from a save file: a load if the file exists, a new game if it does not.
+        /// </summary>
+        void BeginSave(string filename);
+
+        /// <summary>
+        /// The file the playthrough was begun from or last saved to. A new game's does not exist until it is saved.
+        /// </summary>
+        string GetCurrentSaveFileName();
+
+        /// <summary>
+        /// Write the playthrough to a save file, which becomes the current one.
+        /// </summary>
+        void CommitSave(string filename);
+
+        string[]    GetListOfSaveFiles();
+        string      GetUnusedSaveFileName();
+        SavePreview ReadPreview(string filename);
     }
 
     internal sealed class SaveDataService : ISaveDataService
@@ -84,33 +93,34 @@ namespace RPGFramework.Core.SaveData
             VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, restoredBytes);
         }
 
-        bool ISaveDataService.HasSaveLoaded()
+        string ISaveDataService.GetCurrentSaveFileName()
         {
-            return m_Sections.Count > 0 && m_CurrentPath != string.Empty;
+            string filename = Path.GetFileName(m_CurrentPath);
+
+            return filename;
         }
 
-        void ISaveDataService.CommitSave()
+        void ISaveDataService.CommitSave(string filename)
         {
-            if (string.IsNullOrWhiteSpace(m_CurrentPath))
-            {
-                throw new InvalidOperationException($"{nameof(ISaveDataService)}::{nameof(ISaveDataService.CommitSave)} Must call {nameof(ISaveDataService.BeginSave)} before CommitSave");
-            }
+            m_CurrentPath = Path.Combine(Application.persistentDataPath, filename);
 
             CapturePersistentMemory();
 
             SectionFile.Write(m_CurrentPath, m_Sections);
         }
 
-        bool ISaveDataService.TryGetSection<T>(string sectionId, out SaveSection<T> section)
+        SavePreview ISaveDataService.ReadPreview(string filename)
         {
-            bool found = SectionFile.TryGetSection(m_Sections, sectionId, out section);
+            string path = Path.Combine(Application.persistentDataPath, filename);
 
-            return found;
-        }
+            // A save written before any variables existed has no persistent memory, so every variable reads its default.
+            byte[] persistent = SectionFile.TryReadSection(path, m_PersistentMemorySectionId, out SectionBlob persistentMemory)
+                                    ? persistentMemory.Data
+                                    : Array.Empty<byte>();
 
-        void ISaveDataService.SetSection<T>(string sectionId, SaveSection<T> section)
-        {
-            SectionFile.SetSection(m_Sections, sectionId, section);
+            SavePreview preview = new SavePreview(filename, File.GetLastWriteTime(path), persistent, m_VariableMap);
+
+            return preview;
         }
 
         string[] ISaveDataService.GetListOfSaveFiles()
@@ -214,15 +224,6 @@ namespace RPGFramework.Core.SaveData
             return parsed;
         }
 
-        void ISaveDataService.ClearSaveDataFromMemory()
-        {
-            m_Sections.Clear();
-            m_CurrentPath = string.Empty;
-
-            m_MemoryBankAccess.ClearPersistent();
-            m_MemoryBankAccess.ClearSession();
-        }
-
         private void SetLoadedFromSave(bool loaded)
         {
             m_VariableMap.TryGetVariable(CoreVariables.LOADED_FROM_SAVE, out VariableDefinition variable);
@@ -261,31 +262,6 @@ namespace RPGFramework.Core.SaveData
             int restoredBytes = persistentMemory.Data.Length;
 
             return restoredBytes;
-        }
-
-        bool ISaveDataService.TryGetLastWrittenSaveFileName(out string filename)
-        {
-            List<FileInfo> files = GetSaveFiles();
-
-            filename = string.Empty;
-
-            if (files.Count == 0)
-            {
-                return false;
-            }
-
-            DateTime lastAccessedTime = DateTime.MinValue;
-
-            foreach (FileInfo fileInfo in files)
-            {
-                if (fileInfo.LastWriteTimeUtc > lastAccessedTime)
-                {
-                    lastAccessedTime = fileInfo.LastWriteTimeUtc;
-                    filename         = fileInfo.Name;
-                }
-            }
-
-            return true;
         }
     }
 }

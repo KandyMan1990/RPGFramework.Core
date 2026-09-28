@@ -59,6 +59,39 @@ namespace RPGFramework.Core.SaveData
             }
         }
 
+        /// <summary>
+        /// One section, reading only the table of contents and that section's bytes.
+        /// </summary>
+        internal static bool TryReadSection(string path, ulong sectionId, out SectionBlob section)
+        {
+            using FileStream   fs     = File.OpenRead(path);
+            using BinaryReader reader = new BinaryReader(fs);
+
+            int sectionCount = reader.ReadInt32();
+
+            for (int i = 0; i < sectionCount; i++)
+            {
+                ulong id      = reader.ReadUInt64();
+                uint  version = reader.ReadUInt32();
+                int   offset  = reader.ReadInt32();
+                int   size    = reader.ReadInt32();
+
+                if (id != sectionId)
+                {
+                    continue;
+                }
+
+                fs.Position = offset;
+                section     = new SectionBlob(version, reader.ReadBytes(size));
+
+                return true;
+            }
+
+            section = default;
+
+            return false;
+        }
+
         internal static void Write(string path, Dictionary<ulong, SectionBlob> sections)
         {
             using FileStream   fs     = File.Create(path);
