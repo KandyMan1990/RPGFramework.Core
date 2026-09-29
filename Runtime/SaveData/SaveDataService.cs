@@ -18,7 +18,8 @@ namespace RPGFramework.Core.SaveData
         void BeginSave(string filename);
 
         /// <summary>
-        /// The file the playthrough was begun from or last saved to. A new game's does not exist until it is saved.
+        /// The file the playthrough was begun from or last saved to. A new game's does not exist until it is saved,
+        /// and nor does one whose save was deleted while it played.
         /// </summary>
         string GetCurrentSaveFileName();
 
@@ -26,6 +27,8 @@ namespace RPGFramework.Core.SaveData
         /// Write the playthrough to a save file, which becomes the current one.
         /// </summary>
         void CommitSave(string filename);
+
+        void DeleteSave(string filename);
 
         string[]    GetListOfSaveFiles();
         string      GetUnusedSaveFileName();
@@ -107,6 +110,13 @@ namespace RPGFramework.Core.SaveData
             CapturePersistentMemory();
 
             SectionFile.Write(m_CurrentPath, m_Sections);
+        }
+
+        void ISaveDataService.DeleteSave(string filename)
+        {
+            string path = Path.Combine(Application.persistentDataPath, filename);
+
+            File.Delete(path);
         }
 
         SavePreview ISaveDataService.ReadPreview(string filename)
