@@ -60,8 +60,9 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Write the defaults of every variable in <paramref name="bank" /> that starts at or after
-        /// <paramref name="fromOffset" />. A new game writes them all; a load writes only those past the end of
-        /// the saved bank, which were added since that save and would otherwise start at zero.
+        /// <paramref name="fromOffset" />, every element of an array included. A new game writes them all; a load
+        /// writes only those past the end of the saved bank, which were added since that save and would otherwise
+        /// start at zero.
         /// </summary>
         public static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank, int fromOffset)
         {
@@ -74,9 +75,15 @@ namespace RPGFramework.Core.Memory
 
                 int byteCount = variable.Width.GetByteCount();
 
-                for (int i = 0; i < byteCount; i++)
+                for (int element = 0; element < variable.Count; element++)
                 {
-                    memory.WriteByte(bank, (ushort)(variable.Offset + i), (byte)(variable.DefaultValue >> (8 * i)));
+                    ulong value  = variable.GetDefault(element);
+                    int   offset = variable.GetElementOffset(element);
+
+                    for (int i = 0; i < byteCount; i++)
+                    {
+                        memory.WriteByte(bank, (ushort)(offset + i), (byte)(value >> (8 * i)));
+                    }
                 }
             }
         }

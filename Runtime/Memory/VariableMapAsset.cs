@@ -118,7 +118,7 @@ namespace RPGFramework.Core.Memory
                     continue;
                 }
 
-                Allocate(required.Name, required.Bank, required.Width, required.Description, 0);
+                Allocate(required.Name, required.Bank, required.Width, 1, required.Description, 0);
                 added++;
             }
 
@@ -126,14 +126,15 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// Authoring only. Appends a variable at the next free naturally aligned offset in its bank and
-        /// returns it. Never reuses a hole left by a deleted variable — see the note on this class.
+        /// Authoring only. Appends a variable of <paramref name="count" /> values — one, or an array — at the next
+        /// free naturally aligned offset in its bank and returns it. Never reuses a hole left by a deleted variable —
+        /// see the note on this class.
         /// </summary>
-        public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, string description, ulong defaultValue)
+        public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
         {
             int offset = GetNextOffset(bank, width);
 
-            VariableDefinition definition = new VariableDefinition(name, bank, width, offset, description, defaultValue);
+            VariableDefinition definition = new VariableDefinition(name, bank, width, count, offset, description, defaultValue);
 
             m_Variables.Add(definition);
             m_ByName = null;
@@ -158,9 +159,9 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Authoring only. Returns a human-readable problem for every duplicate name, overlapping range,
-        /// negative offset or missing name in the map, for a required variable it lacks or declares
-        /// differently, and for a start module default no module answers to. An empty list means the map is
-        /// well formed.
+        /// negative offset, missing name, count below one or element default outside its array, for a required
+        /// variable the map lacks or declares differently, and for a start module default no module answers to.
+        /// An empty list means the map is well formed.
         /// </summary>
         public List<string> Validate()
         {
@@ -187,6 +188,13 @@ namespace RPGFramework.Core.Memory
                     problems.Add($"'{variable.Name}' has a negative offset ({variable.Offset})");
                 }
 
+                if (variable.Count < 1)
+                {
+                    problems.Add($"'{variable.Name}' has a count of {variable.Count}, and a variable holds at least one value");
+                }
+
+                ValidateElementDefaults(variable, problems);
+
                 for (int j = i + 1; j < m_Variables.Count; j++)
                 {
                     VariableDefinition other = m_Variables[j];
@@ -203,6 +211,24 @@ namespace RPGFramework.Core.Memory
             return problems;
         }
 
+        private static void ValidateElementDefaults(VariableDefinition variable, List<string> problems)
+        {
+            HashSet<int> indices = new HashSet<int>();
+
+            foreach (VariableElementDefault elementDefault in variable.ElementDefaults)
+            {
+                if (elementDefault.Index < 0 || elementDefault.Index >= variable.Count)
+                {
+                    problems.Add($"'{variable.Name}' has a default for element [{elementDefault.Index}], outside its {variable.Count} element(s)");
+                }
+
+                if (!indices.Add(elementDefault.Index))
+                {
+                    problems.Add($"'{variable.Name}' has more than one default for element [{elementDefault.Index}]");
+                }
+            }
+        }
+
         private void ValidateRequiredVariables(List<string> problems)
         {
             foreach (RequiredVariable required in RequiredVariables.FindAll())
@@ -216,6 +242,11 @@ namespace RPGFramework.Core.Memory
                 if (variable.Bank != required.Bank || variable.Width != required.Width)
                 {
                     problems.Add($"'{required.Name}' is declared as {variable.Bank} {variable.Width}, but the framework reads it as {required.Bank} {required.Width}");
+                }
+
+                if (variable.Count != 1)
+                {
+                    problems.Add($"'{required.Name}' is declared as an array of {variable.Count}, but the framework reads it as a single value");
                 }
             }
 

@@ -18,15 +18,16 @@ namespace RPGFramework.Core.Editor
     {
         private VariableMapAsset m_Map;
 
-        private Label     m_PersistentSizeLabel;
-        private Label     m_SessionSizeLabel;
-        private Label     m_NextOffsetLabel;
-        private TextField m_NameField;
-        private EnumField m_BankField;
-        private EnumField m_WidthField;
-        private TextField m_DescriptionField;
-        private HelpBox   m_DeclarationProblem;
-        private Button    m_AllocateButton;
+        private Label        m_PersistentSizeLabel;
+        private Label        m_SessionSizeLabel;
+        private Label        m_NextOffsetLabel;
+        private TextField    m_NameField;
+        private EnumField    m_BankField;
+        private EnumField    m_WidthField;
+        private IntegerField m_CountField;
+        private TextField    m_DescriptionField;
+        private HelpBox      m_DeclarationProblem;
+        private Button       m_AllocateButton;
 
         private VisualElement m_ValidationResults;
         private HelpBox       m_MissingRequired;
@@ -86,6 +87,7 @@ namespace RPGFramework.Core.Editor
             m_NameField        = new TextField("Name");
             m_BankField        = new EnumField("Bank",  MemoryBank.Persistent);
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
+            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value; more makes an array. An array's count is fixed once saves exist, since growing it would move what follows" };
             m_DescriptionField = new TextField("Description") { multiline = true };
 
             m_NextOffsetLabel                    = new Label();
@@ -100,10 +102,12 @@ namespace RPGFramework.Core.Editor
             m_NameField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
             m_BankField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
             m_WidthField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
+            m_CountField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
 
             section.Add(m_NameField);
             section.Add(m_BankField);
             section.Add(m_WidthField);
+            section.Add(m_CountField);
             section.Add(m_DescriptionField);
             section.Add(m_NextOffsetLabel);
             section.Add(m_DeclarationProblem);
@@ -166,8 +170,9 @@ namespace RPGFramework.Core.Editor
 
             MemoryBank    bank  = (MemoryBank)m_BankField.value;
             VariableWidth width = (VariableWidth)m_WidthField.value;
+            int           count = m_CountField.value;
 
-            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, width)}";
+            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, width)}, taking {width.GetByteCount() * count} bytes";
 
             string name      = m_NameField.value;
             bool   hasName   = !string.IsNullOrWhiteSpace(name);
@@ -179,14 +184,18 @@ namespace RPGFramework.Core.Editor
             {
                 problem = $"'{name}' is already declared in this map.";
             }
+            else if (count < 1)
+            {
+                problem = "A variable holds at least one value.";
+            }
             else if (bank == MemoryBank.Temp)
             {
                 problem = "Temp is script scratch: each running script has its own, zeroed when it starts. Declare a variable here only if scripts need a named scratch slot; anything that must outlast the script belongs in Session or Persistent.";
             }
 
-            SetProblem(problem, nameTaken ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);
+            SetProblem(problem, nameTaken || count < 1 ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);
 
-            m_AllocateButton.SetEnabled(hasName && !nameTaken);
+            m_AllocateButton.SetEnabled(hasName && !nameTaken && count >= 1);
         }
 
         private void SetProblem(string message, HelpBoxMessageType messageType)
@@ -209,6 +218,7 @@ namespace RPGFramework.Core.Editor
             m_Map.Allocate(m_NameField.value,
                            (MemoryBank)m_BankField.value,
                            (VariableWidth)m_WidthField.value,
+                           m_CountField.value,
                            m_DescriptionField.value,
                            0);
 
@@ -218,6 +228,7 @@ namespace RPGFramework.Core.Editor
             serializedObject.Update();
 
             m_NameField.value        = string.Empty;
+            m_CountField.value       = 1;
             m_DescriptionField.value = string.Empty;
 
             m_ValidationResults.Clear();
