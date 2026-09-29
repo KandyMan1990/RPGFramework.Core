@@ -7,7 +7,8 @@ namespace RPGFramework.Core.Memory
 {
     /// <summary>
     /// One named variable in a <see cref="VariableMapAsset" />: a single value, or an array of <see cref="Count" />
-    /// values of its width laid end to end.<br /><br />
+    /// values of its width laid end to end — or, when it has <see cref="Fields" />, one record or an array of records,
+    /// each its fields packed end to end.<br /><br />
     /// <see cref="Offset" /> is assigned by the map, never typed by hand — see
     /// <see cref="VariableMapAsset" /> for why.
     /// </summary>
@@ -23,12 +24,16 @@ namespace RPGFramework.Core.Memory
         private MemoryBank m_Bank;
 
         [SerializeField]
-        [Tooltip("Storage width. Determines which IMemoryService accessor reads this variable")]
+        [Tooltip("Storage width. Determines which IMemoryService accessor reads this variable. Unused by a record, whose fields have their own")]
         private VariableWidth m_Width;
 
         [SerializeField]
-        [Tooltip("How many values of its width this variable holds. 1 is a single value; more makes an array, its elements end to end")]
+        [Tooltip("How many values of its width, or records, this variable holds. 1 is a single one; more makes an array, its elements end to end")]
         private int m_Count;
+
+        [SerializeField]
+        [Tooltip("A record's fields, in order, packed end to end. Empty for a value or an array of values")]
+        private List<VariableRecordField> m_Fields = new List<VariableRecordField>();
 
         [SerializeField]
         [Tooltip("Byte offset into the bank. Assigned by the map, do not edit by hand")]
@@ -44,7 +49,7 @@ namespace RPGFramework.Core.Memory
         private ulong m_DefaultValue;
 
         [SerializeField]
-        [Tooltip("Elements of an array that start at something other than the default. Edit them through the Variable Map inspector")]
+        [Tooltip("Elements of an array, or fields of particular records, that start at something other than the default. Edit them through the Variable Map inspector")]
         private List<VariableElementDefault> m_ElementDefaults = new List<VariableElementDefault>();
 
         public string        Name        => m_Name;
@@ -60,16 +65,38 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public ulong DefaultValue => m_DefaultValue;
 
+        public IReadOnlyList<VariableRecordField> Fields => m_Fields;
+
+        public bool IsRecord => m_Fields.Count > 0;
+
         internal IReadOnlyList<VariableElementDefault> ElementDefaults => m_ElementDefaults;
 
         /// <summary>
-        /// The first byte after this variable, i.e. <see cref="Offset" /> plus its width in bytes for every element.
+        /// How many bytes one element takes: its width, or a record's fields end to end.
+        /// </summary>
+        public int ElementSize
+        {
+            get
+            {
+                int elementSize = IsRecord ? 0 : m_Width.GetByteCount();
+
+                for (int i = 0; i < m_Fields.Count; i++)
+                {
+                    elementSize += m_Fields[i].ByteCount;
+                }
+
+                return elementSize;
+            }
+        }
+
+        /// <summary>
+        /// The first byte after this variable, i.e. <see cref="Offset" /> plus <see cref="ElementSize" /> for every element.
         /// </summary>
         public int EndOffset
         {
             get
             {
-                int endOffset = m_Offset + m_Width.GetByteCount() * m_Count;
+                int endOffset = m_Offset + ElementSize * m_Count;
 
                 return endOffset;
             }
@@ -86,14 +113,50 @@ namespace RPGFramework.Core.Memory
             m_DefaultValue = defaultValue;
         }
 
+        public VariableDefinition(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, int offset, string description)
+        {
+            m_Name        = name;
+            m_Bank        = bank;
+            m_Fields      = new List<VariableRecordField>(fields);
+            m_Count       = count;
+            m_Offset      = offset;
+            m_Description = description;
+        }
+
         /// <summary>
         /// Where element <paramref name="index" /> of an array starts. Element 0 is the variable's own offset.
         /// </summary>
         public int GetElementOffset(int index)
         {
-            int elementOffset = m_Offset + index * m_Width.GetByteCount();
+            int elementOffset = m_Offset + index * ElementSize;
 
             return elementOffset;
+        }
+
+        /// <summary>
+        /// Find a record's field by the name scripts use, and where it starts within each record.
+        /// </summary>
+        public bool TryGetField(string fieldName, out VariableRecordField field, out int fieldOffset)
+        {
+            field       = null;
+            fieldOffset = 0;
+
+            bool found = false;
+
+            for (int i = 0; i < m_Fields.Count && !found; i++)
+            {
+                if (m_Fields[i].Name == fieldName)
+                {
+                    field = m_Fields[i];
+                    found = true;
+                }
+                else
+                {
+                    fieldOffset += m_Fields[i].ByteCount;
+                }
+            }
+
+            return found;
         }
 
         /// <summary>
@@ -102,13 +165,33 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         internal ulong GetDefault(int index)
         {
-            ulong value = m_DefaultValue;
+            ulong value = FindElementDefault(index, string.Empty, 0, m_DefaultValue);
+
+            return value;
+        }
+
+        /// <summary>
+        /// What value <paramref name="fieldIndex" /> of <paramref name="field" /> starts at in record
+        /// <paramref name="index" />: that record's own default for it if it has one, otherwise the field's.
+        /// </summary>
+        internal ulong GetDefault(int index, VariableRecordField field, int fieldIndex)
+        {
+            ulong value = FindElementDefault(index, field.Name, fieldIndex, field.DefaultValue);
+
+            return value;
+        }
+
+        private ulong FindElementDefault(int index, string fieldName, int fieldIndex, ulong fallback)
+        {
+            ulong value = fallback;
 
             for (int i = 0; i < m_ElementDefaults.Count; i++)
             {
-                if (m_ElementDefaults[i].Index == index)
+                VariableElementDefault elementDefault = m_ElementDefaults[i];
+
+                if (elementDefault.Index == index && elementDefault.Field == fieldName && elementDefault.FieldIndex == fieldIndex)
                 {
-                    value = m_ElementDefaults[i].Value;
+                    value = elementDefault.Value;
                     break;
                 }
             }
@@ -134,8 +217,56 @@ namespace RPGFramework.Core.Memory
     }
 
     /// <summary>
-    /// One element of an array variable that starts at its own value rather than the variable's default, so an
-    /// array of hundreds can set a few without listing the rest.
+    /// One field of a record variable, packed after the one before it. A count above 1 makes it an array inside the
+    /// record, as a fixed buffer is inside a struct.
+    /// </summary>
+    [Serializable]
+    public sealed class VariableRecordField
+    {
+        [SerializeField]
+        [Tooltip("Name scripts use after the record, as in $characters[0].hp. Unique within the record")]
+        private string m_Name;
+
+        [SerializeField]
+        [Tooltip("Storage width of each value")]
+        private VariableWidth m_Width;
+
+        [SerializeField]
+        [Tooltip("How many values of its width. More than 1 makes an array inside the record")]
+        private int m_Count;
+
+        [SerializeField]
+        [Tooltip("What every record starts with in a new game, held as the bytes it occupies. Edit it through the Variable Map inspector")]
+        private ulong m_DefaultValue;
+
+        public string        Name         => m_Name;
+        public VariableWidth Width        => m_Width;
+        public int           Count        => m_Count;
+        public ulong         DefaultValue => m_DefaultValue;
+
+        public int ByteCount
+        {
+            get
+            {
+                int byteCount = m_Width.GetByteCount() * m_Count;
+
+                return byteCount;
+            }
+        }
+
+        public VariableRecordField(string name, VariableWidth width, int count, ulong defaultValue)
+        {
+            m_Name         = name;
+            m_Width        = width;
+            m_Count        = count;
+            m_DefaultValue = defaultValue;
+        }
+    }
+
+    /// <summary>
+    /// One value that starts at its own default rather than the one covering it: an element of an array, or a field
+    /// of one record — and for a field that is itself an array, one of its elements — so an array of hundreds can set
+    /// a few without listing the rest.
     /// </summary>
     [Serializable]
     internal struct VariableElementDefault
@@ -144,9 +275,17 @@ namespace RPGFramework.Core.Memory
         private int m_Index;
 
         [SerializeField]
+        private string m_Field;
+
+        [SerializeField]
+        private int m_FieldIndex;
+
+        [SerializeField]
         private ulong m_Value;
 
-        public int   Index => m_Index;
-        public ulong Value => m_Value;
+        public int    Index      => m_Index;
+        public string Field      => m_Field ?? string.Empty;
+        public int    FieldIndex => m_FieldIndex;
+        public ulong  Value      => m_Value;
     }
 }

@@ -60,9 +60,9 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Write the defaults of every variable in <paramref name="bank" /> that starts at or after
-        /// <paramref name="fromOffset" />, every element of an array included. A new game writes them all; a load
-        /// writes only those past the end of the saved bank, which were added since that save and would otherwise
-        /// start at zero.
+        /// <paramref name="fromOffset" />, every element of an array and every field of a record included. A new game
+        /// writes them all; a load writes only those past the end of the saved bank, which were added since that save
+        /// and would otherwise start at zero.
         /// </summary>
         public static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank, int fromOffset)
         {
@@ -73,18 +73,36 @@ namespace RPGFramework.Core.Memory
                     continue;
                 }
 
-                int byteCount = variable.Width.GetByteCount();
-
                 for (int element = 0; element < variable.Count; element++)
                 {
-                    ulong value  = variable.GetDefault(element);
-                    int   offset = variable.GetElementOffset(element);
+                    int offset = variable.GetElementOffset(element);
 
-                    for (int i = 0; i < byteCount; i++)
+                    if (!variable.IsRecord)
                     {
-                        memory.WriteByte(bank, (ushort)(offset + i), (byte)(value >> (8 * i)));
+                        WriteValue(memory, bank, offset, variable.Width, variable.GetDefault(element));
+                        continue;
+                    }
+
+                    foreach (VariableRecordField field in variable.Fields)
+                    {
+                        for (int fieldIndex = 0; fieldIndex < field.Count; fieldIndex++)
+                        {
+                            WriteValue(memory, bank, offset + fieldIndex * field.Width.GetByteCount(), field.Width, variable.GetDefault(element, field, fieldIndex));
+                        }
+
+                        offset += field.ByteCount;
                     }
                 }
+            }
+        }
+
+        private static void WriteValue(IMemoryService memory, MemoryBank bank, int offset, VariableWidth width, ulong value)
+        {
+            int byteCount = width.GetByteCount();
+
+            for (int i = 0; i < byteCount; i++)
+            {
+                memory.WriteByte(bank, (ushort)(offset + i), (byte)(value >> (8 * i)));
             }
         }
 

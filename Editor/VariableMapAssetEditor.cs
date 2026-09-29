@@ -28,6 +28,11 @@ namespace RPGFramework.Core.Editor
         private TextField    m_DescriptionField;
         private HelpBox      m_DeclarationProblem;
         private Button       m_AllocateButton;
+        private Toggle       m_RecordToggle;
+
+        private VisualElement m_PendingFieldsContainer;
+
+        private readonly List<PendingField> m_PendingFields = new List<PendingField>();
 
         private VisualElement m_ValidationResults;
         private HelpBox       m_MissingRequired;
@@ -86,9 +91,13 @@ namespace RPGFramework.Core.Editor
 
             m_NameField        = new TextField("Name");
             m_BankField        = new EnumField("Bank",  MemoryBank.Persistent);
+            m_RecordToggle     = new Toggle("Record") { tooltip = "A record is fields of their own widths packed together, as a struct is — a character, an item slot" };
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
-            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value; more makes an array. An array's count is fixed once saves exist, since growing it would move what follows" };
+            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value or record; more makes an array. An array's count is fixed once saves exist, since growing it would move what follows" };
             m_DescriptionField = new TextField("Description") { multiline = true };
+
+            m_PendingFieldsContainer               = new VisualElement();
+            m_PendingFieldsContainer.style.display = DisplayStyle.None;
 
             m_NextOffsetLabel                    = new Label();
             m_NextOffsetLabel.style.marginTop    = 4;
@@ -103,10 +112,13 @@ namespace RPGFramework.Core.Editor
             m_BankField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
             m_WidthField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
             m_CountField.RegisterValueChangedCallback(_ => RefreshDerivedLabels());
+            m_RecordToggle.RegisterValueChangedCallback(e => OnRecordToggled(e.newValue));
 
             section.Add(m_NameField);
             section.Add(m_BankField);
+            section.Add(m_RecordToggle);
             section.Add(m_WidthField);
+            section.Add(m_PendingFieldsContainer);
             section.Add(m_CountField);
             section.Add(m_DescriptionField);
             section.Add(m_NextOffsetLabel);
@@ -114,6 +126,105 @@ namespace RPGFramework.Core.Editor
             section.Add(m_AllocateButton);
 
             return section;
+        }
+
+        private void OnRecordToggled(bool record)
+        {
+            if (record && m_PendingFields.Count == 0)
+            {
+                m_PendingFields.Add(new PendingField());
+            }
+
+            m_WidthField.style.display             = record ? DisplayStyle.None : DisplayStyle.Flex;
+            m_PendingFieldsContainer.style.display = record ? DisplayStyle.Flex : DisplayStyle.None;
+
+            RebuildPendingFields();
+        }
+
+        private void RebuildPendingFields()
+        {
+            m_PendingFieldsContainer.Clear();
+
+            foreach (PendingField pending in m_PendingFields)
+            {
+                VisualElement row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+
+                TextField    name  = new TextField { value  = pending.Name, tooltip  = "The field's name, as scripts write it after the record" };
+                EnumField    width = new EnumField(pending.Width) { tooltip = "Storage width of each value" };
+                IntegerField count = new IntegerField { value = pending.Count, tooltip = "More than 1 makes an array inside the record" };
+
+                name.style.flexGrow = 1;
+                width.style.width   = 90;
+                count.style.width   = 50;
+
+                name.RegisterValueChangedCallback(e =>
+                                                  {
+                                                      pending.Name = e.newValue;
+                                                      RefreshDerivedLabels();
+                                                  });
+                width.RegisterValueChangedCallback(e =>
+                                                   {
+                                                       pending.Width = (VariableWidth)e.newValue;
+                                                       RefreshDerivedLabels();
+                                                   });
+                count.RegisterValueChangedCallback(e =>
+                                                   {
+                                                       pending.Count = e.newValue;
+                                                       RefreshDerivedLabels();
+                                                   });
+
+                Button remove = new Button(() =>
+                                           {
+                                               m_PendingFields.Remove(pending);
+                                               RebuildPendingFields();
+                                           })
+                                {
+                                    text = "✕"
+                                };
+
+                remove.SetEnabled(m_PendingFields.Count > 1);
+
+                row.Add(name);
+                row.Add(width);
+                row.Add(count);
+                row.Add(remove);
+
+                m_PendingFieldsContainer.Add(row);
+            }
+
+            m_PendingFieldsContainer.Add(new Button(() =>
+                                                    {
+                                                        m_PendingFields.Add(new PendingField { Name = $"field{m_PendingFields.Count}" });
+                                                        RebuildPendingFields();
+                                                    })
+                                         {
+                                             text = "Add Field"
+                                         });
+
+            RefreshDerivedLabels();
+        }
+
+        private List<VariableRecordField> CreatePendingFields()
+        {
+            List<VariableRecordField> fields = new List<VariableRecordField>(m_PendingFields.Count);
+
+            foreach (PendingField pending in m_PendingFields)
+            {
+                fields.Add(new VariableRecordField(pending.Name, pending.Width, pending.Count, 0));
+            }
+
+            return fields;
+        }
+
+        /// <summary>
+        /// A field of the record being declared, before it is allocated.
+        /// </summary>
+        private sealed class PendingField
+        {
+            internal string        Name  = "field0";
+            internal VariableWidth Width = VariableWidth.Byte;
+            internal int           Count = 1;
         }
 
         private VisualElement BuildValidation()
@@ -168,15 +279,32 @@ namespace RPGFramework.Core.Editor
             m_PersistentSizeLabel.text = $"Persistent (saved):  {m_Map.GetRequiredBytes(MemoryBank.Persistent)} bytes";
             m_SessionSizeLabel.text    = $"Session (not saved):  {m_Map.GetRequiredBytes(MemoryBank.Session)} bytes";
 
-            MemoryBank    bank  = (MemoryBank)m_BankField.value;
-            VariableWidth width = (VariableWidth)m_WidthField.value;
-            int           count = m_CountField.value;
+            MemoryBank    bank   = (MemoryBank)m_BankField.value;
+            VariableWidth width  = (VariableWidth)m_WidthField.value;
+            int           count  = m_CountField.value;
+            bool          record = m_RecordToggle.value;
 
-            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, width)}, taking {width.GetByteCount() * count} bytes";
+            List<VariableRecordField> fields = CreatePendingFields();
+
+            int alignment   = record ? VariableMapAsset.GetAlignment(fields) : width.GetByteCount();
+            int elementSize = record ? 0 : width.GetByteCount();
+
+            if (record)
+            {
+                foreach (VariableRecordField field in fields)
+                {
+                    elementSize += field.ByteCount;
+                }
+            }
+
+            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, alignment)}, taking {elementSize * count} bytes";
 
             string name      = m_NameField.value;
             bool   hasName   = !string.IsNullOrWhiteSpace(name);
             bool   nameTaken = hasName && m_Map.TryGetVariable(name, out VariableDefinition _);
+
+            string fieldProblem = record ? FindPendingFieldProblem(fields) : null;
+            bool   blocked      = nameTaken || count < 1 || (hasName && !VariableMapAsset.IsScriptName(name)) || fieldProblem != null;
 
             string problem = null;
 
@@ -184,18 +312,55 @@ namespace RPGFramework.Core.Editor
             {
                 problem = $"'{name}' is already declared in this map.";
             }
+            else if (hasName && !VariableMapAsset.IsScriptName(name))
+            {
+                problem = "Scripts name variables in text, so use letters, digits and underscores, not starting with a digit.";
+            }
             else if (count < 1)
             {
                 problem = "A variable holds at least one value.";
+            }
+            else if (fieldProblem != null)
+            {
+                problem = fieldProblem;
             }
             else if (bank == MemoryBank.Temp)
             {
                 problem = "Temp is script scratch: each running script has its own, zeroed when it starts. Declare a variable here only if scripts need a named scratch slot; anything that must outlast the script belongs in Session or Persistent.";
             }
 
-            SetProblem(problem, nameTaken || count < 1 ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);
+            SetProblem(problem, blocked ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);
 
-            m_AllocateButton.SetEnabled(hasName && !nameTaken && count >= 1);
+            m_AllocateButton.SetEnabled(hasName && !blocked);
+        }
+
+        private static string FindPendingFieldProblem(List<VariableRecordField> fields)
+        {
+            HashSet<string> names   = new HashSet<string>();
+            string          problem = null;
+
+            foreach (VariableRecordField field in fields)
+            {
+                if (!VariableMapAsset.IsScriptName(field.Name))
+                {
+                    problem = $"The field '{field.Name}' needs a name scripts can use: letters, digits and underscores, not starting with a digit.";
+                }
+                else if (!names.Add(field.Name))
+                {
+                    problem = $"Two fields are called '{field.Name}'.";
+                }
+                else if (field.Count < 1)
+                {
+                    problem = $"The field '{field.Name}' holds at least one value.";
+                }
+
+                if (problem != null)
+                {
+                    break;
+                }
+            }
+
+            return problem;
         }
 
         private void SetProblem(string message, HelpBoxMessageType messageType)
@@ -215,21 +380,35 @@ namespace RPGFramework.Core.Editor
         {
             Undo.RecordObject(m_Map, "Allocate variable");
 
-            m_Map.Allocate(m_NameField.value,
-                           (MemoryBank)m_BankField.value,
-                           (VariableWidth)m_WidthField.value,
-                           m_CountField.value,
-                           m_DescriptionField.value,
-                           0);
+            if (m_RecordToggle.value)
+            {
+                m_Map.AllocateRecord(m_NameField.value,
+                                     (MemoryBank)m_BankField.value,
+                                     CreatePendingFields(),
+                                     m_CountField.value,
+                                     m_DescriptionField.value);
+            }
+            else
+            {
+                m_Map.Allocate(m_NameField.value,
+                               (MemoryBank)m_BankField.value,
+                               (VariableWidth)m_WidthField.value,
+                               m_CountField.value,
+                               m_DescriptionField.value,
+                               0);
+            }
 
             EditorUtility.SetDirty(m_Map);
             AssetDatabase.SaveAssets();
 
             serializedObject.Update();
 
+            m_PendingFields.Clear();
+
             m_NameField.value        = string.Empty;
             m_CountField.value       = 1;
             m_DescriptionField.value = string.Empty;
+            m_RecordToggle.value     = false;
 
             m_ValidationResults.Clear();
 

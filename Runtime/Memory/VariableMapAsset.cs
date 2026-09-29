@@ -132,7 +132,7 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
         {
-            int offset = GetNextOffset(bank, width);
+            int offset = GetNextOffset(bank, width.GetByteCount());
 
             VariableDefinition definition = new VariableDefinition(name, bank, width, count, offset, description, defaultValue);
 
@@ -143,13 +143,71 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// Authoring only. The offset <see cref="Allocate" /> would use for this bank and width: the first
-        /// naturally aligned offset at or after the end of the highest variable currently in the bank.
+        /// Authoring only. As <see cref="Allocate" />, for <paramref name="count" /> records of
+        /// <paramref name="fields" />, aligned to the widest field. Each field's default starts at zero.
         /// </summary>
-        public int GetNextOffset(MemoryBank bank, VariableWidth width)
+        public VariableDefinition AllocateRecord(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, string description)
+        {
+            int offset = GetNextOffset(bank, GetAlignment(fields));
+
+            VariableDefinition definition = new VariableDefinition(name, bank, fields, count, offset, description);
+
+            m_Variables.Add(definition);
+            m_ByName = null;
+
+            return definition;
+        }
+
+        /// <summary>
+        /// Authoring only. What a record of <paramref name="fields" /> is aligned to: its widest field, as a struct is.
+        /// </summary>
+        public static int GetAlignment(IReadOnlyList<VariableRecordField> fields)
+        {
+            int alignment = 1;
+
+            for (int i = 0; i < fields.Count; i++)
+            {
+                int fieldAlignment = fields[i].Width.GetByteCount();
+
+                if (fieldAlignment > alignment)
+                {
+                    alignment = fieldAlignment;
+                }
+            }
+
+            return alignment;
+        }
+
+        /// <summary>
+        /// Authoring only. Letters, digits and underscores, not starting with a digit — what a variable or a record
+        /// field can be called, since scripts name them in text beside <c>[</c> and <c>.</c>.
+        /// </summary>
+        public static bool IsScriptName(string name)
+        {
+            bool isScriptName = !string.IsNullOrEmpty(name) && !char.IsDigit(name[0]);
+
+            if (isScriptName)
+            {
+                foreach (char c in name)
+                {
+                    if (!char.IsLetterOrDigit(c) && c != '_')
+                    {
+                        isScriptName = false;
+                        break;
+                    }
+                }
+            }
+
+            return isScriptName;
+        }
+
+        /// <summary>
+        /// Authoring only. The offset <see cref="Allocate" /> would use for this bank and alignment: the first
+        /// aligned offset at or after the end of the highest variable currently in the bank.
+        /// </summary>
+        public int GetNextOffset(MemoryBank bank, int alignment)
         {
             int highestEnd = GetRequiredBytes(bank);
-            int alignment  = width.GetByteCount();
             int remainder  = highestEnd % alignment;
 
             int offset = remainder == 0 ? highestEnd : highestEnd + (alignment - remainder);
@@ -159,9 +217,10 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Authoring only. Returns a human-readable problem for every duplicate name, overlapping range,
-        /// negative offset, missing name, count below one or element default outside its array, for a required
-        /// variable the map lacks or declares differently, and for a start module default no module answers to.
-        /// An empty list means the map is well formed.
+        /// negative offset, missing name, count below one or element default outside its array, for a name scripts
+        /// cannot use, for a record field that is misnamed, repeated or empty, for a required variable the map lacks or
+        /// declares differently, and for a start module default no module answers to. An empty list means the map is
+        /// well formed.
         /// </summary>
         public List<string> Validate()
         {
@@ -183,6 +242,11 @@ namespace RPGFramework.Core.Memory
                     problems.Add($"'{variable.Name}' is declared more than once");
                 }
 
+                if (!IsScriptName(variable.Name))
+                {
+                    problems.Add($"'{variable.Name}' is not a name scripts can use: letters, digits and underscores, not starting with a digit");
+                }
+
                 if (variable.Offset < 0)
                 {
                     problems.Add($"'{variable.Name}' has a negative offset ({variable.Offset})");
@@ -193,6 +257,7 @@ namespace RPGFramework.Core.Memory
                     problems.Add($"'{variable.Name}' has a count of {variable.Count}, and a variable holds at least one value");
                 }
 
+                ValidateRecordFields(variable, problems);
                 ValidateElementDefaults(variable, problems);
 
                 for (int j = i + 1; j < m_Variables.Count; j++)
@@ -211,20 +276,64 @@ namespace RPGFramework.Core.Memory
             return problems;
         }
 
+        private static void ValidateRecordFields(VariableDefinition variable, List<string> problems)
+        {
+            HashSet<string> names = new HashSet<string>();
+
+            foreach (VariableRecordField field in variable.Fields)
+            {
+                if (!IsScriptName(field.Name))
+                {
+                    problems.Add($"'{variable.Name}' has a field called '{field.Name}', which scripts cannot use: letters, digits and underscores, not starting with a digit");
+                }
+
+                if (!names.Add(field.Name))
+                {
+                    problems.Add($"'{variable.Name}' has more than one field called '{field.Name}'");
+                }
+
+                if (field.Count < 1)
+                {
+                    problems.Add($"'{variable.Name}.{field.Name}' has a count of {field.Count}, and a field holds at least one value");
+                }
+            }
+        }
+
         private static void ValidateElementDefaults(VariableDefinition variable, List<string> problems)
         {
-            HashSet<int> indices = new HashSet<int>();
+            HashSet<string> described = new HashSet<string>();
 
             foreach (VariableElementDefault elementDefault in variable.ElementDefaults)
             {
+                string where = variable.IsRecord
+                                   ? $"[{elementDefault.Index}].{elementDefault.Field}[{elementDefault.FieldIndex}]"
+                                   : $"[{elementDefault.Index}]";
+
                 if (elementDefault.Index < 0 || elementDefault.Index >= variable.Count)
                 {
-                    problems.Add($"'{variable.Name}' has a default for element [{elementDefault.Index}], outside its {variable.Count} element(s)");
+                    problems.Add($"'{variable.Name}' has a default for {where}, outside its {variable.Count} element(s)");
                 }
 
-                if (!indices.Add(elementDefault.Index))
+                if (!variable.IsRecord && elementDefault.Field.Length > 0)
                 {
-                    problems.Add($"'{variable.Name}' has more than one default for element [{elementDefault.Index}]");
+                    problems.Add($"'{variable.Name}' is not a record, and has a default for a field called '{elementDefault.Field}'");
+                }
+
+                if (variable.IsRecord)
+                {
+                    if (!variable.TryGetField(elementDefault.Field, out VariableRecordField field, out int _))
+                    {
+                        problems.Add($"'{variable.Name}' has a default for {where}, and has no field called '{elementDefault.Field}'");
+                    }
+                    else if (elementDefault.FieldIndex < 0 || elementDefault.FieldIndex >= field.Count)
+                    {
+                        problems.Add($"'{variable.Name}' has a default for {where}, outside the field's {field.Count} element(s)");
+                    }
+                }
+
+                if (!described.Add(where))
+                {
+                    problems.Add($"'{variable.Name}' has more than one default for {where}");
                 }
             }
         }
@@ -247,6 +356,11 @@ namespace RPGFramework.Core.Memory
                 if (variable.Count != 1)
                 {
                     problems.Add($"'{required.Name}' is declared as an array of {variable.Count}, but the framework reads it as a single value");
+                }
+
+                if (variable.IsRecord)
+                {
+                    problems.Add($"'{required.Name}' is declared as a record, but the framework reads it as a single {required.Width}");
                 }
             }
 
