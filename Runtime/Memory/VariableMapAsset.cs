@@ -14,10 +14,14 @@ namespace RPGFramework.Core.Memory
     /// appends after the highest offset already in use, so deleting a variable leaves a permanent hole.
     /// That is deliberate: once a game has shipped, a saved file holds bytes at fixed offsets, and handing
     /// a freed offset to a new variable would make it silently read the old variable's data out of every
-    /// existing save.
+    /// existing save.<br /><br />
+    /// It also sizes the banks, each exactly big enough for what is declared in it. A game binds it as
+    /// <see cref="IVariableMap" />, <see cref="IMemoryServiceArgs" /> and <see cref="ITempMemoryArgs" />, so the banks
+    /// and the variables read from them cannot come from different maps. Growing the map between releases is safe: a
+    /// save written by an older build restores into the larger bank, and what lies past its end takes its defaults.
     /// </summary>
     [CreateAssetMenu(menuName = "RPG Framework/Core/Variable Map", fileName = "VariableMap")]
-    public sealed class VariableMapAsset : ScriptableObject, IVariableMap
+    public sealed class VariableMapAsset : ScriptableObject, IVariableMap, IMemoryServiceArgs, ITempMemoryArgs
     {
         [SerializeField]
         private List<VariableDefinition> m_Variables = new List<VariableDefinition>();
@@ -25,6 +29,36 @@ namespace RPGFramework.Core.Memory
         private Dictionary<string, VariableDefinition> m_ByName;
 
         public IReadOnlyList<VariableDefinition> Variables => m_Variables;
+
+        int IMemoryServiceArgs.PersistentBytes
+        {
+            get
+            {
+                int persistentBytes = GetRequiredBytes(MemoryBank.Persistent);
+
+                return persistentBytes;
+            }
+        }
+
+        int IMemoryServiceArgs.SessionBytes
+        {
+            get
+            {
+                int sessionBytes = GetRequiredBytes(MemoryBank.Session);
+
+                return sessionBytes;
+            }
+        }
+
+        int ITempMemoryArgs.TempBytes
+        {
+            get
+            {
+                int tempBytes = GetRequiredBytes(MemoryBank.Temp);
+
+                return tempBytes;
+            }
+        }
 
         /// <summary>
         /// Find a variable by the name it was authored under.
@@ -39,8 +73,7 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// How many bytes a bank needs to hold every variable declared for it. This is the value to give
-        /// <see cref="IMemoryServiceArgs" /> — see <see cref="VariableMapMemoryServiceArgs" />.
+        /// How many bytes a bank needs to hold every variable declared for it, which is the size it is given.
         /// </summary>
         public int GetRequiredBytes(MemoryBank bank)
         {
