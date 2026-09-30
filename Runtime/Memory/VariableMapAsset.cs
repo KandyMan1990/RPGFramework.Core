@@ -26,6 +26,10 @@ namespace RPGFramework.Core.Memory
         [SerializeField]
         private List<VariableDefinition> m_Variables = new List<VariableDefinition>();
 
+        [SerializeField]
+        [HideInInspector]
+        private uint m_LastVariableId;
+
         private Dictionary<string, VariableDefinition> m_ByName;
 
         public IReadOnlyList<VariableDefinition> Variables => m_Variables;
@@ -167,7 +171,7 @@ namespace RPGFramework.Core.Memory
         {
             int offset = GetNextOffset(bank, width.GetByteCount());
 
-            VariableDefinition definition = new VariableDefinition(name, bank, width, count, offset, description, defaultValue);
+            VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, width, count, offset, description, defaultValue);
 
             m_Variables.Add(definition);
             m_ByName = null;
@@ -183,12 +187,46 @@ namespace RPGFramework.Core.Memory
         {
             int offset = GetNextOffset(bank, GetAlignment(fields));
 
-            VariableDefinition definition = new VariableDefinition(name, bank, fields, count, offset, description);
+            VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, fields, count, offset, description);
+            definition.AssignMissingFieldIds();
 
             m_Variables.Add(definition);
             m_ByName = null;
 
             return definition;
+        }
+
+        /// <summary>
+        /// Authoring only. Gives every variable without an id, or sharing one with a variable before it — a copy made in
+        /// the inspector — the next id the map has not used, does the same for each record's fields, and returns how
+        /// many it gave. Ids are never reused, so a deleted variable's cannot reach a new one.
+        /// </summary>
+        internal int AssignMissingIds()
+        {
+            foreach (VariableDefinition variable in m_Variables)
+            {
+                if (variable.Id > m_LastVariableId)
+                {
+                    m_LastVariableId = variable.Id;
+                }
+            }
+
+            HashSet<uint> seen     = new HashSet<uint>();
+            int           assigned = 0;
+
+            foreach (VariableDefinition variable in m_Variables)
+            {
+                if (variable.Id == 0 || !seen.Add(variable.Id))
+                {
+                    variable.AssignId(++m_LastVariableId);
+                    seen.Add(variable.Id);
+                    assigned++;
+                }
+
+                assigned += variable.AssignMissingFieldIds();
+            }
+
+            return assigned;
         }
 
         /// <summary>
@@ -251,14 +289,16 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// Authoring only. Returns a human-readable problem for every duplicate name, overlapping range,
         /// negative offset, missing name, count below one or element default outside its array, for a name scripts
-        /// cannot use, for a record field that is misnamed, repeated or empty, for a required variable the map lacks or
-        /// declares differently, and for a start module default no module answers to. An empty list means the map is
-        /// well formed.
+        /// cannot use, for a record field that is misnamed, repeated or empty, for an id that is missing or shared, for
+        /// a required variable the map lacks or declares differently, and for a start module default no module answers
+        /// to. An empty list means the map is well formed.
         /// </summary>
         public List<string> Validate()
         {
             List<string>    problems = new List<string>();
             HashSet<string> seen     = new HashSet<string>();
+
+            ValidateIds(problems);
 
             for (int i = 0; i < m_Variables.Count; i++)
             {
@@ -307,6 +347,29 @@ namespace RPGFramework.Core.Memory
             ValidateRequiredVariables(problems);
 
             return problems;
+        }
+
+        private void ValidateIds(List<string> problems)
+        {
+            HashSet<uint> ids = new HashSet<uint>();
+
+            foreach (VariableDefinition variable in m_Variables)
+            {
+                if (variable.Id == 0 || variable.Id > m_LastVariableId || !ids.Add(variable.Id))
+                {
+                    problems.Add($"'{variable.Name}' has no id of its own. Open the map's inspector, which assigns one");
+                }
+
+                HashSet<ushort> fieldIds = new HashSet<ushort>();
+
+                foreach (VariableRecordField field in variable.Fields)
+                {
+                    if (field.Id == 0 || !fieldIds.Add(field.Id))
+                    {
+                        problems.Add($"'{variable.Name}.{field.Name}' has no id of its own. Open the map's inspector, which assigns one");
+                    }
+                }
+            }
         }
 
         private static void ValidateRecordFields(VariableDefinition variable, List<string> problems)

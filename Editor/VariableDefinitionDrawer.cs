@@ -19,6 +19,7 @@ namespace RPGFramework.Core.Editor
     {
         public const string DEFAULT_VALUE = "m_DefaultValue";
 
+        private const string ID               = "m_Id";
         private const string NAME             = "m_Name";
         private const string BANK             = "m_Bank";
         private const string WIDTH            = "m_Width";
@@ -47,6 +48,9 @@ namespace RPGFramework.Core.Editor
             Foldout foldout = new Foldout { text = name.stringValue, value = false };
             foldout.TrackPropertyValue(name, changed => foldout.text = changed.stringValue);
 
+            PropertyField id = new PropertyField(property.FindPropertyRelative(ID));
+            id.SetEnabled(false);
+
             PropertyField offset = new PropertyField(property.FindPropertyRelative(OFFSET));
             offset.SetEnabled(false);
 
@@ -57,6 +61,7 @@ namespace RPGFramework.Core.Editor
             foldout.Add(new PropertyField(bank));
             foldout.Add(widthField);
             foldout.Add(new PropertyField(count));
+            foldout.Add(id);
             foldout.Add(offset);
             foldout.Add(new PropertyField(property.FindPropertyRelative(DESCRIPTION)));
             foldout.Add(defaultSlot);
@@ -296,6 +301,7 @@ namespace RPGFramework.Core.Editor
             fields.arraySize++;
 
             SerializedProperty added = fields.GetArrayElementAtIndex(fields.arraySize - 1);
+            added.FindPropertyRelative(ID).intValue              = 0;
             added.FindPropertyRelative(NAME).stringValue         = $"field{suffix}";
             added.FindPropertyRelative(WIDTH).enumValueFlag      = (int)VariableWidth.Byte;
             added.FindPropertyRelative(COUNT).intValue           = 1;

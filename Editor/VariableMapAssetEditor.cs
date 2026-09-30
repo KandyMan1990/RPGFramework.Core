@@ -42,6 +42,8 @@ namespace RPGFramework.Core.Editor
         {
             m_Map = (VariableMapAsset)target;
 
+            AssignMissingIds();
+
             VisualElement root = new VisualElement();
 
             root.Add(BuildBankSummary());
@@ -51,11 +53,32 @@ namespace RPGFramework.Core.Editor
             root.Add(BuildDeclaredVariables());
 
             // Keep the derived labels honest when the list is edited directly, or undone.
-            root.TrackSerializedObjectValue(serializedObject, _ => RefreshDerivedLabels());
+            root.TrackSerializedObjectValue(serializedObject, _ =>
+                                                              {
+                                                                  AssignMissingIds();
+                                                                  RefreshDerivedLabels();
+                                                              });
 
             RefreshDerivedLabels();
 
             return root;
+        }
+
+        /// <summary>
+        /// A map from before ids, or a variable or field copied in the list, gets its ids as soon as it is seen. Not
+        /// recorded for undo: undoing it would only bring the missing or shared id back.
+        /// </summary>
+        private void AssignMissingIds()
+        {
+            if (m_Map.AssignMissingIds() == 0)
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty(m_Map);
+            AssetDatabase.SaveAssetIfDirty(m_Map);
+
+            serializedObject.Update();
         }
 
         private VisualElement BuildBankSummary()

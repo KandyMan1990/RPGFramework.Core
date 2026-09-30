@@ -16,6 +16,10 @@ namespace RPGFramework.Core.Memory
     public sealed class VariableDefinition
     {
         [SerializeField]
+        [Tooltip("Permanent, assigned by the map and never reused: what a save knows this variable by, so a rename or a move keeps its value")]
+        private uint m_Id;
+
+        [SerializeField]
         [Tooltip("Name used to reference this variable when authoring. Must be unique within the map")]
         private string m_Name;
 
@@ -36,6 +40,9 @@ namespace RPGFramework.Core.Memory
         private List<VariableRecordField> m_Fields = new List<VariableRecordField>();
 
         [SerializeField]
+        private ushort m_LastFieldId;
+
+        [SerializeField]
         [Tooltip("Byte offset into the bank. Assigned by the map, do not edit by hand")]
         private int m_Offset;
 
@@ -51,6 +58,8 @@ namespace RPGFramework.Core.Memory
         [SerializeField]
         [Tooltip("Elements of an array, or fields of particular records, that start at something other than the default. Edit them through the Variable Map inspector")]
         private List<VariableElementDefault> m_ElementDefaults = new List<VariableElementDefault>();
+
+        internal uint Id => m_Id;
 
         public string        Name        => m_Name;
         public MemoryBank    Bank        => m_Bank;
@@ -102,8 +111,9 @@ namespace RPGFramework.Core.Memory
             }
         }
 
-        public VariableDefinition(string name, MemoryBank bank, VariableWidth width, int count, int offset, string description, ulong defaultValue)
+        public VariableDefinition(uint id, string name, MemoryBank bank, VariableWidth width, int count, int offset, string description, ulong defaultValue)
         {
+            m_Id           = id;
             m_Name         = name;
             m_Bank         = bank;
             m_Width        = width;
@@ -113,8 +123,9 @@ namespace RPGFramework.Core.Memory
             m_DefaultValue = defaultValue;
         }
 
-        public VariableDefinition(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, int offset, string description)
+        public VariableDefinition(uint id, string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, int offset, string description)
         {
+            m_Id          = id;
             m_Name        = name;
             m_Bank        = bank;
             m_Fields      = new List<VariableRecordField>(fields);
@@ -122,6 +133,45 @@ namespace RPGFramework.Core.Memory
             m_Offset      = offset;
             m_Description = description;
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Gives every field without an id, or sharing one with a field before it, the next id this record has not
+        /// used, and returns how many it gave.
+        /// </summary>
+        internal int AssignMissingFieldIds()
+        {
+            foreach (VariableRecordField field in m_Fields)
+            {
+                if (field.Id > m_LastFieldId)
+                {
+                    m_LastFieldId = field.Id;
+                }
+            }
+
+            HashSet<ushort> seen     = new HashSet<ushort>();
+            int             assigned = 0;
+
+            foreach (VariableRecordField field in m_Fields)
+            {
+                if (field.Id != 0 && seen.Add(field.Id))
+                {
+                    continue;
+                }
+
+                field.AssignId(++m_LastFieldId);
+                seen.Add(field.Id);
+                assigned++;
+            }
+
+            return assigned;
+        }
+
+        internal void AssignId(uint id)
+        {
+            m_Id = id;
+        }
+#endif
 
         /// <summary>
         /// Where element <paramref name="index" /> of an array starts. Element 0 is the variable's own offset.
@@ -224,6 +274,10 @@ namespace RPGFramework.Core.Memory
     public sealed class VariableRecordField
     {
         [SerializeField]
+        [Tooltip("Permanent within its record, assigned by the map and never reused, so a rename or a reorder keeps its values")]
+        private ushort m_Id;
+
+        [SerializeField]
         [Tooltip("Name scripts use after the record, as in $characters[0].hp. Unique within the record")]
         private string m_Name;
 
@@ -238,6 +292,8 @@ namespace RPGFramework.Core.Memory
         [SerializeField]
         [Tooltip("What every record starts with in a new game, held as the bytes it occupies. Edit it through the Variable Map inspector")]
         private ulong m_DefaultValue;
+
+        internal ushort Id => m_Id;
 
         public string        Name         => m_Name;
         public VariableWidth Width        => m_Width;
@@ -261,6 +317,13 @@ namespace RPGFramework.Core.Memory
             m_Count        = count;
             m_DefaultValue = defaultValue;
         }
+
+#if UNITY_EDITOR
+        internal void AssignId(ushort id)
+        {
+            m_Id = id;
+        }
+#endif
     }
 
     /// <summary>
