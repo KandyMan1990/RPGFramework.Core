@@ -42,7 +42,7 @@ namespace RPGFramework.Core.Editor
         {
             m_Map = (VariableMapAsset)target;
 
-            AssignMissingIds();
+            Repair();
 
             VisualElement root = new VisualElement();
 
@@ -55,7 +55,7 @@ namespace RPGFramework.Core.Editor
             // Keep the derived labels honest when the list is edited directly, or undone.
             root.TrackSerializedObjectValue(serializedObject, _ =>
                                                               {
-                                                                  AssignMissingIds();
+                                                                  Repair();
                                                                   RefreshDerivedLabels();
                                                               });
 
@@ -65,12 +65,16 @@ namespace RPGFramework.Core.Editor
         }
 
         /// <summary>
-        /// A map from before ids, or a variable or field copied in the list, gets its ids as soon as it is seen. Not
-        /// recorded for undo: undoing it would only bring the missing or shared id back.
+        /// Ids and offsets are the map's to give, so a variable or field without its own id — a map from before ids, a
+        /// copy made in the list — gets one, and a variable overlapping another is moved, as soon as either is seen.
+        /// Not recorded for undo: undoing it would only bring the problem back.
         /// </summary>
-        private void AssignMissingIds()
+        private void Repair()
         {
-            if (m_Map.AssignMissingIds() == 0)
+            int assigned = m_Map.AssignMissingIds();
+            int moved    = m_Map.RelocateOverlapping();
+
+            if (assigned + moved == 0)
             {
                 return;
             }
@@ -116,7 +120,7 @@ namespace RPGFramework.Core.Editor
             m_BankField        = new EnumField("Bank",  MemoryBank.Persistent);
             m_RecordToggle     = new Toggle("Record") { tooltip = "A record is fields of their own widths packed together, as a struct is — a character, an item slot" };
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
-            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value or record; more makes an array. An array's count is fixed once saves exist, since growing it would move what follows" };
+            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value or record; more makes an array" };
             m_DescriptionField = new TextField("Description") { multiline = true };
 
             m_PendingFieldsContainer               = new VisualElement();
@@ -266,7 +270,7 @@ namespace RPGFramework.Core.Editor
         {
             VisualElement section = MakeSection("Declared variables");
 
-            section.Add(new HelpBox("Offsets are assigned by the map and are never reused, so deleting a variable leaves a permanent gap. That is deliberate: reassigning a freed offset would make a new variable read an old one's data out of every existing save file.", HelpBoxMessageType.Info));
+            section.Add(new HelpBox("Offsets are assigned by the map: a new variable fills the first gap it fits, and one that grows into the next moves it out of the way. Saves find every value by its variable's id wherever it is. Field scripts address offsets, so export the fields again after changing the map — a player build refuses fields exported against an older one.", HelpBoxMessageType.Info));
 
             VisualElement defaultInspector = new VisualElement();
             InspectorElement.FillDefaultInspector(defaultInspector, serializedObject, this);
@@ -320,7 +324,7 @@ namespace RPGFramework.Core.Editor
                 }
             }
 
-            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.GetNextOffset(bank, alignment)}, taking {elementSize * count} bytes";
+            m_NextOffsetLabel.text = $"Will be allocated at offset {m_Map.FindFreeOffset(bank, alignment, elementSize * count)}, taking {elementSize * count} bytes";
 
             string name      = m_NameField.value;
             bool   hasName   = !string.IsNullOrWhiteSpace(name);

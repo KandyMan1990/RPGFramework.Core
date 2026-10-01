@@ -172,6 +172,11 @@ namespace RPGFramework.Core.Memory
         {
             m_Id = id;
         }
+
+        internal void MoveTo(int offset)
+        {
+            m_Offset = offset;
+        }
 #endif
 
         /// <summary>

@@ -10,15 +10,13 @@ namespace RPGFramework.Core.Memory
     /// A memory bank on its own is an anonymous <c>byte[]</c>. This asset is what makes it readable —
     /// it is the schema that authoring tools resolve names against, and the record of which bytes are
     /// already spoken for.<br /><br />
-    /// <b>Offsets are allocated by this asset, never typed by hand, and are never reused.</b> Allocation
-    /// appends after the highest offset already in use, so deleting a variable leaves a permanent hole.
-    /// That is deliberate: once a game has shipped, a saved file holds bytes at fixed offsets, and handing
-    /// a freed offset to a new variable would make it silently read the old variable's data out of every
-    /// existing save.<br /><br />
+    /// <b>Offsets are allocated by this asset, never typed by hand.</b> A new variable fills the first gap in its bank
+    /// it fits, and a variable that grows into the next is moved. Saves record where each value was and are matched on
+    /// permanent ids, so a value follows its variable wherever it goes, and one in a gap a deleted variable left is
+    /// never read as the new one's.<br /><br />
     /// It also sizes the banks, each exactly big enough for what is declared in it. A game binds it as
     /// <see cref="IVariableMap" />, <see cref="IMemoryServiceArgs" /> and <see cref="ITempMemoryArgs" />, so the banks
-    /// and the variables read from them cannot come from different maps. Growing the map between releases is safe: a
-    /// save written by an older build restores into the larger bank, and what lies past its end takes its defaults.
+    /// and the variables read from them cannot come from different maps.
     /// </summary>
     [CreateAssetMenu(menuName = "RPG Framework/Core/Variable Map", fileName = "VariableMap")]
     public sealed class VariableMapAsset : ScriptableObject, IVariableMap, IMemoryServiceArgs, ITempMemoryArgs
@@ -166,12 +164,11 @@ namespace RPGFramework.Core.Memory
 
         /// <summary>
         /// Authoring only. Appends a variable of <paramref name="count" /> values — one, or an array — at the next
-        /// free naturally aligned offset in its bank and returns it. Never reuses a hole left by a deleted variable —
-        /// see the note on this class.
+        /// free naturally aligned offset in its bank and returns it — the first gap it fits, otherwise the end.
         /// </summary>
         public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
         {
-            int offset = GetNextOffset(bank, width.GetByteCount());
+            int offset = FindFreeOffset(bank, width.GetByteCount(), width.GetByteCount() * count);
 
             VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, width, count, offset, description, defaultValue);
 
@@ -187,7 +184,14 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public VariableDefinition AllocateRecord(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, string description)
         {
-            int offset = GetNextOffset(bank, GetAlignment(fields));
+            int recordSize = 0;
+
+            foreach (VariableRecordField field in fields)
+            {
+                recordSize += field.ByteCount;
+            }
+
+            int offset = FindFreeOffset(bank, GetAlignment(fields), recordSize * count);
 
             VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, fields, count, offset, description);
             definition.AssignMissingFieldIds();
@@ -275,17 +279,93 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// Authoring only. The offset <see cref="Allocate" /> would use for this bank and alignment: the first
-        /// aligned offset at or after the end of the highest variable currently in the bank.
+        /// Authoring only. Where <paramref name="size" /> bytes at <paramref name="alignment" /> go in a bank: the first
+        /// gap between its variables they fit, otherwise after the last. <paramref name="moving" />, a variable being
+        /// relocated, counts its own bytes as free.
         /// </summary>
-        public int GetNextOffset(MemoryBank bank, int alignment)
+        internal int FindFreeOffset(MemoryBank bank, int alignment, int size, VariableDefinition moving = null)
         {
-            int highestEnd = GetRequiredBytes(bank);
-            int remainder  = highestEnd % alignment;
+            List<VariableDefinition> occupied = new List<VariableDefinition>();
 
-            int offset = remainder == 0 ? highestEnd : highestEnd + (alignment - remainder);
+            foreach (VariableDefinition variable in m_Variables)
+            {
+                if (variable.Bank == bank && variable != moving)
+                {
+                    occupied.Add(variable);
+                }
+            }
+
+            occupied.Sort((a, b) => a.Offset.CompareTo(b.Offset));
+
+            int offset = 0;
+
+            foreach (VariableDefinition variable in occupied)
+            {
+                if (offset + size <= variable.Offset)
+                {
+                    break;
+                }
+
+                offset = Align(Mathf.Max(offset, variable.EndOffset), alignment);
+            }
 
             return offset;
+        }
+
+        /// <summary>
+        /// Authoring only. Moves every variable that overlaps another to the first gap it fits, and returns how many it
+        /// moved — a variable that grew into its neighbour, a copy made in the list, one moved onto another's bytes in
+        /// a different bank. Of two that overlap, the one starting later moves (the later in the list, on a tie), so the
+        /// one that grew stays where it is, and a state undo restores, which has no overlaps, is left alone. Saves follow
+        /// the moved variable by its id.
+        /// </summary>
+        internal int RelocateOverlapping()
+        {
+            int moved = 0;
+
+            VariableDefinition overlapping = FindLaterOverlapping();
+
+            while (overlapping != null)
+            {
+                int alignment = overlapping.IsRecord ? GetAlignment(overlapping.Fields) : overlapping.Width.GetByteCount();
+                int size      = overlapping.EndOffset - overlapping.Offset;
+
+                overlapping.MoveTo(FindFreeOffset(overlapping.Bank, alignment, size, overlapping));
+                moved++;
+
+                overlapping = FindLaterOverlapping();
+            }
+
+            return moved;
+        }
+
+        private VariableDefinition FindLaterOverlapping()
+        {
+            for (int i = 0; i < m_Variables.Count; i++)
+            {
+                for (int j = 0; j < m_Variables.Count; j++)
+                {
+                    VariableDefinition variable = m_Variables[i];
+                    VariableDefinition other    = m_Variables[j];
+
+                    bool later = variable.Offset > other.Offset || (variable.Offset == other.Offset && i > j);
+
+                    if (i != j && later && variable.Overlaps(other))
+                    {
+                        return variable;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static int Align(int offset, int alignment)
+        {
+            int remainder = offset % alignment;
+            int aligned   = remainder == 0 ? offset : offset + (alignment - remainder);
+
+            return aligned;
         }
 
         /// <summary>
