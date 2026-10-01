@@ -19,14 +19,23 @@ namespace RPGFramework.Core.SaveData
         /// </summary>
         public bool IsFromNewerVersion { get; }
 
+        /// <summary>
+        /// Its checksum or contents are wrong — a write cut short, or a file damaged since. It cannot be loaded, and its
+        /// variables read their defaults.
+        /// </summary>
+        public bool IsDamaged { get; }
+
+        public bool CanLoad => !IsFromNewerVersion && !IsDamaged;
+
         private readonly byte[]       m_Persistent;
         private readonly IVariableMap m_VariableMap;
 
-        internal SavePreview(string fileName, DateTime lastWritten, byte[] persistent, IVariableMap variableMap, bool isFromNewerVersion)
+        internal SavePreview(string fileName, DateTime lastWritten, byte[] persistent, IVariableMap variableMap, SaveState state)
         {
             FileName           = fileName;
             LastWritten        = lastWritten;
-            IsFromNewerVersion = isFromNewerVersion;
+            IsFromNewerVersion = state == SaveState.FromNewerVersion;
+            IsDamaged          = state == SaveState.Damaged;
             m_Persistent       = persistent;
             m_VariableMap      = variableMap;
         }

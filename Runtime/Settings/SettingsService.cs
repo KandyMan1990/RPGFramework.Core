@@ -13,8 +13,8 @@ namespace RPGFramework.Core.Settings
     public interface ISettingsService
     {
         /// <summary>
-        /// Whether settings have been written on this machine. Until they are, every section holds the game's
-        /// defaults from <see cref="ISettingsFactory" />.
+        /// Whether settings have been written on this machine, in a file that is intact. Until they are, every section
+        /// holds the game's defaults from <see cref="ISettingsFactory" />.
         /// </summary>
         bool IsSaved { get; }
 
@@ -28,7 +28,8 @@ namespace RPGFramework.Core.Settings
     }
 
     /// <summary>
-    /// The game's settings on a first launch.
+    /// The game's default settings: what a first launch starts with, and what a section the settings file lacks, or holds
+    /// in a shape an older build wrote, falls back to. Called on every launch, before the file is read.
     /// </summary>
     public interface ISettingsFactory
     {
@@ -101,16 +102,43 @@ namespace RPGFramework.Core.Settings
             // Set first: the factory fills the defaults in through this service.
             m_Loaded = true;
 
-            if (File.Exists(m_Path))
+            m_SettingsFactory.CreateDefaultSettings(this);
+
+            if (!File.Exists(m_Path))
             {
-                SectionFile.Read(m_Path, m_Sections);
-
-                m_IsSaved = true;
-
                 return;
             }
 
-            m_SettingsFactory.CreateDefaultSettings(this);
+            Dictionary<ulong, SectionBlob> saved = new Dictionary<ulong, SectionBlob>();
+
+            // A damaged file, or one in a newer format, is a first launch: the defaults stand until the player commits.
+            if (SectionFile.Read(m_Path, saved) != SectionFileStatus.Intact)
+            {
+                return;
+            }
+
+            TakeSaved(m_Sections, saved);
+
+            m_IsSaved = true;
+        }
+
+        /// <summary>
+        /// The saved sections over the game's defaults. A section the game writes is taken from the file only in the shape
+        /// the game writes it now — the same version and size — so one a later build changed, or added, starts at its
+        /// default rather than being read as something it is not. One the game no longer writes is carried through.
+        /// </summary>
+        internal static void TakeSaved(Dictionary<ulong, SectionBlob> sections, Dictionary<ulong, SectionBlob> saved)
+        {
+            foreach (KeyValuePair<ulong, SectionBlob> section in saved)
+            {
+                bool reshaped = sections.TryGetValue(section.Key, out SectionBlob current) &&
+                                (current.Version != section.Value.Version || current.Data.Length != section.Value.Data.Length);
+
+                if (!reshaped)
+                {
+                    sections[section.Key] = section.Value;
+                }
+            }
         }
     }
 }

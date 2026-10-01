@@ -22,6 +22,10 @@ namespace RPGFramework.Core.SaveData
         /// </summary>
         internal const uint DATA_VERSION = 1;
 
+        private const int HEADER_SIZE         = sizeof(uint) + sizeof(ushort);
+        private const int VARIABLE_ENTRY_SIZE = sizeof(uint) + sizeof(ushort) + sizeof(ushort) + sizeof(byte) + sizeof(byte);
+        private const int FIELD_ENTRY_SIZE    = sizeof(ushort) + sizeof(byte) + sizeof(ushort);
+
         internal readonly struct Field
         {
             internal readonly ushort        Id;
@@ -90,12 +94,27 @@ namespace RPGFramework.Core.SaveData
 
         internal uint DataVersion { get; }
 
+        /// <summary>
+        /// How many bytes of bank the layout describes: what a save's bank section must hold.
+        /// </summary>
+        internal int RequiredBytes { get; }
+
         internal IEnumerable<Entry> Entries => m_Entries.Values;
 
         private PersistentLayout(uint dataVersion, Dictionary<uint, Entry> entries)
         {
             DataVersion = dataVersion;
             m_Entries   = entries;
+
+            foreach (Entry entry in entries.Values)
+            {
+                int end = entry.Offset + entry.ElementSize * entry.Count;
+
+                if (end > RequiredBytes)
+                {
+                    RequiredBytes = end;
+                }
+            }
         }
 
         internal bool TryGetEntry(uint id, out Entry entry)
@@ -149,8 +168,18 @@ namespace RPGFramework.Core.SaveData
             return bytes;
         }
 
-        internal static PersistentLayout Read(byte[] bytes)
+        /// <summary>
+        /// False for bytes too short for what they declare — a layout that is not one.
+        /// </summary>
+        internal static bool TryRead(byte[] bytes, out PersistentLayout layout)
         {
+            layout = null;
+
+            if (bytes.Length < HEADER_SIZE)
+            {
+                return false;
+            }
+
             using MemoryStream stream = new MemoryStream(bytes);
             using BinaryReader reader = new BinaryReader(stream);
 
@@ -161,11 +190,21 @@ namespace RPGFramework.Core.SaveData
 
             for (int i = 0; i < variableCount; i++)
             {
+                if (stream.Length - stream.Position < VARIABLE_ENTRY_SIZE)
+                {
+                    return false;
+                }
+
                 uint          id         = reader.ReadUInt32();
                 int           offset     = reader.ReadUInt16();
                 int           count      = reader.ReadUInt16();
                 VariableWidth width      = (VariableWidth)reader.ReadByte();
                 int           fieldCount = reader.ReadByte();
+
+                if (stream.Length - stream.Position < fieldCount * FIELD_ENTRY_SIZE)
+                {
+                    return false;
+                }
 
                 Field[] fields = new Field[fieldCount];
 
@@ -177,9 +216,9 @@ namespace RPGFramework.Core.SaveData
                 entries[id] = new Entry(id, offset, count, width, fields);
             }
 
-            PersistentLayout layout = new PersistentLayout(dataVersion, entries);
+            layout = new PersistentLayout(dataVersion, entries);
 
-            return layout;
+            return true;
         }
 
         /// <summary>
