@@ -34,6 +34,8 @@ namespace RPGFramework.Core.Memory
 
         public IReadOnlyList<VariableDefinition> Variables => m_Variables;
 
+        uint IVariableMap.LastVariableId => m_LastVariableId;
+
         int IMemoryServiceArgs.PersistentBytes
         {
             get

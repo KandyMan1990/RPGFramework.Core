@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using RPGFramework.Core.Memory;
 
@@ -14,15 +13,22 @@ namespace RPGFramework.Core.SaveData
         public string   FileName    { get; }
         public DateTime LastWritten { get; }
 
+        /// <summary>
+        /// Written by a newer version of the game, holding variables this one does not know. It cannot be loaded —
+        /// that would drop them — though saving over it is the player's choice.
+        /// </summary>
+        public bool IsFromNewerVersion { get; }
+
         private readonly byte[]       m_Persistent;
         private readonly IVariableMap m_VariableMap;
 
-        internal SavePreview(string fileName, DateTime lastWritten, byte[] persistent, IVariableMap variableMap)
+        internal SavePreview(string fileName, DateTime lastWritten, byte[] persistent, IVariableMap variableMap, bool isFromNewerVersion)
         {
-            FileName      = fileName;
-            LastWritten   = lastWritten;
-            m_Persistent  = persistent;
-            m_VariableMap = variableMap;
+            FileName           = fileName;
+            LastWritten        = lastWritten;
+            IsFromNewerVersion = isFromNewerVersion;
+            m_Persistent       = persistent;
+            m_VariableMap      = variableMap;
         }
 
         /// <summary>
@@ -33,20 +39,7 @@ namespace RPGFramework.Core.SaveData
         {
             m_VariableMap.TryGetVariable(variableName, out VariableDefinition variable);
 
-            T value = variable.EndOffset <= m_Persistent.Length
-                          ? MemoryMarshal.Read<T>(m_Persistent.AsSpan(variable.Offset))
-                          : ReadDefault<T>(variable.DefaultValue);
-
-            return value;
-        }
-
-        private static T ReadDefault<T>(ulong defaultValue) where T : unmanaged
-        {
-            Span<byte> bytes = stackalloc byte[sizeof(ulong)];
-
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes, defaultValue);
-
-            T value = MemoryMarshal.Read<T>(bytes);
+            T value = MemoryMarshal.Read<T>(m_Persistent.AsSpan(variable.Offset));
 
             return value;
         }

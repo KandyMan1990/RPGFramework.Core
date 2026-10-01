@@ -10,6 +10,12 @@ namespace RPGFramework.Core.Memory
     {
         IReadOnlyList<VariableDefinition> Variables { get; }
 
+        /// <summary>
+        /// The id most recently given to a variable. Ids only go up, so a save holding a higher one was written by a
+        /// newer build of the game.
+        /// </summary>
+        uint LastVariableId { get; }
+
         bool TryGetVariable(string varName, out VariableDefinition definition);
     }
 }

@@ -49,6 +49,8 @@ namespace RPGFramework.Core.SaveData
         private readonly IMemoryService                 m_MemoryService;
         private readonly IVariableMap                   m_VariableMap;
         private readonly ulong                          m_PersistentMemorySectionId;
+        private readonly ulong                          m_PersistentLayoutSectionId;
+        private readonly byte[]                         m_PersistentLayout;
 
         private string m_CurrentPath;
 
@@ -61,6 +63,8 @@ namespace RPGFramework.Core.SaveData
             m_MemoryService             = memoryService;
             m_VariableMap               = variableMap;
             m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY);
+            m_PersistentLayoutSectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY_LAYOUT);
+            m_PersistentLayout          = PersistentLayout.Write(variableMap);
         }
 
         void ISaveDataService.BeginSave(string filename)
@@ -75,25 +79,32 @@ namespace RPGFramework.Core.SaveData
                 m_MemoryBankAccess.ClearPersistent();
                 m_MemoryBankAccess.ClearSession();
 
-                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, 0);
-                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session,    0);
+                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent);
+                VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session);
                 SetLoadedFromSave(false);
                 return;
             }
 
             SectionFile.Read(m_CurrentPath, m_Sections);
 
+            byte[] persistent = m_Sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob memory) ? memory.Data : Array.Empty<byte>();
+            byte[] layout     = m_Sections.TryGetValue(m_PersistentLayoutSectionId, out SectionBlob saved)  ? saved.Data  : null;
+
+            byte[] bank = ToCurrentLayout(persistent, layout, out bool fromNewerVersion);
+
+            if (fromNewerVersion)
+            {
+                throw new InvalidOperationException($"{nameof(SaveDataService)}::{nameof(ISaveDataService.BeginSave)} {filename} was written by a newer version of the game, and loading it would drop what this version does not know. Offer only saves whose {nameof(SavePreview)}.{nameof(SavePreview.IsFromNewerVersion)} is false");
+            }
+
             // Session state is what survives a module change but not a restart, and loading a save is a
             // restart — NPC positions and "have I already heard this line" belong to the playthrough
             // being left, not the one being entered.
             m_MemoryBankAccess.ClearSession();
-            VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session, 0);
+            VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session);
             SetLoadedFromSave(true);
 
-            int restoredBytes = RestorePersistentMemory();
-
-            // Variables added since this save was written lie past the end of what it holds.
-            VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent, restoredBytes);
+            m_MemoryBankAccess.RestorePersistent(bank);
         }
 
         string ISaveDataService.GetCurrentSaveFileName()
@@ -124,11 +135,12 @@ namespace RPGFramework.Core.SaveData
             string path = Path.Combine(Application.persistentDataPath, filename);
 
             // A save written before any variables existed has no persistent memory, so every variable reads its default.
-            byte[] persistent = SectionFile.TryReadSection(path, m_PersistentMemorySectionId, out SectionBlob persistentMemory)
-                                    ? persistentMemory.Data
-                                    : Array.Empty<byte>();
+            byte[] persistent = SectionFile.TryReadSection(path, m_PersistentMemorySectionId, out SectionBlob memory) ? memory.Data : Array.Empty<byte>();
+            byte[] layout     = SectionFile.TryReadSection(path, m_PersistentLayoutSectionId, out SectionBlob saved)  ? saved.Data  : null;
 
-            SavePreview preview = new SavePreview(filename, File.GetLastWriteTime(path), persistent, m_VariableMap);
+            byte[] bank = ToCurrentLayout(persistent, layout, out bool fromNewerVersion);
+
+            SavePreview preview = new SavePreview(filename, File.GetLastWriteTime(path), bank, m_VariableMap, fromNewerVersion);
 
             return preview;
         }
@@ -243,35 +255,39 @@ namespace RPGFramework.Core.SaveData
 
         /// <summary>
         /// Copy the persistent memory bank into its reserved section, so <see cref="ISaveDataService.CommitSave" />
-        /// writes the variables as they stand right now. The bank is a raw blob rather than a
-        /// <see cref="SaveSection{T}" /> because its length is decided by the variable map at build time,
-        /// not by an unmanaged struct.
+        /// writes the variables as they stand right now, with the layout that says where each one is. The bank is a raw
+        /// blob rather than a <see cref="SaveSection{T}" /> because its length is decided by the variable map at build
+        /// time, not by an unmanaged struct.
         /// </summary>
         private void CapturePersistentMemory()
         {
             byte[] persistent = m_MemoryBankAccess.CopyPersistent();
 
             m_Sections[m_PersistentMemorySectionId] = new SectionBlob(Versions.PERSISTENT_MEMORY, persistent);
+            m_Sections[m_PersistentLayoutSectionId] = new SectionBlob(PersistentLayout.FORMAT_VERSION, m_PersistentLayout);
         }
 
         /// <summary>
-        /// Push the loaded persistent memory section back into the bank. A save written before any variables
-        /// existed has no such section, in which case the bank is cleared — the same state a new game gets.
+        /// A save's persistent bank laid out as this build's map lays it out: as saved when the layouts match, otherwise
+        /// moved value by value. A save with no layout was written before saves recorded one, when the map could only
+        /// ever grow at the end, so it is read by the map's own layout as far as its bytes reach.
         /// </summary>
-        /// <returns>How many bytes of the bank came from the save; everything after them did not.</returns>
-        private int RestorePersistentMemory()
+        private byte[] ToCurrentLayout(byte[] persistent, byte[] layout, out bool fromNewerVersion)
         {
-            if (!m_Sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob persistentMemory))
+            fromNewerVersion = false;
+
+            if (layout != null && layout.AsSpan().SequenceEqual(m_PersistentLayout))
             {
-                m_MemoryBankAccess.ClearPersistent();
-                return 0;
+                return persistent;
             }
 
-            m_MemoryBankAccess.RestorePersistent(persistentMemory.Data);
+            PersistentLayout savedLayout = layout != null ? PersistentLayout.Read(layout) : PersistentLayout.Within(m_VariableMap, persistent.Length);
 
-            int restoredBytes = persistentMemory.Data.Length;
+            fromNewerVersion = PersistentMigration.IsFromNewerBuild(savedLayout, m_VariableMap);
 
-            return restoredBytes;
+            byte[] bank = PersistentMigration.Migrate(persistent, savedLayout, m_VariableMap, m_MemoryBankAccess.PersistentByteCount);
+
+            return bank;
         }
     }
 }

@@ -59,7 +59,8 @@ namespace RPGFramework.Core.Memory
         [Tooltip("Elements of an array, or fields of particular records, that start at something other than the default. Edit them through the Variable Map inspector")]
         private List<VariableElementDefault> m_ElementDefaults = new List<VariableElementDefault>();
 
-        internal uint Id => m_Id;
+        internal uint   Id          => m_Id;
+        internal ushort LastFieldId => m_LastFieldId;
 
         public string        Name        => m_Name;
         public MemoryBank    Bank        => m_Bank;

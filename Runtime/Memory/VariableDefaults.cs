@@ -59,16 +59,39 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// Write the defaults of every variable in <paramref name="bank" /> that starts at or after
-        /// <paramref name="fromOffset" />, every element of an array and every field of a record included. A new game
-        /// writes them all; a load writes only those past the end of the saved bank, which were added since that save
-        /// and would otherwise start at zero.
+        /// Write the default of every variable in <paramref name="bank" />, every element of an array and every field of
+        /// a record included — what a new game starts with.
         /// </summary>
-        public static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank, int fromOffset)
+        public static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank)
+        {
+            ForEachDefault(map, bank, (offset, byteCount, value) =>
+                                      {
+                                          for (int i = 0; i < byteCount; i++)
+                                          {
+                                              memory.WriteByte(bank, (ushort)(offset + i), (byte)(value >> (8 * i)));
+                                          }
+                                      });
+        }
+
+        /// <summary>
+        /// As <see cref="Write(IMemoryService, IVariableMap, MemoryBank)" />, into a copy of the bank rather than the bank.
+        /// </summary>
+        internal static void Write(byte[] image, IVariableMap map, MemoryBank bank)
+        {
+            ForEachDefault(map, bank, (offset, byteCount, value) =>
+                                      {
+                                          for (int i = 0; i < byteCount; i++)
+                                          {
+                                              image[offset + i] = (byte)(value >> (8 * i));
+                                          }
+                                      });
+        }
+
+        private static void ForEachDefault(IVariableMap map, MemoryBank bank, Action<int, int, ulong> write)
         {
             foreach (VariableDefinition variable in map.Variables)
             {
-                if (variable.Bank != bank || variable.Offset < fromOffset)
+                if (variable.Bank != bank)
                 {
                     continue;
                 }
@@ -79,30 +102,22 @@ namespace RPGFramework.Core.Memory
 
                     if (!variable.IsRecord)
                     {
-                        WriteValue(memory, bank, offset, variable.Width, variable.GetDefault(element));
+                        write(offset, variable.Width.GetByteCount(), variable.GetDefault(element));
                         continue;
                     }
 
                     foreach (VariableRecordField field in variable.Fields)
                     {
+                        int byteCount = field.Width.GetByteCount();
+
                         for (int fieldIndex = 0; fieldIndex < field.Count; fieldIndex++)
                         {
-                            WriteValue(memory, bank, offset + fieldIndex * field.Width.GetByteCount(), field.Width, variable.GetDefault(element, field, fieldIndex));
+                            write(offset + fieldIndex * byteCount, byteCount, variable.GetDefault(element, field, fieldIndex));
                         }
 
                         offset += field.ByteCount;
                     }
                 }
-            }
-        }
-
-        private static void WriteValue(IMemoryService memory, MemoryBank bank, int offset, VariableWidth width, ulong value)
-        {
-            int byteCount = width.GetByteCount();
-
-            for (int i = 0; i < byteCount; i++)
-            {
-                memory.WriteByte(bank, (ushort)(offset + i), (byte)(value >> (8 * i)));
             }
         }
 
