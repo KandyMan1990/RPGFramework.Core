@@ -141,7 +141,7 @@ namespace RPGFramework.Core.Memory
         }
 
         /// <summary>
-        /// Authoring only. Declares every required variable the map does not have yet, with a default of zero,
+        /// Authoring only. Declares every required variable the map does not have yet, with the default it asks for,
         /// and returns how many were added.
         /// </summary>
         public int AddMissingRequiredVariables()
@@ -155,7 +155,7 @@ namespace RPGFramework.Core.Memory
                     continue;
                 }
 
-                Allocate(required.Name, required.Bank, required.Width, 1, required.Description, 0);
+                Allocate(required.Name, required.Bank, required.Width, 1, required.Description, required.DefaultValue);
                 added++;
             }
 

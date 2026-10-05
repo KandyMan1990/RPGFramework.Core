@@ -14,13 +14,19 @@ namespace RPGFramework.Core.Memory
         public readonly MemoryBank    Bank;
         public readonly VariableWidth Width;
         public readonly string        Description;
+        public readonly ulong         DefaultValue;
 
-        public RequiredVariable(string name, MemoryBank bank, VariableWidth width, string description)
+        public RequiredVariable(string        name,
+                                MemoryBank    bank,
+                                VariableWidth width,
+                                string        description,
+                                ulong         defaultValue = 0)
         {
-            Name        = name;
-            Bank        = bank;
-            Width       = width;
-            Description = description;
+            Name         = name;
+            Bank         = bank;
+            Width        = width;
+            Description  = description;
+            DefaultValue = defaultValue;
         }
     }
 
