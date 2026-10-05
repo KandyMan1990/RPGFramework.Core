@@ -29,8 +29,10 @@ namespace RPGFramework.Core.Dialogue
 
             colour = default;
 
-            foreach (DialogueTextSpan span in Spans)
+            for (int i = 0; i < Spans.Count; i++)
             {
+                DialogueTextSpan span = Spans[i];
+
                 if (span.Colour.HasValue && span.Contains(index) && span.Start >= innermost)
                 {
                     innermost = span.Start;
@@ -45,8 +47,10 @@ namespace RPGFramework.Core.Dialogue
 
         public bool IsBlinking(int index)
         {
-            foreach (DialogueTextSpan span in Spans)
+            for (int i = 0; i < Spans.Count; i++)
             {
+                DialogueTextSpan span = Spans[i];
+
                 if (span.Blink && span.Contains(index))
                 {
                     return true;
