@@ -1,4 +1,5 @@
-﻿using RPGFramework.DI;
+﻿using System;
+using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,6 +7,8 @@ namespace RPGFramework.Core.Input
 {
     public sealed class InputAdapter : MonoBehaviour
     {
+        private static readonly int s_SlotCount = Enum.GetValues(typeof(ControlSlot)).Length;
+
         [SerializeField] private InputActionReference m_Movement;
         [SerializeField] private InputActionReference m_Primary;
         [SerializeField] private InputActionReference m_Secondary;
@@ -20,6 +23,12 @@ namespace RPGFramework.Core.Input
 
         private IInputRouter m_InputRouter;
         private bool         m_Subscribed;
+
+        // Read from the references when input starts and kept, so stopping it never reads a reference: one that no longer
+        // resolves as play mode ends would throw.
+        private InputAction                           m_MovementAction;
+        private InputAction[]                         m_Actions;
+        private Action<InputAction.CallbackContext>[] m_Handlers;
 
         [Inject]
         private void Inject(IInputRouter inputRouter)
@@ -41,61 +50,24 @@ namespace RPGFramework.Core.Input
 
             m_Subscribed = true;
 
-            if (m_Movement != null)
+            ReadActions();
+
+            if (m_MovementAction != null)
             {
-                m_Movement.action.performed += RouteMovement;
-                m_Movement.action.canceled  += RouteMovement;
-                m_Movement.action.Enable();
+                m_MovementAction.performed += RouteMovement;
+                m_MovementAction.canceled  += RouteMovement;
+                m_MovementAction.Enable();
             }
-            if (m_Primary != null)
+
+            for (int i = 0; i < m_Actions.Length; i++)
             {
-                m_Primary.action.performed += RoutePrimary;
-                m_Primary.action.Enable();
-            }
-            if (m_Secondary != null)
-            {
-                m_Secondary.action.performed += RouteSecondary;
-                m_Secondary.action.Enable();
-            }
-            if (m_Tertiary != null)
-            {
-                m_Tertiary.action.performed += RouteTertiary;
-                m_Tertiary.action.Enable();
-            }
-            if (m_Quaternary != null)
-            {
-                m_Quaternary.action.performed += RouteQuaternary;
-                m_Quaternary.action.Enable();
-            }
-            if (m_ShoulderLeft != null)
-            {
-                m_ShoulderLeft.action.performed += RouteShoulderLeft;
-                m_ShoulderLeft.action.Enable();
-            }
-            if (m_ShoulderRight != null)
-            {
-                m_ShoulderRight.action.performed += RouteShoulderRight;
-                m_ShoulderRight.action.Enable();
-            }
-            if (m_TriggerLeft != null)
-            {
-                m_TriggerLeft.action.performed += RouteTriggerLeft;
-                m_TriggerLeft.action.Enable();
-            }
-            if (m_TriggerRight != null)
-            {
-                m_TriggerRight.action.performed += RouteTriggerRight;
-                m_TriggerRight.action.Enable();
-            }
-            if (m_Start != null)
-            {
-                m_Start.action.performed += RouteStart;
-                m_Start.action.Enable();
-            }
-            if (m_Select != null)
-            {
-                m_Select.action.performed += RouteSelect;
-                m_Select.action.Enable();
+                if (m_Actions[i] == null)
+                {
+                    continue;
+                }
+
+                m_Actions[i].performed += m_Handlers[i];
+                m_Actions[i].Enable();
             }
         }
 
@@ -108,117 +80,64 @@ namespace RPGFramework.Core.Input
 
             m_Subscribed = false;
 
-            if (m_Movement != null)
+            if (m_MovementAction != null)
             {
-                m_Movement.action.Disable();
-                m_Movement.action.canceled  -= RouteMovement;
-                m_Movement.action.performed -= RouteMovement;
+                m_MovementAction.Disable();
+                m_MovementAction.canceled  -= RouteMovement;
+                m_MovementAction.performed -= RouteMovement;
             }
-            if (m_Primary != null)
+
+            for (int i = 0; i < m_Actions.Length; i++)
             {
-                m_Primary.action.Disable();
-                m_Primary.action.performed -= RoutePrimary;
+                if (m_Actions[i] == null)
+                {
+                    continue;
+                }
+
+                m_Actions[i].Disable();
+                m_Actions[i].performed -= m_Handlers[i];
             }
-            if (m_Secondary != null)
+        }
+
+        private void ReadActions()
+        {
+            if (m_Actions == null)
             {
-                m_Secondary.action.Disable();
-                m_Secondary.action.performed -= RouteSecondary;
+                m_Actions  = new InputAction[s_SlotCount];
+                m_Handlers = new Action<InputAction.CallbackContext>[s_SlotCount];
+
+                for (int i = 0; i < s_SlotCount; i++)
+                {
+                    ControlSlot slot = (ControlSlot)i;
+
+                    m_Handlers[i] = _ => m_InputRouter.Route(slot);
+                }
             }
-            if (m_Tertiary != null)
-            {
-                m_Tertiary.action.Disable();
-                m_Tertiary.action.performed -= RouteTertiary;
-            }
-            if (m_Quaternary != null)
-            {
-                m_Quaternary.action.Disable();
-                m_Quaternary.action.performed -= RouteQuaternary;
-            }
-            if (m_ShoulderLeft != null)
-            {
-                m_ShoulderLeft.action.Disable();
-                m_ShoulderLeft.action.performed -= RouteShoulderLeft;
-            }
-            if (m_ShoulderRight != null)
-            {
-                m_ShoulderRight.action.Disable();
-                m_ShoulderRight.action.performed -= RouteShoulderRight;
-            }
-            if (m_TriggerLeft != null)
-            {
-                m_TriggerLeft.action.Disable();
-                m_TriggerLeft.action.performed -= RouteTriggerLeft;
-            }
-            if (m_TriggerRight != null)
-            {
-                m_TriggerRight.action.Disable();
-                m_TriggerRight.action.performed -= RouteTriggerRight;
-            }
-            if (m_Start != null)
-            {
-                m_Start.action.Disable();
-                m_Start.action.performed -= RouteStart;
-            }
-            if (m_Select != null)
-            {
-                m_Select.action.Disable();
-                m_Select.action.performed -= RouteSelect;
-            }
+
+            m_MovementAction = ReadAction(m_Movement);
+
+            m_Actions[(int)ControlSlot.Primary]       = ReadAction(m_Primary);
+            m_Actions[(int)ControlSlot.Secondary]     = ReadAction(m_Secondary);
+            m_Actions[(int)ControlSlot.Tertiary]      = ReadAction(m_Tertiary);
+            m_Actions[(int)ControlSlot.Quaternary]    = ReadAction(m_Quaternary);
+            m_Actions[(int)ControlSlot.ShoulderLeft]  = ReadAction(m_ShoulderLeft);
+            m_Actions[(int)ControlSlot.ShoulderRight] = ReadAction(m_ShoulderRight);
+            m_Actions[(int)ControlSlot.TriggerLeft]   = ReadAction(m_TriggerLeft);
+            m_Actions[(int)ControlSlot.TriggerRight]  = ReadAction(m_TriggerRight);
+            m_Actions[(int)ControlSlot.Start]         = ReadAction(m_Start);
+            m_Actions[(int)ControlSlot.Select]        = ReadAction(m_Select);
+        }
+
+        private static InputAction ReadAction(InputActionReference reference)
+        {
+            InputAction action = reference != null ? reference.action : null;
+
+            return action;
         }
 
         private void RouteMovement(InputAction.CallbackContext context)
         {
             m_InputRouter.RouteMovement(context.ReadValue<Vector2>());
-        }
-
-        private void RoutePrimary(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Primary);
-        }
-
-        private void RouteSecondary(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Secondary);
-        }
-
-        private void RouteTertiary(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Tertiary);
-        }
-
-        private void RouteQuaternary(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Quaternary);
-        }
-
-        private void RouteShoulderLeft(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.ShoulderLeft);
-        }
-
-        private void RouteShoulderRight(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.ShoulderRight);
-        }
-
-        private void RouteTriggerLeft(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.TriggerLeft);
-        }
-
-        private void RouteTriggerRight(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.TriggerRight);
-        }
-
-        private void RouteStart(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Start);
-        }
-
-        private void RouteSelect(InputAction.CallbackContext context)
-        {
-            m_InputRouter.Route(ControlSlot.Select);
         }
     }
 }
