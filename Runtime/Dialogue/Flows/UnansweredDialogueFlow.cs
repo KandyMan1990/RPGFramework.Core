@@ -15,8 +15,10 @@ namespace RPGFramework.Core.Dialogue.Flows
     {
         async Task IDialogueFlow.RunAsync(IDialogueWindowUI uiInstance, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
-            foreach (string dialogue in dialogues)
+            for (int i = 0; i < dialogues.Length; i++)
             {
+                string dialogue = dialogues[i];
+
                 DialoguePage page = DialogueUtils.ParseIntoPages(DialogueUtils.JoinPages(dialogue)).Pages[0];
 
                 await DialogueUtils.RunUnansweredPageAsync(uiInstance, page, close);

@@ -76,8 +76,10 @@ namespace RPGFramework.Core.PlayerLoop
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Unity Player Loop");
 
-            foreach (PlayerLoopSystem loopSystem in loop.subSystemList)
+            for (int i = 0; i < loop.subSystemList.Length; i++)
             {
+                PlayerLoopSystem loopSystem = loop.subSystemList[i];
+
                 PrintSubSystem(loopSystem, sb, 0);
             }
 
@@ -91,8 +93,10 @@ namespace RPGFramework.Core.PlayerLoop
             if (loop.subSystemList == null || loop.subSystemList.Length == 0)
                 return;
 
-            foreach (PlayerLoopSystem subSystem in loop.subSystemList)
+            for (int i = 0; i < loop.subSystemList.Length; i++)
             {
+                PlayerLoopSystem subSystem = loop.subSystemList[i];
+
                 PrintSubSystem(subSystem, sb, level + 1);
             }
         }

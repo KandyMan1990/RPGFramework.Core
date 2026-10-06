@@ -29,8 +29,12 @@ namespace RPGFramework.Core.Editor
             {
                 s_ByName = new Dictionary<string, IVariableDefaultField>();
 
-                foreach (Type type in TypeCache.GetTypesDerivedFrom<IVariableDefaultField>())
+                TypeCache.TypeCollection types = TypeCache.GetTypesDerivedFrom<IVariableDefaultField>();
+
+                for (int i = 0; i < types.Count; i++)
                 {
+                    Type type = types[i];
+
                     if (type.IsAbstract || type.IsInterface)
                     {
                         continue;

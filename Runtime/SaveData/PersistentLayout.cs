@@ -63,8 +63,10 @@ namespace RPGFramework.Core.SaveData
 
                 ElementSize = fields.Length > 0 ? 0 : width.GetByteCount();
 
-                foreach (Field field in fields)
+                for (int i = 0; i < fields.Length; i++)
                 {
+                    Field field = fields[i];
+
                     ElementSize += field.ByteCount;
                 }
             }
@@ -73,8 +75,10 @@ namespace RPGFramework.Core.SaveData
             {
                 fieldOffset = 0;
 
-                foreach (Field candidate in Fields)
+                for (int i = 0; i < Fields.Length; i++)
                 {
+                    Field candidate = Fields[i];
+
                     if (candidate.Id == id)
                     {
                         field = candidate;
@@ -131,8 +135,10 @@ namespace RPGFramework.Core.SaveData
         {
             List<VariableDefinition> persistent = new List<VariableDefinition>();
 
-            foreach (VariableDefinition variable in map.Variables)
+            for (int i = 0; i < map.Variables.Count; i++)
             {
+                VariableDefinition variable = map.Variables[i];
+
                 if (variable.Bank == MemoryBank.Persistent)
                 {
                     persistent.Add(variable);
@@ -145,16 +151,20 @@ namespace RPGFramework.Core.SaveData
             writer.Write(DATA_VERSION);
             writer.Write((ushort)persistent.Count);
 
-            foreach (VariableDefinition variable in persistent)
+            for (int i = 0; i < persistent.Count; i++)
             {
+                VariableDefinition variable = persistent[i];
+
                 writer.Write(variable.Id);
                 writer.Write((ushort)variable.Offset);
                 writer.Write((ushort)variable.Count);
                 writer.Write((byte)variable.Width);
                 writer.Write((byte)variable.Fields.Count);
 
-                foreach (VariableRecordField field in variable.Fields)
+                for (int j = 0; j < variable.Fields.Count; j++)
                 {
+                    VariableRecordField field = variable.Fields[j];
+
                     writer.Write(field.Id);
                     writer.Write((byte)field.Width);
                     writer.Write((ushort)field.Count);
@@ -229,8 +239,10 @@ namespace RPGFramework.Core.SaveData
         {
             Dictionary<uint, Entry> entries = new Dictionary<uint, Entry>();
 
-            foreach (VariableDefinition variable in map.Variables)
+            for (int i = 0; i < map.Variables.Count; i++)
             {
+                VariableDefinition variable = map.Variables[i];
+
                 if (variable.Bank != MemoryBank.Persistent || variable.EndOffset > savedLength)
                 {
                     continue;

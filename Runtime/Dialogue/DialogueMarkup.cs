@@ -172,8 +172,12 @@ namespace RPGFramework.Core.Dialogue
         {
             List<string> problems = new List<string>();
 
-            foreach (string page in DialogueUtils.SplitPages(source))
+            List<string> pages = DialogueUtils.SplitPages(source);
+
+            for (int i = 0; i < pages.Count; i++)
             {
+                string page = pages[i];
+
                 Parse(page, null, styles, problems);
             }
 

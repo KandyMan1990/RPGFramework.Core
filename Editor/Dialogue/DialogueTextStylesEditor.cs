@@ -46,8 +46,10 @@ namespace RPGFramework.Core.Editor.Dialogue
 
             DialogueTextStyles styles = (DialogueTextStyles)target;
 
-            foreach (DialogueTextStyle style in styles.Styles)
+            for (int i = 0; i < styles.Styles.Count; i++)
             {
+                DialogueTextStyle style = styles.Styles[i];
+
                 if (string.IsNullOrWhiteSpace(style.Name))
                 {
                     continue;

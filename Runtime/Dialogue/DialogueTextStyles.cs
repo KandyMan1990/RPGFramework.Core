@@ -18,8 +18,10 @@ namespace RPGFramework.Core.Dialogue
 
         public bool TryGet(string name, out DialogueTextStyle style)
         {
-            foreach (DialogueTextStyle candidate in m_Styles)
+            for (int i = 0; i < m_Styles.Count; i++)
             {
+                DialogueTextStyle candidate = m_Styles[i];
+
                 if (candidate.Name == name)
                 {
                     style = candidate;

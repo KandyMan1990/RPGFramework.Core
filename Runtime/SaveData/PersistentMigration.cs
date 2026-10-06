@@ -19,8 +19,10 @@ namespace RPGFramework.Core.SaveData
 
             VariableDefaults.Write(image, map, MemoryBank.Persistent);
 
-            foreach (VariableDefinition variable in map.Variables)
+            for (int i = 0; i < map.Variables.Count; i++)
             {
+                VariableDefinition variable = map.Variables[i];
+
                 if (variable.Bank != MemoryBank.Persistent || !layout.TryGetEntry(variable.Id, out PersistentLayout.Entry entry) || entry.IsRecord != variable.IsRecord)
                 {
                     continue;
@@ -61,8 +63,10 @@ namespace RPGFramework.Core.SaveData
 
             Dictionary<uint, VariableDefinition> byId = new Dictionary<uint, VariableDefinition>();
 
-            foreach (VariableDefinition variable in map.Variables)
+            for (int i = 0; i < map.Variables.Count; i++)
             {
+                VariableDefinition variable = map.Variables[i];
+
                 byId[variable.Id] = variable;
             }
 
@@ -78,8 +82,10 @@ namespace RPGFramework.Core.SaveData
                     continue;
                 }
 
-                foreach (PersistentLayout.Field field in entry.Fields)
+                for (int i = 0; i < entry.Fields.Length; i++)
                 {
+                    PersistentLayout.Field field = entry.Fields[i];
+
                     if (field.Id > variable.LastFieldId)
                     {
                         return true;
@@ -92,8 +98,10 @@ namespace RPGFramework.Core.SaveData
 
         private static void CopyRecord(byte[] saved, int from, PersistentLayout.Entry entry, byte[] image, int to, VariableDefinition variable)
         {
-            foreach (VariableRecordField field in variable.Fields)
+            for (int j = 0; j < variable.Fields.Count; j++)
             {
+                VariableRecordField field = variable.Fields[j];
+
                 if (entry.TryGetField(field.Id, out PersistentLayout.Field savedField, out int savedFieldOffset))
                 {
                     int count = Math.Min(savedField.Count, field.Count);

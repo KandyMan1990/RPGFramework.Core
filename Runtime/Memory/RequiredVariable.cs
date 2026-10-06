@@ -64,8 +64,12 @@ namespace RPGFramework.Core.Memory
         {
             List<RequiredVariable> required = new List<RequiredVariable>();
 
-            foreach (IRequiredVariables source in CreateAll<IRequiredVariables>())
+            List<IRequiredVariables> sources = CreateAll<IRequiredVariables>();
+
+            for (int i = 0; i < sources.Count; i++)
             {
+                IRequiredVariables source = sources[i];
+
                 required.AddRange(source.Variables);
             }
 
@@ -83,8 +87,12 @@ namespace RPGFramework.Core.Memory
         {
             List<T> instances = new List<T>();
 
-            foreach (System.Type type in UnityEditor.TypeCache.GetTypesDerivedFrom<T>())
+            UnityEditor.TypeCache.TypeCollection types = UnityEditor.TypeCache.GetTypesDerivedFrom<T>();
+
+            for (int i = 0; i < types.Count; i++)
             {
+                System.Type type = types[i];
+
                 if (type.IsAbstract || type.IsInterface)
                 {
                     continue;

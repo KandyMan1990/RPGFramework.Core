@@ -172,8 +172,10 @@ namespace RPGFramework.Core.Editor
         {
             m_PendingFieldsContainer.Clear();
 
-            foreach (PendingField pending in m_PendingFields)
+            for (int i = 0; i < m_PendingFields.Count; i++)
             {
+                PendingField pending = m_PendingFields[i];
+
                 VisualElement row = new VisualElement();
                 row.style.flexDirection = FlexDirection.Row;
 
@@ -236,8 +238,10 @@ namespace RPGFramework.Core.Editor
         {
             List<VariableRecordField> fields = new List<VariableRecordField>(m_PendingFields.Count);
 
-            foreach (PendingField pending in m_PendingFields)
+            for (int i = 0; i < m_PendingFields.Count; i++)
             {
+                PendingField pending = m_PendingFields[i];
+
                 fields.Add(new VariableRecordField(pending.Name, pending.Width, pending.Count, 0));
             }
 
@@ -318,8 +322,10 @@ namespace RPGFramework.Core.Editor
 
             if (record)
             {
-                foreach (VariableRecordField field in fields)
+                for (int i = 0; i < fields.Count; i++)
                 {
+                    VariableRecordField field = fields[i];
+
                     elementSize += field.ByteCount;
                 }
             }
@@ -366,8 +372,10 @@ namespace RPGFramework.Core.Editor
             HashSet<string> names   = new HashSet<string>();
             string          problem = null;
 
-            foreach (VariableRecordField field in fields)
+            for (int i = 0; i < fields.Count; i++)
             {
+                VariableRecordField field = fields[i];
+
                 if (!VariableMapAsset.IsScriptName(field.Name))
                 {
                     problem = $"The field '{field.Name}' needs a name scripts can use: letters, digits and underscores, not starting with a digit.";
@@ -446,8 +454,12 @@ namespace RPGFramework.Core.Editor
         {
             List<string> missing = new List<string>();
 
-            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+
+            for (int i = 0; i < requiredVariables.Count; i++)
             {
+                RequiredVariable required = requiredVariables[i];
+
                 if (!m_Map.TryGetVariable(required.Name, out VariableDefinition _))
                 {
                     missing.Add(required.Name);
@@ -486,8 +498,10 @@ namespace RPGFramework.Core.Editor
                 return;
             }
 
-            foreach (string problem in problems)
+            for (int i = 0; i < problems.Count; i++)
             {
+                string problem = problems[i];
+
                 m_ValidationResults.Add(new HelpBox(problem, HelpBoxMessageType.Error));
             }
         }

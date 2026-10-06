@@ -192,8 +192,12 @@ namespace RPGFramework.Core.SaveData
 
             HashSet<byte> usedIndices = new HashSet<byte>();
 
-            foreach (FileInfo file in directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN))
+            FileInfo[] files = directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN);
+
+            for (int i = 0; i < files.Length; i++)
             {
+                FileInfo file = files[i];
+
                 if (TryGetSaveSlotIndex(file.Name, out byte index))
                 {
                     usedIndices.Add(index);
@@ -211,8 +215,10 @@ namespace RPGFramework.Core.SaveData
 
             List<FileInfo> saveFiles = new List<FileInfo>(candidates.Length);
 
-            foreach (FileInfo candidate in candidates)
+            for (int i = 0; i < candidates.Length; i++)
             {
+                FileInfo candidate = candidates[i];
+
                 if (TryGetSaveSlotIndex(candidate.Name, out byte _))
                 {
                     saveFiles.Add(candidate);

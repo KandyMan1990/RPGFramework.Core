@@ -142,8 +142,10 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         internal int AssignMissingFieldIds()
         {
-            foreach (VariableRecordField field in m_Fields)
+            for (int i = 0; i < m_Fields.Count; i++)
             {
+                VariableRecordField field = m_Fields[i];
+
                 if (field.Id > m_LastFieldId)
                 {
                     m_LastFieldId = field.Id;
@@ -153,8 +155,10 @@ namespace RPGFramework.Core.Memory
             HashSet<ushort> seen     = new HashSet<ushort>();
             int             assigned = 0;
 
-            foreach (VariableRecordField field in m_Fields)
+            for (int i = 0; i < m_Fields.Count; i++)
             {
+                VariableRecordField field = m_Fields[i];
+
                 if (field.Id != 0 && seen.Add(field.Id))
                 {
                     continue;

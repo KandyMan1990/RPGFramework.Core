@@ -247,8 +247,12 @@ namespace RPGFramework.Core.Dialogue.UI
 
         private void ApplyStyle()
         {
-            foreach (DialogueWindowStyle style in (DialogueWindowStyle[])Enum.GetValues(typeof(DialogueWindowStyle)))
+            DialogueWindowStyle[] styles = (DialogueWindowStyle[])Enum.GetValues(typeof(DialogueWindowStyle));
+
+            for (int i = 0; i < styles.Length; i++)
             {
+                DialogueWindowStyle style = styles[i];
+
                 m_UIInstance.EnableInClassList(StyleClass(style), style == m_Style);
             }
         }
@@ -267,8 +271,10 @@ namespace RPGFramework.Core.Dialogue.UI
 
             m_TextView.Tick(deltaTime, charactersPerSecond);
 
-            foreach (DialogueTextView choiceView in m_ChoiceViews)
+            for (int i = 0; i < m_ChoiceViews.Length; i++)
             {
+                DialogueTextView choiceView = m_ChoiceViews[i];
+
                 choiceView.Tick(deltaTime, charactersPerSecond);
             }
         }

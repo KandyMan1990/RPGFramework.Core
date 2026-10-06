@@ -148,8 +148,12 @@ namespace RPGFramework.Core.Memory
         {
             int added = 0;
 
-            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+
+            for (int i = 0; i < requiredVariables.Count; i++)
             {
+                RequiredVariable required = requiredVariables[i];
+
                 if (TryGetVariable(required.Name, out VariableDefinition _))
                 {
                     continue;
@@ -186,8 +190,10 @@ namespace RPGFramework.Core.Memory
         {
             int recordSize = 0;
 
-            foreach (VariableRecordField field in fields)
+            for (int i = 0; i < fields.Count; i++)
             {
+                VariableRecordField field = fields[i];
+
                 recordSize += field.ByteCount;
             }
 
@@ -209,8 +215,10 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         internal int AssignMissingIds()
         {
-            foreach (VariableDefinition variable in m_Variables)
+            for (int i = 0; i < m_Variables.Count; i++)
             {
+                VariableDefinition variable = m_Variables[i];
+
                 if (variable.Id > m_LastVariableId)
                 {
                     m_LastVariableId = variable.Id;
@@ -220,8 +228,10 @@ namespace RPGFramework.Core.Memory
             HashSet<uint> seen     = new HashSet<uint>();
             int           assigned = 0;
 
-            foreach (VariableDefinition variable in m_Variables)
+            for (int i = 0; i < m_Variables.Count; i++)
             {
+                VariableDefinition variable = m_Variables[i];
+
                 if (variable.Id == 0 || !seen.Add(variable.Id))
                 {
                     variable.AssignId(++m_LastVariableId);
@@ -265,8 +275,10 @@ namespace RPGFramework.Core.Memory
 
             if (isScriptName)
             {
-                foreach (char c in name)
+                for (int i = 0; i < name.Length; i++)
                 {
+                    char c = name[i];
+
                     if (!char.IsLetterOrDigit(c) && c != '_')
                     {
                         isScriptName = false;
@@ -287,8 +299,10 @@ namespace RPGFramework.Core.Memory
         {
             List<VariableDefinition> occupied = new List<VariableDefinition>();
 
-            foreach (VariableDefinition variable in m_Variables)
+            for (int i = 0; i < m_Variables.Count; i++)
             {
+                VariableDefinition variable = m_Variables[i];
+
                 if (variable.Bank == bank && variable != moving)
                 {
                     occupied.Add(variable);
@@ -299,8 +313,10 @@ namespace RPGFramework.Core.Memory
 
             int offset = 0;
 
-            foreach (VariableDefinition variable in occupied)
+            for (int i = 0; i < occupied.Count; i++)
             {
+                VariableDefinition variable = occupied[i];
+
                 if (offset + size <= variable.Offset)
                 {
                     break;
@@ -435,8 +451,10 @@ namespace RPGFramework.Core.Memory
         {
             HashSet<uint> ids = new HashSet<uint>();
 
-            foreach (VariableDefinition variable in m_Variables)
+            for (int i = 0; i < m_Variables.Count; i++)
             {
+                VariableDefinition variable = m_Variables[i];
+
                 if (variable.Id == 0 || variable.Id > m_LastVariableId || !ids.Add(variable.Id))
                 {
                     problems.Add($"'{variable.Name}' has no id of its own. Open the map's inspector, which assigns one");
@@ -444,8 +462,10 @@ namespace RPGFramework.Core.Memory
 
                 HashSet<ushort> fieldIds = new HashSet<ushort>();
 
-                foreach (VariableRecordField field in variable.Fields)
+                for (int j = 0; j < variable.Fields.Count; j++)
                 {
+                    VariableRecordField field = variable.Fields[j];
+
                     if (field.Id == 0 || !fieldIds.Add(field.Id))
                     {
                         problems.Add($"'{variable.Name}.{field.Name}' has no id of its own. Open the map's inspector, which assigns one");
@@ -458,8 +478,10 @@ namespace RPGFramework.Core.Memory
         {
             HashSet<string> names = new HashSet<string>();
 
-            foreach (VariableRecordField field in variable.Fields)
+            for (int i = 0; i < variable.Fields.Count; i++)
             {
+                VariableRecordField field = variable.Fields[i];
+
                 if (!IsScriptName(field.Name))
                 {
                     problems.Add($"'{variable.Name}' has a field called '{field.Name}', which scripts cannot use: letters, digits and underscores, not starting with a digit");
@@ -481,8 +503,10 @@ namespace RPGFramework.Core.Memory
         {
             HashSet<string> described = new HashSet<string>();
 
-            foreach (VariableElementDefault elementDefault in variable.ElementDefaults)
+            for (int i = 0; i < variable.ElementDefaults.Count; i++)
             {
+                VariableElementDefault elementDefault = variable.ElementDefaults[i];
+
                 string where = variable.IsRecord
                                    ? $"[{elementDefault.Index}].{elementDefault.Field}[{elementDefault.FieldIndex}]"
                                    : $"[{elementDefault.Index}]";
@@ -518,8 +542,12 @@ namespace RPGFramework.Core.Memory
 
         private void ValidateRequiredVariables(List<string> problems)
         {
-            foreach (RequiredVariable required in RequiredVariables.FindAll())
+            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+
+            for (int i = 0; i < requiredVariables.Count; i++)
             {
+                RequiredVariable required = requiredVariables[i];
+
                 if (!TryGetVariable(required.Name, out VariableDefinition variable))
                 {
                     problems.Add($"'{required.Name}' is required by the framework and is not declared — use Add Missing Required Variables. {required.Description}");
@@ -549,8 +577,12 @@ namespace RPGFramework.Core.Memory
 
             byte startModule = (byte)currentModule.DefaultValue;
 
-            foreach (IStartModule module in RequiredVariables.FindStartModules())
+            List<IStartModule> modules = RequiredVariables.FindStartModules();
+
+            for (int i = 0; i < modules.Count; i++)
             {
+                IStartModule module = modules[i];
+
                 if (module.ModuleId == startModule)
                 {
                     return;

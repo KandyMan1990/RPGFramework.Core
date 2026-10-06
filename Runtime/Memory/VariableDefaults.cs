@@ -95,8 +95,10 @@ namespace RPGFramework.Core.Memory
 
         private static void ForEachDefault(IVariableMap map, MemoryBank bank, Action<int, int, ulong> write)
         {
-            foreach (VariableDefinition variable in map.Variables)
+            for (int i = 0; i < map.Variables.Count; i++)
             {
+                VariableDefinition variable = map.Variables[i];
+
                 if (variable.Bank != bank)
                 {
                     continue;
@@ -112,8 +114,10 @@ namespace RPGFramework.Core.Memory
                         continue;
                     }
 
-                    foreach (VariableRecordField field in variable.Fields)
+                    for (int j = 0; j < variable.Fields.Count; j++)
                     {
+                        VariableRecordField field = variable.Fields[j];
+
                         int byteCount = field.Width.GetByteCount();
 
                         for (int fieldIndex = 0; fieldIndex < field.Count; fieldIndex++)

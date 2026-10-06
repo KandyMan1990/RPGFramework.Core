@@ -26,13 +26,19 @@ namespace RPGFramework.Core.Editor
                 throw new BuildFailedException($"No {nameof(VariableMapAsset)} in the project. The framework reads the module to start in, and where in it, from the variable map — create one with RPG Framework / Core / Variable Map");
             }
 
-            foreach (string guid in guids)
+            for (int i = 0; i < guids.Length; i++)
             {
+                string guid = guids[i];
+
                 string           path = AssetDatabase.GUIDToAssetPath(guid);
                 VariableMapAsset map  = AssetDatabase.LoadAssetAtPath<VariableMapAsset>(path);
 
-                foreach (string problem in map.Validate())
+                List<string> mapProblems = map.Validate();
+
+                for (int j = 0; j < mapProblems.Count; j++)
                 {
+                    string problem = mapProblems[j];
+
                     problems.Add($"{path}: {problem}");
                 }
             }
