@@ -25,10 +25,14 @@ namespace RPGFramework.Core.Editor.Dialogue
         private IReadOnlyList<DialoguePage> m_Pages;
         private int                         m_Page;
 
+        /// <summary>
+        /// Opens as a tab beside the Scene view: a floating window drops behind the main editor window on macOS as soon
+        /// as anything else is clicked.
+        /// </summary>
         [MenuItem("RPG Framework/Dialogue/Dialogue Preview")]
         public static void Open()
         {
-            GetWindow<DialoguePreviewWindow>("Dialogue Preview");
+            GetWindow<DialoguePreviewWindow>("Dialogue Preview", typeof(SceneView));
         }
 
         private void CreateGUI()
