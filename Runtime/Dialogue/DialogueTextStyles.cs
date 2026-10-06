@@ -14,7 +14,7 @@ namespace RPGFramework.Core.Dialogue
     {
         [SerializeField] private List<DialogueTextStyle> m_Styles = new List<DialogueTextStyle>();
 
-        public IReadOnlyList<DialogueTextStyle> Styles => m_Styles;
+        internal IReadOnlyList<DialogueTextStyle> Styles => m_Styles;
 
         public bool TryGet(string name, out DialogueTextStyle style)
         {
@@ -52,11 +52,11 @@ namespace RPGFramework.Core.Dialogue
         [Tooltip("Flash the text, to draw the eye to something such as a new objective.")]
         [SerializeField] private bool m_Blink;
 
-        public string Name   => m_Name;
-        public Color  Colour => m_Colour;
-        public bool   Blink  => m_Blink;
+        internal string Name   => m_Name;
+        internal Color  Colour => m_Colour;
+        internal bool   Blink  => m_Blink;
 
-        public DialogueTextStyle(string name, Color colour, bool blink)
+        internal DialogueTextStyle(string name, Color colour, bool blink)
         {
             m_Name   = name;
             m_Colour = colour;

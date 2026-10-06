@@ -53,7 +53,7 @@ namespace RPGFramework.Core.Dialogue
         /// <param name="variables">The message variables; missing slots read as 0.</param>
         /// <param name="styles">The named styles; null means none are declared.</param>
         /// <param name="problems">Collects a readable line per mistake. Null to ignore them.</param>
-        public static DialogueText Parse(string source, IReadOnlyList<int> variables, IDialogueTextStyles styles, List<string> problems)
+        internal static DialogueText Parse(string source, IReadOnlyList<int> variables, IDialogueTextStyles styles, List<string> problems)
         {
             StringBuilder          text   = new StringBuilder(source.Length);
             List<DialogueTextSpan> spans  = new List<DialogueTextSpan>();
@@ -164,6 +164,7 @@ namespace RPGFramework.Core.Dialogue
             return result;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Parse only to find mistakes, as the editor does when text arrives from a sheet.
         /// </summary>
@@ -182,12 +183,13 @@ namespace RPGFramework.Core.Dialogue
         /// <summary>
         /// A line split into its pages, each with its speaker taken off the front, as a window shows them.
         /// </summary>
-        public static IReadOnlyList<DialoguePage> ToPages(string source)
+        internal static IReadOnlyList<DialoguePage> ToPages(string source)
         {
             IReadOnlyList<DialoguePage> pages = DialogueUtils.ParseIntoPages(source).Pages;
 
             return pages;
         }
+#endif
 
         private static bool TryParseColour(string value, out Color colour)
         {

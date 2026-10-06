@@ -61,13 +61,13 @@ namespace RPGFramework.Core.Memory
 
         internal uint   Id          => m_Id;
         internal ushort LastFieldId => m_LastFieldId;
+        internal string Description => m_Description;
 
-        public string        Name        => m_Name;
-        public MemoryBank    Bank        => m_Bank;
-        public VariableWidth Width       => m_Width;
-        public int           Count       => m_Count;
-        public int           Offset      => m_Offset;
-        public string        Description => m_Description;
+        public string        Name   => m_Name;
+        public MemoryBank    Bank   => m_Bank;
+        public VariableWidth Width  => m_Width;
+        public int           Count  => m_Count;
+        public int           Offset => m_Offset;
 
         /// <summary>
         /// What a new game starts with, as the bytes the variable occupies in its bank, lowest byte first —
@@ -84,7 +84,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// How many bytes one element takes: its width, or a record's fields end to end.
         /// </summary>
-        public int ElementSize
+        internal int ElementSize
         {
             get
             {
@@ -102,7 +102,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// The first byte after this variable, i.e. <see cref="Offset" /> plus <see cref="ElementSize" /> for every element.
         /// </summary>
-        public int EndOffset
+        internal int EndOffset
         {
             get
             {
@@ -112,7 +112,8 @@ namespace RPGFramework.Core.Memory
             }
         }
 
-        public VariableDefinition(uint id, string name, MemoryBank bank, VariableWidth width, int count, int offset, string description, ulong defaultValue)
+#if UNITY_EDITOR
+        internal VariableDefinition(uint id, string name, MemoryBank bank, VariableWidth width, int count, int offset, string description, ulong defaultValue)
         {
             m_Id           = id;
             m_Name         = name;
@@ -124,7 +125,7 @@ namespace RPGFramework.Core.Memory
             m_DefaultValue = defaultValue;
         }
 
-        public VariableDefinition(uint id, string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, int offset, string description)
+        internal VariableDefinition(uint id, string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, int offset, string description)
         {
             m_Id          = id;
             m_Name        = name;
@@ -135,7 +136,6 @@ namespace RPGFramework.Core.Memory
             m_Description = description;
         }
 
-#if UNITY_EDITOR
         /// <summary>
         /// Gives every field without an id, or sharing one with a field before it, the next id this record has not
         /// used, and returns how many it gave.
@@ -299,14 +299,14 @@ namespace RPGFramework.Core.Memory
         [Tooltip("What every record starts with in a new game, held as the bytes it occupies. Edit it through the Variable Map inspector")]
         private ulong m_DefaultValue;
 
-        internal ushort Id => m_Id;
+        internal ushort Id           => m_Id;
+        internal ulong  DefaultValue => m_DefaultValue;
 
-        public string        Name         => m_Name;
-        public VariableWidth Width        => m_Width;
-        public int           Count        => m_Count;
-        public ulong         DefaultValue => m_DefaultValue;
+        public string        Name  => m_Name;
+        public VariableWidth Width => m_Width;
+        public int           Count => m_Count;
 
-        public int ByteCount
+        internal int ByteCount
         {
             get
             {
@@ -316,7 +316,8 @@ namespace RPGFramework.Core.Memory
             }
         }
 
-        public VariableRecordField(string name, VariableWidth width, int count, ulong defaultValue)
+#if UNITY_EDITOR
+        internal VariableRecordField(string name, VariableWidth width, int count, ulong defaultValue)
         {
             m_Name         = name;
             m_Width        = width;
@@ -324,7 +325,6 @@ namespace RPGFramework.Core.Memory
             m_DefaultValue = defaultValue;
         }
 
-#if UNITY_EDITOR
         internal void AssignId(ushort id)
         {
             m_Id = id;

@@ -12,7 +12,7 @@ namespace RPGFramework.Core.UI
             set => m_Label.text = value;
         }
 
-        public Label Label => m_Label;
+        internal Label Label => m_Label;
 
         private readonly Image m_Icon;
         private readonly Label m_Label;

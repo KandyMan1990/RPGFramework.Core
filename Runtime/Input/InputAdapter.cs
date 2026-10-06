@@ -22,7 +22,7 @@ namespace RPGFramework.Core.Input
         private bool         m_Subscribed;
 
         [Inject]
-        public void Inject(IInputRouter inputRouter)
+        private void Inject(IInputRouter inputRouter)
         {
             m_InputRouter = inputRouter;
         }

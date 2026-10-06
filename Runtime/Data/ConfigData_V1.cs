@@ -11,11 +11,11 @@ namespace RPGFramework.Core.Data
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct ConfigData_V1
     {
-        public fixed byte  Language[8];
-        public       float MusicVolume;
-        public       float SfxVolume;
-        public       float BattleMessageSpeed;
-        public       float FieldMessageSpeed;
+        private fixed byte  Language[8];
+        public        float MusicVolume;
+        public        float SfxVolume;
+        public        float BattleMessageSpeed;
+        public        float FieldMessageSpeed;
         // TODO: control bindings
 
         public string GetLanguage()

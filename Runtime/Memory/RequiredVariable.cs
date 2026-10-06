@@ -10,11 +10,11 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public readonly struct RequiredVariable
     {
-        public readonly string        Name;
-        public readonly MemoryBank    Bank;
-        public readonly VariableWidth Width;
-        public readonly string        Description;
-        public readonly ulong         DefaultValue;
+        internal readonly string        Name;
+        internal readonly MemoryBank    Bank;
+        internal readonly VariableWidth Width;
+        internal readonly string        Description;
+        internal readonly ulong         DefaultValue;
 
         public RequiredVariable(string        name,
                                 MemoryBank    bank,
@@ -58,9 +58,9 @@ namespace RPGFramework.Core.Memory
     /// Authoring only. Every <see cref="IRequiredVariables" /> and <see cref="IStartModule" /> in the project,
     /// found by type so a package declares its own without anything having to list it.
     /// </summary>
-    public static class RequiredVariables
+    internal static class RequiredVariables
     {
-        public static List<RequiredVariable> FindAll()
+        internal static List<RequiredVariable> FindAll()
         {
             List<RequiredVariable> required = new List<RequiredVariable>();
 
@@ -72,7 +72,7 @@ namespace RPGFramework.Core.Memory
             return required;
         }
 
-        public static List<IStartModule> FindStartModules()
+        internal static List<IStartModule> FindStartModules()
         {
             List<IStartModule> startModules = CreateAll<IStartModule>();
 

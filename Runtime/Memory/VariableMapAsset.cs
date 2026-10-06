@@ -79,7 +79,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// How many bytes a bank needs to hold every variable declared for it, which is the size it is given.
         /// </summary>
-        public int GetRequiredBytes(MemoryBank bank)
+        internal int GetRequiredBytes(MemoryBank bank)
         {
             int requiredBytes = 0;
 
@@ -144,7 +144,7 @@ namespace RPGFramework.Core.Memory
         /// Authoring only. Declares every required variable the map does not have yet, with the default it asks for,
         /// and returns how many were added.
         /// </summary>
-        public int AddMissingRequiredVariables()
+        internal int AddMissingRequiredVariables()
         {
             int added = 0;
 
@@ -166,7 +166,7 @@ namespace RPGFramework.Core.Memory
         /// Authoring only. Appends a variable of <paramref name="count" /> values — one, or an array — at the next
         /// free naturally aligned offset in its bank and returns it — the first gap it fits, otherwise the end.
         /// </summary>
-        public VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
+        internal VariableDefinition Allocate(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
         {
             int offset = FindFreeOffset(bank, width.GetByteCount(), width.GetByteCount() * count);
 
@@ -182,7 +182,7 @@ namespace RPGFramework.Core.Memory
         /// Authoring only. As <see cref="Allocate" />, for <paramref name="count" /> records of
         /// <paramref name="fields" />, aligned to the widest field. Each field's default starts at zero.
         /// </summary>
-        public VariableDefinition AllocateRecord(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, string description)
+        internal VariableDefinition AllocateRecord(string name, MemoryBank bank, IReadOnlyList<VariableRecordField> fields, int count, string description)
         {
             int recordSize = 0;
 
@@ -238,7 +238,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// Authoring only. What a record of <paramref name="fields" /> is aligned to: its widest field, as a struct is.
         /// </summary>
-        public static int GetAlignment(IReadOnlyList<VariableRecordField> fields)
+        internal static int GetAlignment(IReadOnlyList<VariableRecordField> fields)
         {
             int alignment = 1;
 
@@ -259,7 +259,7 @@ namespace RPGFramework.Core.Memory
         /// Authoring only. Letters, digits and underscores, not starting with a digit — what a variable or a record
         /// field can be called, since scripts name them in text beside <c>[</c> and <c>.</c>.
         /// </summary>
-        public static bool IsScriptName(string name)
+        internal static bool IsScriptName(string name)
         {
             bool isScriptName = !string.IsNullOrEmpty(name) && !char.IsDigit(name[0]);
 

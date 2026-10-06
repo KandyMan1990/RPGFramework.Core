@@ -10,6 +10,7 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public static class VariableDefaults
     {
+#if UNITY_EDITOR
         public static ulong FromInteger(long value, VariableWidth width)
         {
             ulong bits = (ulong)value & Mask(width);
@@ -17,12 +18,13 @@ namespace RPGFramework.Core.Memory
             return bits;
         }
 
-        public static ulong FromBool(bool value)
+        internal static ulong FromBool(bool value)
         {
             ulong bits = value ? 1UL : 0UL;
 
             return bits;
         }
+#endif
 
         public static ulong FromFloat(float value)
         {
@@ -31,6 +33,7 @@ namespace RPGFramework.Core.Memory
             return bits;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// The value of a signed or unsigned integer width, sign-extended for the signed ones.
         /// </summary>
@@ -43,26 +46,29 @@ namespace RPGFramework.Core.Memory
 
             return integer;
         }
+#endif
 
-        public static bool ToBool(ulong bits)
+        internal static bool ToBool(ulong bits)
         {
             bool value = (bits & 0xFF) != 0;
 
             return value;
         }
 
-        public static float ToFloat(ulong bits)
+#if UNITY_EDITOR
+        internal static float ToFloat(ulong bits)
         {
             float value = BitConverter.Int32BitsToSingle((int)(uint)bits);
 
             return value;
         }
+#endif
 
         /// <summary>
         /// Write the default of every variable in <paramref name="bank" />, every element of an array and every field of
         /// a record included — what a new game starts with.
         /// </summary>
-        public static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank)
+        internal static void Write(IMemoryService memory, IVariableMap map, MemoryBank bank)
         {
             ForEachDefault(map, bank, (offset, byteCount, value) =>
                                       {

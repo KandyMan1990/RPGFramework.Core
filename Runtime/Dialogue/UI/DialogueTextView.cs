@@ -12,7 +12,7 @@ namespace RPGFramework.Core.Dialogue.UI
     /// in a line is just a character.<br /><br />
     /// Driven by <see cref="Tick" /> rather than by frames of its own, so the editor's preview can run it too.
     /// </summary>
-    public sealed class DialogueTextView
+    internal sealed class DialogueTextView
     {
         private const float BLINK_SECONDS = 0.8f;
         private const float BLINK_FLOOR   = 0.2f;
