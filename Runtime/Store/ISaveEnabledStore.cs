@@ -9,7 +9,7 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ISaveEnabledStore
     {
-        bool GetSaveEnabled { get; }
+        bool IsSaveEnabled { get; }
         void SetSaveEnabled(bool enabled);
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace RPGFramework.Core.Store
             m_Default       = VariableDefaults.ToBool(saveEnabled.DefaultValue);
         }
 
-        bool ISaveEnabledStore.GetSaveEnabled
+        bool ISaveEnabledStore.IsSaveEnabled
         {
             get
             {

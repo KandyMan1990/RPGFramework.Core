@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Dialogue.UI
 
         private const string STYLE_CLASS_PREFIX = "dialogue-window--";
 
-        private readonly IDialogueWindowUiProvider m_DialogueWindowUiProvider;
+        private readonly IDialogueWindowUIProvider m_DialogueWindowUIProvider;
         private readonly IAudioIntentPlayer        m_AudioIntentPlayer;
         private readonly float                     m_TextSpeed;
         private readonly float                     m_WindowSpeed;
@@ -26,7 +26,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private bool                        m_SkipRequested;
         private Label                       m_Text;
         private DialogueTextView            m_TextView;
-        private VisualElement               m_UiInstance;
+        private VisualElement               m_UIInstance;
         private RPGUIButton[]               m_Choices;
         private DialogueTextView[]          m_ChoiceViews;
         private string[]                    m_ChoiceTexts;
@@ -36,12 +36,12 @@ namespace RPGFramework.Core.Dialogue.UI
         private IVisualElementScheduledItem m_Ticker;
         private float                       m_TextSpeedMultiplier = 1f;
 
-        public DialogueWindowUI(IDialogueWindowUiProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
+        public DialogueWindowUI(IDialogueWindowUIProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
         {
-            m_DialogueWindowUiProvider = uiProvider;
+            m_DialogueWindowUIProvider = uiProvider;
             m_AudioIntentPlayer        = audioIntentPlayer;
-            m_TextSpeed                = uiProvider.GetTextSpeed;
-            m_WindowSpeed              = uiProvider.GetWindowSpeed;
+            m_TextSpeed                = uiProvider.TextSpeed;
+            m_WindowSpeed              = uiProvider.WindowSpeed;
             m_TextStyles               = uiProvider.TextStyles;
             m_Choices                  = Array.Empty<RPGUIButton>();
             m_ChoiceViews              = Array.Empty<DialogueTextView>();
@@ -74,28 +74,28 @@ namespace RPGFramework.Core.Dialogue.UI
                 float width  = math.lerp(m_Rect.width,  0f,      progress);
                 float height = math.lerp(m_Rect.height, 0f,      progress);
 
-                m_UiInstance.style.left   = x;
-                m_UiInstance.style.top    = y;
-                m_UiInstance.style.width  = width;
-                m_UiInstance.style.height = height;
+                m_UIInstance.style.left   = x;
+                m_UIInstance.style.top    = y;
+                m_UIInstance.style.width  = width;
+                m_UIInstance.style.height = height;
 
                 progress += Time.deltaTime * m_WindowSpeed;
 
                 await Awaitable.NextFrameAsync();
             }
 
-            m_UiInstance.style.width  = 0f;
-            m_UiInstance.style.height = 0f;
+            m_UIInstance.style.width  = 0f;
+            m_UIInstance.style.height = 0f;
         }
 
         async Task IDialogueWindowUI.AnimateWindowOpenAsync()
         {
-            m_UiInstance.style.left   = m_Rect.x;
-            m_UiInstance.style.top    = m_Rect.y;
-            m_UiInstance.style.width  = 0f;
-            m_UiInstance.style.height = 0f;
+            m_UIInstance.style.left   = m_Rect.x;
+            m_UIInstance.style.top    = m_Rect.y;
+            m_UIInstance.style.width  = 0f;
+            m_UIInstance.style.height = 0f;
 
-            m_UiInstance.style.display = DisplayStyle.Flex;
+            m_UIInstance.style.display = DisplayStyle.Flex;
 
             float progress = 0f;
 
@@ -104,23 +104,23 @@ namespace RPGFramework.Core.Dialogue.UI
                 float x = math.lerp(0f, m_Rect.width,  progress);
                 float y = math.lerp(0f, m_Rect.height, progress);
 
-                m_UiInstance.style.width  = x;
-                m_UiInstance.style.height = y;
+                m_UIInstance.style.width  = x;
+                m_UIInstance.style.height = y;
 
                 progress += Time.deltaTime * m_WindowSpeed;
 
                 await Awaitable.NextFrameAsync();
             }
 
-            m_UiInstance.style.width  = m_Rect.width;
-            m_UiInstance.style.height = m_Rect.height;
+            m_UIInstance.style.width  = m_Rect.width;
+            m_UIInstance.style.height = m_Rect.height;
         }
 
         void IDialogueWindowUI.Destroy()
         {
             m_Ticker.Pause();
-            m_UiInstance.RemoveFromHierarchy();
-            m_UiInstance = null;
+            m_UIInstance.RemoveFromHierarchy();
+            m_UIInstance = null;
         }
 
         byte IDialogueWindowUI.GetSelectedChoice()
@@ -132,21 +132,21 @@ namespace RPGFramework.Core.Dialogue.UI
 
         void IDialogueWindowUI.Init(VisualElement container)
         {
-            VisualTreeAsset uiAsset = m_DialogueWindowUiProvider.Get<IDialogueWindowUI>();
+            VisualTreeAsset uiAsset = m_DialogueWindowUIProvider.Get<IDialogueWindowUI>();
 
             uiAsset.CloneTree(container, out int index, out _);
 
-            m_UiInstance               = container[index];
-            m_UiInstance.style.display = DisplayStyle.None;
+            m_UIInstance               = container[index];
+            m_UIInstance.style.display = DisplayStyle.None;
 
-            m_Text      = m_UiInstance.Q<Label>(TEXT);
+            m_Text      = m_UIInstance.Q<Label>(TEXT);
             m_Text.text = string.Empty;
             m_TextView  = new DialogueTextView(m_Text);
 
             ApplyStyle();
 
             // One tick for the window drives the typing and keeps blinking text flashing while a page waits.
-            m_Ticker = m_UiInstance.schedule.Execute(Tick).Every(0);
+            m_Ticker = m_UIInstance.schedule.Execute(Tick).Every(0);
         }
 
         async Task IDialogueWindowUI.RunAsync()
@@ -192,7 +192,7 @@ namespace RPGFramework.Core.Dialogue.UI
                 button.RegisterCallback<ClickEvent, byte>(OnChoiceChosenBtnClicked, i);
                 button.SetEnabledAndVisible(false);
 
-                m_UiInstance.Add(button);
+                m_UIInstance.Add(button);
                 m_Choices[i]     = button;
                 m_ChoiceViews[i] = new DialogueTextView(button.Label);
             }
@@ -217,7 +217,7 @@ namespace RPGFramework.Core.Dialogue.UI
         {
             m_Style = style;
 
-            if (m_UiInstance != null)
+            if (m_UIInstance != null)
             {
                 ApplyStyle();
             }
@@ -249,7 +249,7 @@ namespace RPGFramework.Core.Dialogue.UI
         {
             foreach (DialogueWindowStyle style in (DialogueWindowStyle[])Enum.GetValues(typeof(DialogueWindowStyle)))
             {
-                m_UiInstance.EnableInClassList(StyleClass(style), style == m_Style);
+                m_UIInstance.EnableInClassList(StyleClass(style), style == m_Style);
             }
         }
 
@@ -263,7 +263,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private void Tick(TimerState timerState)
         {
             float deltaTime           = timerState.deltaTime / 1000f;
-            float charactersPerSecond = m_TextSpeed * m_TextSpeedMultiplier;
+            float charactersPerSecond = m_TextSpeed          * m_TextSpeedMultiplier;
 
             m_TextView.Tick(deltaTime, charactersPerSecond);
 

@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
-    public static class CoreModuleBuilder
+    public static class CoreModuleFactory
     {
         public static Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
@@ -71,7 +71,7 @@ namespace RPGFramework.Core
         {
             await m_CurrentModule.OnExitAsync();
 
-            byte   moduleId   = m_ChangeModuleStore.GetModuleId;
+            byte   moduleId   = m_ChangeModuleStore.ModuleId;
             Type   moduleType = m_ModuleDatabase.GetModuleType(moduleId);
             string sceneName  = m_SceneDatabase.GetSceneNameForModule(moduleType);
 

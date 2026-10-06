@@ -1,6 +1,6 @@
 ﻿namespace RPGFramework.Core.Data
 {
-    public static class FrameworkSaveSectionDatabase
+    public static class FrameworkSaveSections
     {
         /// <summary>
         /// The whole of <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Persistent" />, written as a raw

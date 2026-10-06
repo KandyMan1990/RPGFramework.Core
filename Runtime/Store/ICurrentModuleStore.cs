@@ -10,7 +10,7 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ICurrentModuleStore
     {
-        byte GetModuleId { get; }
+        byte ModuleId { get; }
         void SetModuleId(byte moduleId);
     }
 
@@ -31,7 +31,7 @@ namespace RPGFramework.Core.Store
             m_Address       = (ushort)currentModule.Offset;
         }
 
-        byte ICurrentModuleStore.GetModuleId
+        byte ICurrentModuleStore.ModuleId
         {
             get
             {

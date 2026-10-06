@@ -72,8 +72,8 @@ namespace RPGFramework.Core.SaveData
             m_MemoryBankAccess          = memoryBankAccess;
             m_MemoryService             = memoryService;
             m_VariableMap               = variableMap;
-            m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY);
-            m_PersistentLayoutSectionId = Fnv1a64.Hash(FrameworkSaveSectionDatabase.PERSISTENT_MEMORY_LAYOUT);
+            m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY);
+            m_PersistentLayoutSectionId = Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT);
             m_PersistentLayout          = PersistentLayout.Write(variableMap);
         }
 
@@ -264,7 +264,7 @@ namespace RPGFramework.Core.SaveData
         {
             byte[] persistent = m_MemoryBankAccess.CopyPersistent();
 
-            m_Sections[m_PersistentMemorySectionId] = new SectionBlob(Versions.PERSISTENT_MEMORY, persistent);
+            m_Sections[m_PersistentMemorySectionId] = new SectionBlob(Versions.PERSISTENT_MEMORY,      persistent);
             m_Sections[m_PersistentLayoutSectionId] = new SectionBlob(PersistentLayout.FORMAT_VERSION, m_PersistentLayout);
         }
 
@@ -287,7 +287,7 @@ namespace RPGFramework.Core.SaveData
 
             // A save written before any variables existed has no persistent memory, so every variable reads its default.
             byte[] persistent = sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob memory) ? memory.Data : Array.Empty<byte>();
-            byte[] layout     = sections.TryGetValue(m_PersistentLayoutSectionId, out SectionBlob saved)  ? saved.Data  : null;
+            byte[] layout     = sections.TryGetValue(m_PersistentLayoutSectionId, out SectionBlob saved) ? saved.Data : null;
 
             SaveState state = ToCurrentLayout(persistent, layout, out bank);
 

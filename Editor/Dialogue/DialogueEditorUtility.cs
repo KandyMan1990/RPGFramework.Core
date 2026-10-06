@@ -12,9 +12,9 @@ namespace RPGFramework.Core.Editor.Dialogue
         /// </summary>
         public static DialogueTextStyles FindProjectTextStyles()
         {
-            foreach (string guid in AssetDatabase.FindAssets($"t:{nameof(DialogueWindowUiProvider)}"))
+            foreach (string guid in AssetDatabase.FindAssets($"t:{nameof(DialogueWindowUIProvider)}"))
             {
-                IDialogueWindowUiProvider provider = AssetDatabase.LoadAssetAtPath<DialogueWindowUiProvider>(AssetDatabase.GUIDToAssetPath(guid));
+                IDialogueWindowUIProvider provider = AssetDatabase.LoadAssetAtPath<DialogueWindowUIProvider>(AssetDatabase.GUIDToAssetPath(guid));
 
                 if (provider?.TextStyles != null)
                 {

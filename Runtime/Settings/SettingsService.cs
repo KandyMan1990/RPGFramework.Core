@@ -14,7 +14,7 @@ namespace RPGFramework.Core.Settings
     {
         /// <summary>
         /// Whether settings have been written on this machine, in a file that is intact. Until they are, every section
-        /// holds the game's defaults from <see cref="ISettingsFactory" />.
+        /// holds the game's defaults from <see cref="IDefaultSettings" />.
         /// </summary>
         bool IsSaved { get; }
 
@@ -31,12 +31,12 @@ namespace RPGFramework.Core.Settings
     /// The game's default settings: what a first launch starts with, and what a section the settings file lacks, or holds
     /// in a shape an older build wrote, falls back to. Called on every launch, before the file is read.
     /// </summary>
-    public interface ISettingsFactory
+    public interface IDefaultSettings
     {
         /// <summary>
         /// Populate the settings with every section the game expects, at its starting values.
         /// </summary>
-        void CreateDefaultSettings(ISettingsService settingsService);
+        void Populate(ISettingsService settingsService);
     }
 
     internal sealed class SettingsService : ISettingsService
@@ -44,16 +44,16 @@ namespace RPGFramework.Core.Settings
         private const string SETTINGS_FILE_NAME = "settings.dat";
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
-        private readonly ISettingsFactory               m_SettingsFactory;
+        private readonly IDefaultSettings               m_DefaultSettings;
         private readonly string                         m_Path;
 
         private bool m_Loaded;
         private bool m_IsSaved;
 
-        public SettingsService(ISettingsFactory settingsFactory)
+        public SettingsService(IDefaultSettings defaultSettings)
         {
             m_Sections        = new Dictionary<ulong, SectionBlob>();
-            m_SettingsFactory = settingsFactory;
+            m_DefaultSettings = defaultSettings;
             m_Path            = Path.Combine(Application.persistentDataPath, SETTINGS_FILE_NAME);
         }
 
@@ -99,10 +99,10 @@ namespace RPGFramework.Core.Settings
                 return;
             }
 
-            // Set first: the factory fills the defaults in through this service.
+            // Set first: the game's defaults are populated through this service.
             m_Loaded = true;
 
-            m_SettingsFactory.CreateDefaultSettings(this);
+            m_DefaultSettings.Populate(this);
 
             if (!File.Exists(m_Path))
             {

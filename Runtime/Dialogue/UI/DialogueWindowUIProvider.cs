@@ -4,16 +4,16 @@ using UnityEngine.UIElements;
 namespace RPGFramework.Core.Dialogue.UI
 {
     [CreateAssetMenu(menuName = "RPG Framework/Dialogue/Dialogue Window UI Provider", fileName = "Dialogue Window UI Provider")]
-    public class DialogueWindowUiProvider : ScriptableObject, IDialogueWindowUiProvider
+    public class DialogueWindowUIProvider : ScriptableObject, IDialogueWindowUIProvider
     {
-        [SerializeField] private float           m_GetTextSpeed;
-        [SerializeField] private float           m_GetWindowSpeed;
+        [SerializeField] private float           m_TextSpeed;
+        [SerializeField] private float           m_WindowSpeed;
         [SerializeField] private VisualTreeAsset m_DialogueWindow;
 
         [Tooltip("The named styles dialogue can use, such as {Location}secret cave{/Location}")]
         [SerializeField] private DialogueTextStyles m_TextStyles;
 
-        VisualTreeAsset IDialogueWindowUiProvider.Get<T>()
+        VisualTreeAsset IDialogueWindowUIProvider.Get<T>()
         {
             return m_DialogueWindow;
         }
@@ -29,7 +29,7 @@ namespace RPGFramework.Core.Dialogue.UI
                        };
         }
 
-        VisualTreeAsset IDialogueWindowUiProvider.Get<T>()
+        VisualTreeAsset IDialogueWindowUIProvider.Get<T>()
         {
             m_Assets.TryGetValue(typeof(T), out VisualTreeAsset asset);
 
@@ -37,9 +37,9 @@ namespace RPGFramework.Core.Dialogue.UI
         }
         */
 
-        float IDialogueWindowUiProvider.GetTextSpeed   => m_GetTextSpeed;
-        float IDialogueWindowUiProvider.GetWindowSpeed => m_GetWindowSpeed;
+        float IDialogueWindowUIProvider.TextSpeed   => m_TextSpeed;
+        float IDialogueWindowUIProvider.WindowSpeed => m_WindowSpeed;
 
-        DialogueTextStyles IDialogueWindowUiProvider.TextStyles => m_TextStyles;
+        DialogueTextStyles IDialogueWindowUIProvider.TextStyles => m_TextStyles;
     }
 }

@@ -10,7 +10,7 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface IPlayTimeStore
     {
-        uint GetPlayTime { get; }
+        uint PlayTime { get; }
 
         /// <summary>
         /// Start the clock, as the player leaves the title for the game. It runs from then on, in every module.
@@ -38,7 +38,7 @@ namespace RPGFramework.Core.Store
             m_Address       = (ushort)playTime.Offset;
         }
 
-        uint IPlayTimeStore.GetPlayTime
+        uint IPlayTimeStore.PlayTime
         {
             get
             {

@@ -23,11 +23,11 @@ namespace RPGFramework.Core.Dialogue.UI
         void SkipToAnimationEnd();
     }
 
-    public interface IDialogueWindowUiProvider
+    public interface IDialogueWindowUIProvider
     {
         VisualTreeAsset    Get<T>() where T : IDialogueWindowUI;
-        float              GetTextSpeed   { get; }
-        float              GetWindowSpeed { get; }
-        DialogueTextStyles TextStyles     { get; }
+        float              TextSpeed   { get; }
+        float              WindowSpeed { get; }
+        DialogueTextStyles TextStyles  { get; }
     }
 }

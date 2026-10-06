@@ -9,7 +9,7 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ILocationNameStore
     {
-        ulong GetLocationName { get; }
+        ulong LocationName { get; }
         void  SetLocationName(ulong keyHash);
     }
 
@@ -29,7 +29,7 @@ namespace RPGFramework.Core.Store
             m_Address       = (ushort)locationName.Offset;
         }
 
-        ulong ILocationNameStore.GetLocationName
+        ulong ILocationNameStore.LocationName
         {
             get
             {

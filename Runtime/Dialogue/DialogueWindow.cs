@@ -9,61 +9,61 @@ namespace RPGFramework.Core.Dialogue
 {
     internal sealed class DialogueWindow : IDialogueWindow
     {
-        private readonly IDialogueWindowUI m_UiInstance;
+        private readonly IDialogueWindowUI m_UIInstance;
 
         public DialogueWindow(IDialogueWindowUI uiInstance)
         {
-            m_UiInstance = uiInstance;
+            m_UIInstance = uiInstance;
         }
 
         Task IDialogueWindow.AnimateWindowClosedAsync()
         {
-            return m_UiInstance.AnimateWindowClosedAsync();
+            return m_UIInstance.AnimateWindowClosedAsync();
         }
 
         Task IDialogueWindow.AnimateWindowOpenAsync()
         {
-            return m_UiInstance.AnimateWindowOpenAsync();
+            return m_UIInstance.AnimateWindowOpenAsync();
         }
 
         void IDialogueWindow.Destroy()
         {
-            m_UiInstance.Destroy();
+            m_UIInstance.Destroy();
         }
 
         byte IDialogueWindow.GetSelectedChoice()
         {
-            return m_UiInstance.GetSelectedChoice();
+            return m_UIInstance.GetSelectedChoice();
         }
 
         void IDialogueWindow.Init(VisualElement container)
         {
-            m_UiInstance.Init(container);
+            m_UIInstance.Init(container);
         }
 
         Task IDialogueWindow.RunAsync(IDialogueFlow dialogueFlow, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
-            return dialogueFlow.RunAsync(m_UiInstance, dialogues, inputContext, close);
+            return dialogueFlow.RunAsync(m_UIInstance, dialogues, inputContext, close);
         }
 
         void IDialogueWindow.SetMessageVariables(IReadOnlyList<int> variables)
         {
-            m_UiInstance.SetMessageVariables(variables);
+            m_UIInstance.SetMessageVariables(variables);
         }
 
         void IDialogueWindow.SetMessageSpeed(float messageSpeed)
         {
-            m_UiInstance.SetMessageSpeed(messageSpeed);
+            m_UIInstance.SetMessageSpeed(messageSpeed);
         }
 
         void IDialogueWindow.SetRect(RectInt rect)
         {
-            m_UiInstance.SetRect(rect);
+            m_UIInstance.SetRect(rect);
         }
 
         void IDialogueWindow.SetStyle(DialogueWindowStyle style)
         {
-            m_UiInstance.SetStyle(style);
+            m_UIInstance.SetStyle(style);
         }
     }
 }
