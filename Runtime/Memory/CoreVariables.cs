@@ -49,6 +49,6 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(LOCATION_NAME,    MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in")
         };
 
-        public IReadOnlyList<RequiredVariable> Variables => s_Variables;
+        IReadOnlyList<RequiredVariable> IRequiredVariables.Variables => s_Variables;
     }
 }

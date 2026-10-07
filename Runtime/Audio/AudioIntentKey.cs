@@ -13,10 +13,12 @@ namespace RPGFramework.Core.Audio
             Context = context;
         }
 
-        public bool Equals(AudioIntentKey other) => Intent == other.Intent && Context == other.Context;
+        bool IEquatable<AudioIntentKey>.Equals(AudioIntentKey other) => Matches(other);
 
-        public override bool Equals(object obj) => obj is AudioIntentKey other && Equals(other);
+        public override bool Equals(object obj) => obj is AudioIntentKey other && Matches(other);
 
         public override int GetHashCode() => HashCode.Combine((int)Intent, (int)Context);
+
+        private bool Matches(AudioIntentKey other) => Intent == other.Intent && Context == other.Context;
     }
 }

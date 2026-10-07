@@ -17,6 +17,7 @@ namespace RPGFramework.Core.Editor
     internal sealed class VariableMapAssetEditor : UnityEditor.Editor
     {
         private VariableMapAsset m_Map;
+        private IVariableMap     m_IMap;
 
         private Label        m_PersistentSizeLabel;
         private Label        m_SessionSizeLabel;
@@ -40,7 +41,8 @@ namespace RPGFramework.Core.Editor
 
         public override VisualElement CreateInspectorGUI()
         {
-            m_Map = (VariableMapAsset)target;
+            m_Map  = (VariableMapAsset)target;
+            m_IMap = m_Map;
 
             Repair();
 
@@ -117,10 +119,10 @@ namespace RPGFramework.Core.Editor
             VisualElement section = MakeSection("Declare a variable");
 
             m_NameField        = new TextField("Name");
-            m_BankField        = new EnumField("Bank",  MemoryBank.Persistent);
+            m_BankField        = new EnumField("Bank", MemoryBank.Persistent);
             m_RecordToggle     = new Toggle("Record") { tooltip = "A record is fields of their own widths packed together, as a struct is — a character, an item slot" };
             m_WidthField       = new EnumField("Width", VariableWidth.Byte);
-            m_CountField       = new IntegerField("Count") { value = 1, tooltip = "1 is a single value or record; more makes an array" };
+            m_CountField       = new IntegerField("Count") { value        = 1, tooltip = "1 is a single value or record; more makes an array" };
             m_DescriptionField = new TextField("Description") { multiline = true };
 
             m_PendingFieldsContainer               = new VisualElement();
@@ -179,9 +181,9 @@ namespace RPGFramework.Core.Editor
                 VisualElement row = new VisualElement();
                 row.style.flexDirection = FlexDirection.Row;
 
-                TextField    name  = new TextField { value  = pending.Name, tooltip  = "The field's name, as scripts write it after the record" };
+                TextField    name  = new TextField { value                  = pending.Name, tooltip = "The field's name, as scripts write it after the record" };
                 EnumField    width = new EnumField(pending.Width) { tooltip = "Storage width of each value" };
-                IntegerField count = new IntegerField { value = pending.Count, tooltip = "More than 1 makes an array inside the record" };
+                IntegerField count = new IntegerField { value               = pending.Count, tooltip = "More than 1 makes an array inside the record" };
 
                 name.style.flexGrow = 1;
                 width.style.width   = 90;
@@ -274,7 +276,9 @@ namespace RPGFramework.Core.Editor
         {
             VisualElement section = MakeSection("Declared variables");
 
-            section.Add(new HelpBox("Offsets are assigned by the map: a new variable fills the first gap it fits, and one that grows into the next moves it out of the way. Saves find every value by its variable's id wherever it is. Field scripts address offsets, so export the fields again after changing the map — a player build refuses fields exported against an older one.", HelpBoxMessageType.Info));
+            section.Add(new
+                            HelpBox("Offsets are assigned by the map: a new variable fills the first gap it fits, and one that grows into the next moves it out of the way. Saves find every value by its variable's id wherever it is. Field scripts address offsets, so export the fields again after changing the map — a player build refuses fields exported against an older one.",
+                                    HelpBoxMessageType.Info));
 
             VisualElement defaultInspector = new VisualElement();
             InspectorElement.FillDefaultInspector(defaultInspector, serializedObject, this);
@@ -334,7 +338,7 @@ namespace RPGFramework.Core.Editor
 
             string name      = m_NameField.value;
             bool   hasName   = !string.IsNullOrWhiteSpace(name);
-            bool   nameTaken = hasName && m_Map.TryGetVariable(name, out VariableDefinition _);
+            bool   nameTaken = hasName && m_IMap.TryGetVariable(name, out VariableDefinition _);
 
             string fieldProblem = record ? FindPendingFieldProblem(fields) : null;
             bool   blocked      = nameTaken || count < 1 || (hasName && !VariableMapAsset.IsScriptName(name)) || fieldProblem != null;
@@ -460,7 +464,7 @@ namespace RPGFramework.Core.Editor
             {
                 RequiredVariable required = requiredVariables[i];
 
-                if (!m_Map.TryGetVariable(required.Name, out VariableDefinition _))
+                if (!m_IMap.TryGetVariable(required.Name, out VariableDefinition _))
                 {
                     missing.Add(required.Name);
                 }

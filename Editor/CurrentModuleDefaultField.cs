@@ -12,9 +12,9 @@ namespace RPGFramework.Core.Editor
     /// </summary>
     internal sealed class CurrentModuleDefaultField : IVariableDefaultField
     {
-        public string VariableName => CoreVariables.CURRENT_MODULE;
+        string IVariableDefaultField.VariableName => CoreVariables.CURRENT_MODULE;
 
-        public VisualElement Create(SerializedProperty variable)
+        VisualElement IVariableDefaultField.Create(SerializedProperty variable)
         {
             SerializedProperty defaultValue = variable.FindPropertyRelative(VariableDefinitionDrawer.DEFAULT_VALUE);
             List<IStartModule> modules      = RequiredVariables.FindStartModules();

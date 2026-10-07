@@ -13,9 +13,9 @@ namespace RPGFramework.Core.Editor
     /// </summary>
     internal sealed class VariableMapBuildCheck : IPreprocessBuildWithReport
     {
-        public int callbackOrder => 0;
+        int IOrderedCallback.callbackOrder => 0;
 
-        public void OnPreprocessBuild(BuildReport report)
+        void IPreprocessBuildWithReport.OnPreprocessBuild(BuildReport report)
         {
             List<string> problems = new List<string>();
 

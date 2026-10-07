@@ -30,9 +30,8 @@ namespace RPGFramework.Core.Memory
 
         private Dictionary<string, VariableDefinition> m_ByName;
 
-        public IReadOnlyList<VariableDefinition> Variables => m_Variables;
-
-        uint IVariableMap.LastVariableId => m_LastVariableId;
+        IReadOnlyList<VariableDefinition> IVariableMap.Variables      => m_Variables;
+        uint IVariableMap.                             LastVariableId => m_LastVariableId;
 
         int IMemoryServiceArgs.PersistentBytes
         {
@@ -64,10 +63,12 @@ namespace RPGFramework.Core.Memory
             }
         }
 
+        bool IVariableMap.TryGetVariable(string varName, out VariableDefinition definition) => TryGetVariable(varName, out definition);
+
         /// <summary>
         /// Find a variable by the name it was authored under.
         /// </summary>
-        public bool TryGetVariable(string varName, out VariableDefinition definition)
+        private bool TryGetVariable(string varName, out VariableDefinition definition)
         {
             EnsureLookup();
 

@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Dialogue
 
         internal IReadOnlyList<DialogueTextStyle> Styles => m_Styles;
 
-        public bool TryGet(string name, out DialogueTextStyle style)
+        bool IDialogueTextStyles.TryGet(string name, out DialogueTextStyle style)
         {
             for (int i = 0; i < m_Styles.Count; i++)
             {
