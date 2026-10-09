@@ -17,19 +17,19 @@ namespace RPGFramework.Core.Editor
         VisualElement IVariableDefaultField.Create(SerializedProperty variable)
         {
             SerializedProperty defaultValue = variable.FindPropertyRelative(VariableDefinitionDrawer.DEFAULT_VALUE);
-            List<IStartModule> modules      = RequiredVariables.FindStartModules();
+            IStartModule[]     modules      = RequiredVariables.FindStartModules();
 
-            if (modules.Count == 0)
+            if (modules.Length == 0)
             {
                 HelpBox none = new HelpBox("No installed module is somewhere a game can begin.", HelpBoxMessageType.Warning);
 
                 return none;
             }
 
-            List<string> names = new List<string>(modules.Count);
+            List<string> names = new List<string>(modules.Length);
             int          chosen = -1;
 
-            for (int i = 0; i < modules.Count; i++)
+            for (int i = 0; i < modules.Length; i++)
             {
                 names.Add(modules[i].ModuleName);
 

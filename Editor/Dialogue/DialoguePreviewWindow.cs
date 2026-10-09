@@ -124,10 +124,10 @@ namespace RPGFramework.Core.Editor.Dialogue
         /// <param name="fromStart">Go back to the first page, as when the text itself changed.</param>
         private void Refresh(bool fromStart)
         {
-            List<string> problems = DialogueMarkup.Validate(m_Source ?? string.Empty, m_Styles);
+            string[] problems = DialogueMarkup.Validate(m_Source ?? string.Empty, m_Styles);
 
             m_Problems.text          = string.Join("\n", problems);
-            m_Problems.style.display = problems.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            m_Problems.style.display = problems.Length > 0 ? DisplayStyle.Flex : DisplayStyle.None;
 
             m_Pages = DialogueMarkup.ToPages(m_Source ?? string.Empty);
 

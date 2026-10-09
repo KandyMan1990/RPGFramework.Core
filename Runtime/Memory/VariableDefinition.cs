@@ -37,7 +37,7 @@ namespace RPGFramework.Core.Memory
 
         [SerializeField]
         [Tooltip("A record's fields, in order, packed end to end. Empty for a value or an array of values")]
-        private List<VariableRecordField> m_Fields = new List<VariableRecordField>();
+        private VariableRecordField[] m_Fields = Array.Empty<VariableRecordField>();
 
         [SerializeField]
         private ushort m_LastFieldId;
@@ -57,7 +57,7 @@ namespace RPGFramework.Core.Memory
 
         [SerializeField]
         [Tooltip("Elements of an array, or fields of particular records, that start at something other than the default. Edit them through the Variable Map inspector")]
-        private List<VariableElementDefault> m_ElementDefaults = new List<VariableElementDefault>();
+        private VariableElementDefault[] m_ElementDefaults = Array.Empty<VariableElementDefault>();
 
         internal uint   Id          => m_Id;
         internal ushort LastFieldId => m_LastFieldId;
@@ -77,7 +77,7 @@ namespace RPGFramework.Core.Memory
 
         public IReadOnlyList<VariableRecordField> Fields => m_Fields;
 
-        public bool IsRecord => m_Fields.Count > 0;
+        public bool IsRecord => m_Fields.Length > 0;
 
         internal IReadOnlyList<VariableElementDefault> ElementDefaults => m_ElementDefaults;
 
@@ -90,7 +90,7 @@ namespace RPGFramework.Core.Memory
             {
                 int elementSize = IsRecord ? 0 : m_Width.GetByteCount();
 
-                for (int i = 0; i < m_Fields.Count; i++)
+                for (int i = 0; i < m_Fields.Length; i++)
                 {
                     elementSize += m_Fields[i].ByteCount;
                 }
@@ -130,10 +130,15 @@ namespace RPGFramework.Core.Memory
             m_Id          = id;
             m_Name        = name;
             m_Bank        = bank;
-            m_Fields      = new List<VariableRecordField>(fields);
+            m_Fields      = new VariableRecordField[fields.Count];
             m_Count       = count;
             m_Offset      = offset;
             m_Description = description;
+
+            for (int i = 0; i < fields.Count; i++)
+            {
+                m_Fields[i] = fields[i];
+            }
         }
 
         /// <summary>
@@ -142,7 +147,7 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         internal int AssignMissingFieldIds()
         {
-            for (int i = 0; i < m_Fields.Count; i++)
+            for (int i = 0; i < m_Fields.Length; i++)
             {
                 VariableRecordField field = m_Fields[i];
 
@@ -155,7 +160,7 @@ namespace RPGFramework.Core.Memory
             HashSet<ushort> seen     = new HashSet<ushort>();
             int             assigned = 0;
 
-            for (int i = 0; i < m_Fields.Count; i++)
+            for (int i = 0; i < m_Fields.Length; i++)
             {
                 VariableRecordField field = m_Fields[i];
 
@@ -203,7 +208,7 @@ namespace RPGFramework.Core.Memory
 
             bool found = false;
 
-            for (int i = 0; i < m_Fields.Count && !found; i++)
+            for (int i = 0; i < m_Fields.Length && !found; i++)
             {
                 if (m_Fields[i].Name == fieldName)
                 {
@@ -245,7 +250,7 @@ namespace RPGFramework.Core.Memory
         {
             ulong value = fallback;
 
-            for (int i = 0; i < m_ElementDefaults.Count; i++)
+            for (int i = 0; i < m_ElementDefaults.Length; i++)
             {
                 VariableElementDefault elementDefault = m_ElementDefaults[i];
 

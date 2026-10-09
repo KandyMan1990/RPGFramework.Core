@@ -149,9 +149,9 @@ namespace RPGFramework.Core.Memory
         {
             int added = 0;
 
-            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+            RequiredVariable[] requiredVariables = RequiredVariables.FindAll();
 
-            for (int i = 0; i < requiredVariables.Count; i++)
+            for (int i = 0; i < requiredVariables.Length; i++)
             {
                 RequiredVariable required = requiredVariables[i];
 
@@ -392,7 +392,7 @@ namespace RPGFramework.Core.Memory
         /// a required variable the map lacks or declares differently, and for a start module default no module answers
         /// to. An empty list means the map is well formed.
         /// </summary>
-        public List<string> Validate()
+        public string[] Validate()
         {
             List<string>    problems = new List<string>();
             HashSet<string> seen     = new HashSet<string>();
@@ -445,7 +445,9 @@ namespace RPGFramework.Core.Memory
 
             ValidateRequiredVariables(problems);
 
-            return problems;
+            string[] found = problems.ToArray();
+
+            return found;
         }
 
         private void ValidateIds(List<string> problems)
@@ -543,9 +545,9 @@ namespace RPGFramework.Core.Memory
 
         private void ValidateRequiredVariables(List<string> problems)
         {
-            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+            RequiredVariable[] requiredVariables = RequiredVariables.FindAll();
 
-            for (int i = 0; i < requiredVariables.Count; i++)
+            for (int i = 0; i < requiredVariables.Length; i++)
             {
                 RequiredVariable required = requiredVariables[i];
 
@@ -578,9 +580,9 @@ namespace RPGFramework.Core.Memory
 
             byte startModule = (byte)currentModule.DefaultValue;
 
-            List<IStartModule> modules = RequiredVariables.FindStartModules();
+            IStartModule[] modules = RequiredVariables.FindStartModules();
 
-            for (int i = 0; i < modules.Count; i++)
+            for (int i = 0; i < modules.Length; i++)
             {
                 IStartModule module = modules[i];
 

@@ -148,13 +148,26 @@ namespace RPGFramework.Core.SaveData
 
         string[] ISaveDataService.GetListOfSaveFiles()
         {
-            List<FileInfo> saveFiles = GetSaveFiles();
+            FileInfo[] candidates = new DirectoryInfo(Application.persistentDataPath).GetFiles(SAVE_FILE_SEARCH_PATTERN);
+            int        count      = 0;
 
-            string[] filenames = new string[saveFiles.Count];
-
-            for (int i = 0; i < saveFiles.Count; i++)
+            for (int i = 0; i < candidates.Length; i++)
             {
-                filenames[i] = saveFiles[i].Name;
+                if (TryGetSaveSlotIndex(candidates[i].Name, out byte _))
+                {
+                    count++;
+                }
+            }
+
+            string[] filenames = new string[count];
+            int      next      = 0;
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                if (TryGetSaveSlotIndex(candidates[i].Name, out byte _))
+                {
+                    filenames[next++] = candidates[i].Name;
+                }
             }
 
             return filenames;
@@ -205,27 +218,6 @@ namespace RPGFramework.Core.SaveData
             }
 
             return usedIndices;
-        }
-
-        private static List<FileInfo> GetSaveFiles()
-        {
-            DirectoryInfo directoryInfo = new DirectoryInfo(Application.persistentDataPath);
-
-            FileInfo[] candidates = directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN);
-
-            List<FileInfo> saveFiles = new List<FileInfo>(candidates.Length);
-
-            for (int i = 0; i < candidates.Length; i++)
-            {
-                FileInfo candidate = candidates[i];
-
-                if (TryGetSaveSlotIndex(candidate.Name, out byte _))
-                {
-                    saveFiles.Add(candidate);
-                }
-            }
-
-            return saveFiles;
         }
 
         private static bool TryGetSaveSlotIndex(string filename, out byte index)

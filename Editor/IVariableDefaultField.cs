@@ -21,13 +21,13 @@ namespace RPGFramework.Core.Editor
 
     internal static class VariableDefaultFields
     {
-        private static Dictionary<string, IVariableDefaultField> s_ByName;
+        private static Dictionary<string, IVariableDefaultField> m_ByName;
 
         internal static bool TryGet(string variableName, out IVariableDefaultField field)
         {
-            if (s_ByName == null)
+            if (m_ByName == null)
             {
-                s_ByName = new Dictionary<string, IVariableDefaultField>();
+                m_ByName = new Dictionary<string, IVariableDefaultField>();
 
                 TypeCache.TypeCollection types = TypeCache.GetTypesDerivedFrom<IVariableDefaultField>();
 
@@ -41,11 +41,11 @@ namespace RPGFramework.Core.Editor
                     }
 
                     IVariableDefaultField instance = (IVariableDefaultField)Activator.CreateInstance(type);
-                    s_ByName[instance.VariableName] = instance;
+                    m_ByName[instance.VariableName] = instance;
                 }
             }
 
-            bool found = s_ByName.TryGetValue(variableName, out field);
+            bool found = m_ByName.TryGetValue(variableName, out field);
 
             return found;
         }

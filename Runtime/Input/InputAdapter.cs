@@ -7,7 +7,7 @@ namespace RPGFramework.Core.Input
 {
     public sealed class InputAdapter : MonoBehaviour
     {
-        private static readonly int s_SlotCount = Enum.GetValues(typeof(ControlSlot)).Length;
+        private static readonly int m_SlotCount = Enum.GetValues(typeof(ControlSlot)).Length;
 
         [SerializeField] private InputActionReference m_Movement;
         [SerializeField] private InputActionReference m_Primary;
@@ -103,10 +103,10 @@ namespace RPGFramework.Core.Input
         {
             if (m_Actions == null)
             {
-                m_Actions  = new InputAction[s_SlotCount];
-                m_Handlers = new Action<InputAction.CallbackContext>[s_SlotCount];
+                m_Actions  = new InputAction[m_SlotCount];
+                m_Handlers = new Action<InputAction.CallbackContext>[m_SlotCount];
 
-                for (int i = 0; i < s_SlotCount; i++)
+                for (int i = 0; i < m_SlotCount; i++)
                 {
                     ControlSlot slot = (ControlSlot)i;
 

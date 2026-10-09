@@ -13,10 +13,10 @@ namespace RPGFramework.Core.Dialogue
 
         internal static DialogueBlock ParseIntoPages(string dialogue)
         {
-            List<string>  pages = SplitPages(dialogue);
-            DialogueBlock block = new DialogueBlock(pages.Count);
+            string[]      pages = SplitPages(dialogue);
+            DialogueBlock block = new DialogueBlock(pages.Length);
 
-            for (int pageIndex = 0; pageIndex < pages.Count; pageIndex++)
+            for (int pageIndex = 0; pageIndex < pages.Length; pageIndex++)
             {
                 ReadOnlySpan<char> pageSpan    = Trim(pages[pageIndex].AsSpan());
                 ReadOnlySpan<char> speakerSpan = default;
@@ -40,24 +40,31 @@ namespace RPGFramework.Core.Dialogue
             return block;
         }
 
-        internal static List<string> SplitPages(string dialogue)
+        internal static string[] SplitPages(string dialogue)
         {
-            List<string> pages = new List<string>();
-            int          start = 0;
+            int count = 1;
+            int found = dialogue.IndexOf(NEW_PAGE_MARKER, StringComparison.Ordinal);
 
-            while (true)
+            while (found >= 0)
+            {
+                count++;
+                found = dialogue.IndexOf(NEW_PAGE_MARKER, found + NEW_PAGE_MARKER.Length, StringComparison.Ordinal);
+            }
+
+            string[] pages = new string[count];
+            int      start = 0;
+
+            for (int i = 0; i < count - 1; i++)
             {
                 int marker = dialogue.IndexOf(NEW_PAGE_MARKER, start, StringComparison.Ordinal);
 
-                if (marker < 0)
-                {
-                    pages.Add(dialogue.Substring(start));
-                    return pages;
-                }
-
-                pages.Add(dialogue.Substring(start, marker - start));
-                start = marker + NEW_PAGE_MARKER.Length;
+                pages[i] = dialogue.Substring(start, marker - start);
+                start    = marker + NEW_PAGE_MARKER.Length;
             }
+
+            pages[count - 1] = dialogue.Substring(start);
+
+            return pages;
         }
 
         internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)

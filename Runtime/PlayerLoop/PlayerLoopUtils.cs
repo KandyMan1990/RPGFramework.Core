@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Text;
 using UnityEngine;
 using UnityEngine.LowLevel;
@@ -14,13 +14,14 @@ namespace RPGFramework.Core.PlayerLoop
                 return HandleSubSystemLoop<T>(ref loop, systemToInsert, index);
             }
 
-            List<PlayerLoopSystem> playerLoopSystemList = new List<PlayerLoopSystem>();
+            PlayerLoopSystem[] existing = loop.subSystemList ?? Array.Empty<PlayerLoopSystem>();
+            PlayerLoopSystem[] inserted = new PlayerLoopSystem[existing.Length + 1];
 
-            if (loop.subSystemList != null)
-                playerLoopSystemList.AddRange(loop.subSystemList);
+            Array.Copy(existing, 0, inserted, 0, index);
+            inserted[index] = systemToInsert;
+            Array.Copy(existing, index, inserted, index + 1, existing.Length - index);
 
-            playerLoopSystemList.Insert(index, systemToInsert);
-            loop.subSystemList = playerLoopSystemList.ToArray();
+            loop.subSystemList = inserted;
 
             return true;
         }
@@ -30,14 +31,17 @@ namespace RPGFramework.Core.PlayerLoop
             if (loop.subSystemList == null)
                 return;
 
-            List<PlayerLoopSystem> playerLoopSystemList = new List<PlayerLoopSystem>(loop.subSystemList);
-
-            for (int i = 0; i < playerLoopSystemList.Count; i++)
+            for (int i = 0; i < loop.subSystemList.Length; i++)
             {
-                if (playerLoopSystemList[i].type == systemToRemove.type && playerLoopSystemList[i].updateDelegate == systemToRemove.updateDelegate)
+                if (loop.subSystemList[i].type == systemToRemove.type && loop.subSystemList[i].updateDelegate == systemToRemove.updateDelegate)
                 {
-                    playerLoopSystemList.RemoveAt(i);
-                    loop.subSystemList = playerLoopSystemList.ToArray();
+                    PlayerLoopSystem[] existing = loop.subSystemList;
+                    PlayerLoopSystem[] removed  = new PlayerLoopSystem[existing.Length - 1];
+
+                    Array.Copy(existing, 0, removed, 0, i);
+                    Array.Copy(existing, i + 1, removed, i, existing.Length - i - 1);
+
+                    loop.subSystemList = removed;
                 }
             }
 

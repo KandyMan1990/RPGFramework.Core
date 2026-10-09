@@ -236,15 +236,15 @@ namespace RPGFramework.Core.Editor
             RefreshDerivedLabels();
         }
 
-        private List<VariableRecordField> CreatePendingFields()
+        private VariableRecordField[] CreatePendingFields()
         {
-            List<VariableRecordField> fields = new List<VariableRecordField>(m_PendingFields.Count);
+            VariableRecordField[] fields = new VariableRecordField[m_PendingFields.Count];
 
             for (int i = 0; i < m_PendingFields.Count; i++)
             {
                 PendingField pending = m_PendingFields[i];
 
-                fields.Add(new VariableRecordField(pending.Name, pending.Width, pending.Count, 0));
+                fields[i] = new VariableRecordField(pending.Name, pending.Width, pending.Count, 0);
             }
 
             return fields;
@@ -319,14 +319,14 @@ namespace RPGFramework.Core.Editor
             int           count  = m_CountField.value;
             bool          record = m_RecordToggle.value;
 
-            List<VariableRecordField> fields = CreatePendingFields();
+            VariableRecordField[] fields = CreatePendingFields();
 
             int alignment   = record ? VariableMapAsset.GetAlignment(fields) : width.GetByteCount();
             int elementSize = record ? 0 : width.GetByteCount();
 
             if (record)
             {
-                for (int i = 0; i < fields.Count; i++)
+                for (int i = 0; i < fields.Length; i++)
                 {
                     VariableRecordField field = fields[i];
 
@@ -371,12 +371,12 @@ namespace RPGFramework.Core.Editor
             m_AllocateButton.SetEnabled(hasName && !blocked);
         }
 
-        private static string FindPendingFieldProblem(List<VariableRecordField> fields)
+        private static string FindPendingFieldProblem(VariableRecordField[] fields)
         {
             HashSet<string> names   = new HashSet<string>();
             string          problem = null;
 
-            for (int i = 0; i < fields.Count; i++)
+            for (int i = 0; i < fields.Length; i++)
             {
                 VariableRecordField field = fields[i];
 
@@ -458,9 +458,9 @@ namespace RPGFramework.Core.Editor
         {
             List<string> missing = new List<string>();
 
-            List<RequiredVariable> requiredVariables = RequiredVariables.FindAll();
+            RequiredVariable[] requiredVariables = RequiredVariables.FindAll();
 
-            for (int i = 0; i < requiredVariables.Count; i++)
+            for (int i = 0; i < requiredVariables.Length; i++)
             {
                 RequiredVariable required = requiredVariables[i];
 
@@ -494,15 +494,15 @@ namespace RPGFramework.Core.Editor
         {
             m_ValidationResults.Clear();
 
-            List<string> problems = m_Map.Validate();
+            string[] problems = m_Map.Validate();
 
-            if (problems.Count == 0)
+            if (problems.Length == 0)
             {
                 m_ValidationResults.Add(new HelpBox("No problems found.", HelpBoxMessageType.Info));
                 return;
             }
 
-            for (int i = 0; i < problems.Count; i++)
+            for (int i = 0; i < problems.Length; i++)
             {
                 string problem = problems[i];
 

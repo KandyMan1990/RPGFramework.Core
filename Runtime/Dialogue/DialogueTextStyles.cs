@@ -12,13 +12,13 @@ namespace RPGFramework.Core.Dialogue
     [CreateAssetMenu(menuName = "RPG Framework/Dialogue/Dialogue Text Styles", fileName = "Dialogue Text Styles")]
     public sealed class DialogueTextStyles : ScriptableObject, IDialogueTextStyles
     {
-        [SerializeField] private List<DialogueTextStyle> m_Styles = new List<DialogueTextStyle>();
+        [SerializeField] private DialogueTextStyle[] m_Styles = Array.Empty<DialogueTextStyle>();
 
         internal IReadOnlyList<DialogueTextStyle> Styles => m_Styles;
 
         bool IDialogueTextStyles.TryGet(string name, out DialogueTextStyle style)
         {
-            for (int i = 0; i < m_Styles.Count; i++)
+            for (int i = 0; i < m_Styles.Length; i++)
             {
                 DialogueTextStyle candidate = m_Styles[i];
 

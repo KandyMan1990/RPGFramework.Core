@@ -60,48 +60,74 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     internal static class RequiredVariables
     {
-        internal static List<RequiredVariable> FindAll()
+        internal static RequiredVariable[] FindAll()
         {
-            List<RequiredVariable> required = new List<RequiredVariable>();
+            IRequiredVariables[] sources = CreateAll<IRequiredVariables>();
+            int                  count   = 0;
 
-            List<IRequiredVariables> sources = CreateAll<IRequiredVariables>();
-
-            for (int i = 0; i < sources.Count; i++)
+            for (int i = 0; i < sources.Length; i++)
             {
-                IRequiredVariables source = sources[i];
+                count += sources[i].Variables.Count;
+            }
 
-                required.AddRange(source.Variables);
+            RequiredVariable[] required = new RequiredVariable[count];
+            int                next     = 0;
+
+            for (int i = 0; i < sources.Length; i++)
+            {
+                IReadOnlyList<RequiredVariable> variables = sources[i].Variables;
+
+                for (int j = 0; j < variables.Count; j++)
+                {
+                    required[next++] = variables[j];
+                }
             }
 
             return required;
         }
 
-        internal static List<IStartModule> FindStartModules()
+        internal static IStartModule[] FindStartModules()
         {
-            List<IStartModule> startModules = CreateAll<IStartModule>();
+            IStartModule[] startModules = CreateAll<IStartModule>();
 
             return startModules;
         }
 
-        private static List<T> CreateAll<T>()
+        private static T[] CreateAll<T>()
         {
-            List<T> instances = new List<T>();
-
             UnityEditor.TypeCache.TypeCollection types = UnityEditor.TypeCache.GetTypesDerivedFrom<T>();
+
+            int count = 0;
+
+            for (int i = 0; i < types.Count; i++)
+            {
+                if (IsCreatable(types[i]))
+                {
+                    count++;
+                }
+            }
+
+            T[] instances = new T[count];
+            int next      = 0;
 
             for (int i = 0; i < types.Count; i++)
             {
                 System.Type type = types[i];
 
-                if (type.IsAbstract || type.IsInterface)
+                if (IsCreatable(type))
                 {
-                    continue;
+                    instances[next++] = (T)System.Activator.CreateInstance(type);
                 }
-
-                instances.Add((T)System.Activator.CreateInstance(type));
             }
 
             return instances;
+        }
+
+        private static bool IsCreatable(System.Type type)
+        {
+            bool isCreatable = !type.IsAbstract && !type.IsInterface;
+
+            return isCreatable;
         }
     }
 }

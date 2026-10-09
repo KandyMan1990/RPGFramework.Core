@@ -32,7 +32,7 @@ namespace RPGFramework.Core.Dialogue
         private const string COLOUR = "Colour";
         private const string BLINK  = "Blink";
 
-        private static readonly Dictionary<string, Color> s_ColourNames = new Dictionary<string, Color>(System.StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, Color> m_ColourNames = new Dictionary<string, Color>(System.StringComparer.OrdinalIgnoreCase)
                                                                           {
                                                                               { "white", Color.white },
                                                                               { "black", Color.black },
@@ -159,7 +159,7 @@ namespace RPGFramework.Core.Dialogue
                 spans.Add(new DialogueTextSpan(span.Start, text.Length, span.Colour, span.Blink));
             }
 
-            DialogueText result = new DialogueText(text.ToString(), pauses, spans);
+            DialogueText result = new DialogueText(text.ToString(), pauses.ToArray(), spans.ToArray());
 
             return result;
         }
@@ -168,20 +168,20 @@ namespace RPGFramework.Core.Dialogue
         /// <summary>
         /// Parse only to find mistakes, as the editor does when text arrives from a sheet.
         /// </summary>
-        public static List<string> Validate(string source, IDialogueTextStyles styles)
+        public static string[] Validate(string source, IDialogueTextStyles styles)
         {
             List<string> problems = new List<string>();
 
-            List<string> pages = DialogueUtils.SplitPages(source);
+            string[] pages = DialogueUtils.SplitPages(source);
 
-            for (int i = 0; i < pages.Count; i++)
+            for (int i = 0; i < pages.Length; i++)
             {
                 string page = pages[i];
 
                 Parse(page, null, styles, problems);
             }
 
-            return problems;
+            return problems.ToArray();
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace RPGFramework.Core.Dialogue
 
         private static bool TryParseColour(string value, out Color colour)
         {
-            if (s_ColourNames.TryGetValue(value, out colour))
+            if (m_ColourNames.TryGetValue(value, out colour))
             {
                 return true;
             }

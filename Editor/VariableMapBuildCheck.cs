@@ -33,9 +33,9 @@ namespace RPGFramework.Core.Editor
                 string           path = AssetDatabase.GUIDToAssetPath(guid);
                 VariableMapAsset map  = AssetDatabase.LoadAssetAtPath<VariableMapAsset>(path);
 
-                List<string> mapProblems = map.Validate();
+                string[] mapProblems = map.Validate();
 
-                for (int j = 0; j < mapProblems.Count; j++)
+                for (int j = 0; j < mapProblems.Length; j++)
                 {
                     string problem = mapProblems[j];
 
