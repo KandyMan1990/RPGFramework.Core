@@ -59,12 +59,14 @@
             return byteCount;
         }
 
+#if UNITY_EDITOR
         public static bool IsInteger(this VariableWidth width)
         {
             bool isInteger = width != VariableWidth.Bool && width != VariableWidth.Float;
 
             return isInteger;
         }
+#endif
 
         public static bool IsSigned(this VariableWidth width)
         {

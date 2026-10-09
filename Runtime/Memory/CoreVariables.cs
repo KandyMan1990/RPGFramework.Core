@@ -6,7 +6,10 @@ namespace RPGFramework.Core.Memory
     /// <summary>
     /// The variables Core itself requires of every game's map.
     /// </summary>
-    public sealed class CoreVariables : IRequiredVariables
+    public sealed class CoreVariables
+#if UNITY_EDITOR
+        : IRequiredVariables
+#endif
     {
         /// <summary>
         /// The module the playthrough is in. Its default is where a new game begins; a module that is a place
@@ -40,7 +43,8 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public const string LOCATION_NAME = "LocationName";
 
-        private static readonly RequiredVariable[] s_Variables =
+#if UNITY_EDITOR
+        private static readonly RequiredVariable[] m_Variables =
         {
             new RequiredVariable(CURRENT_MODULE,   MemoryBank.Persistent, VariableWidth.Byte,  "The module the playthrough is in. Its default is the module a new game begins in"),
             new RequiredVariable(LOADED_FROM_SAVE, MemoryBank.Session,    VariableWidth.Bool,  "Set when a save is loaded, and cleared once the player is back where it was made. Its default is not used"),
@@ -49,6 +53,7 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(LOCATION_NAME,    MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in")
         };
 
-        IReadOnlyList<RequiredVariable> IRequiredVariables.Variables => s_Variables;
+        IReadOnlyList<RequiredVariable> IRequiredVariables.Variables => m_Variables;
+#endif
     }
 }

@@ -14,7 +14,9 @@ namespace RPGFramework.Core.Dialogue
     {
         [SerializeField] private DialogueTextStyle[] m_Styles = Array.Empty<DialogueTextStyle>();
 
+#if UNITY_EDITOR
         internal IReadOnlyList<DialogueTextStyle> Styles => m_Styles;
+#endif
 
         bool IDialogueTextStyles.TryGet(string name, out DialogueTextStyle style)
         {

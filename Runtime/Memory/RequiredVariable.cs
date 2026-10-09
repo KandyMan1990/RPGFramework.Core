@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using RPGFramework.Core.SharedTypes;
 
@@ -49,11 +50,7 @@ namespace RPGFramework.Core.Memory
         byte   ModuleId   { get; }
         string ModuleName { get; }
     }
-}
 
-#if UNITY_EDITOR
-namespace RPGFramework.Core.Memory
-{
     /// <summary>
     /// Authoring only. Every <see cref="IRequiredVariables" /> and <see cref="IStartModule" /> in the project,
     /// found by type so a package declares its own without anything having to list it.

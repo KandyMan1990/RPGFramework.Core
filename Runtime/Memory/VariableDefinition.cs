@@ -79,7 +79,9 @@ namespace RPGFramework.Core.Memory
 
         public bool IsRecord => m_Fields.Length > 0;
 
+#if UNITY_EDITOR
         internal IReadOnlyList<VariableElementDefault> ElementDefaults => m_ElementDefaults;
+#endif
 
         /// <summary>
         /// How many bytes one element takes: its width, or a record's fields end to end.
@@ -198,6 +200,7 @@ namespace RPGFramework.Core.Memory
             return elementOffset;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Find a record's field by the name scripts use, and where it starts within each record.
         /// </summary>
@@ -223,6 +226,7 @@ namespace RPGFramework.Core.Memory
 
             return found;
         }
+#endif
 
         /// <summary>
         /// What element <paramref name="index" /> starts at in a new game: its own default if it has one, otherwise
@@ -264,6 +268,7 @@ namespace RPGFramework.Core.Memory
             return value;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Does this variable's byte range overlap <paramref name="other" />'s? Two variables in different
         /// banks never overlap, since each bank is a separate array.
@@ -279,6 +284,7 @@ namespace RPGFramework.Core.Memory
 
             return overlaps;
         }
+#endif
     }
 
     /// <summary>

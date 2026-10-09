@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using RPGFramework.Core.SharedTypes;
 using UnityEngine;
 
@@ -22,7 +23,7 @@ namespace RPGFramework.Core.Memory
     public sealed class VariableMapAsset : ScriptableObject, IVariableMap, IMemoryServiceArgs, ITempMemoryArgs
     {
         [SerializeField]
-        private List<VariableDefinition> m_Variables = new List<VariableDefinition>();
+        private VariableDefinition[] m_Variables = Array.Empty<VariableDefinition>();
 
         [SerializeField]
         [HideInInspector]
@@ -84,7 +85,7 @@ namespace RPGFramework.Core.Memory
         {
             int requiredBytes = 0;
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -104,14 +105,14 @@ namespace RPGFramework.Core.Memory
 
         private void EnsureLookup()
         {
-            if (m_ByName != null && m_ByName.Count == m_Variables.Count)
+            if (m_ByName != null && m_ByName.Count == m_Variables.Length)
             {
                 return;
             }
 
-            m_ByName = new Dictionary<string, VariableDefinition>(m_Variables.Count);
+            m_ByName = new Dictionary<string, VariableDefinition>(m_Variables.Length);
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -124,19 +125,19 @@ namespace RPGFramework.Core.Memory
             }
         }
 
+#if UNITY_EDITOR
         private void OnValidate()
         {
             m_ByName = null;
         }
 
-#if UNITY_EDITOR
         /// <summary>
         /// A new map starts holding the variables the framework requires, so an author fills in their defaults
         /// rather than having to discover their names.
         /// </summary>
         private void Reset()
         {
-            m_Variables.Clear();
+            m_Variables = Array.Empty<VariableDefinition>();
 
             AddMissingRequiredVariables();
         }
@@ -177,8 +178,7 @@ namespace RPGFramework.Core.Memory
 
             VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, width, count, offset, description, defaultValue);
 
-            m_Variables.Add(definition);
-            m_ByName = null;
+            Append(definition);
 
             return definition;
         }
@@ -203,10 +203,17 @@ namespace RPGFramework.Core.Memory
             VariableDefinition definition = new VariableDefinition(++m_LastVariableId, name, bank, fields, count, offset, description);
             definition.AssignMissingFieldIds();
 
-            m_Variables.Add(definition);
-            m_ByName = null;
+            Append(definition);
 
             return definition;
+        }
+
+        private void Append(VariableDefinition definition)
+        {
+            Array.Resize(ref m_Variables, m_Variables.Length + 1);
+
+            m_Variables[m_Variables.Length - 1] = definition;
+            m_ByName                            = null;
         }
 
         /// <summary>
@@ -216,7 +223,7 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         internal int AssignMissingIds()
         {
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -229,7 +236,7 @@ namespace RPGFramework.Core.Memory
             HashSet<uint> seen     = new HashSet<uint>();
             int           assigned = 0;
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -300,7 +307,7 @@ namespace RPGFramework.Core.Memory
         {
             List<VariableDefinition> occupied = new List<VariableDefinition>();
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -358,9 +365,9 @@ namespace RPGFramework.Core.Memory
 
         private VariableDefinition FindLaterOverlapping()
         {
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
-                for (int j = 0; j < m_Variables.Count; j++)
+                for (int j = 0; j < m_Variables.Length; j++)
                 {
                     VariableDefinition variable = m_Variables[i];
                     VariableDefinition other    = m_Variables[j];
@@ -399,7 +406,7 @@ namespace RPGFramework.Core.Memory
 
             ValidateIds(problems);
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 
@@ -432,7 +439,7 @@ namespace RPGFramework.Core.Memory
                 ValidateRecordFields(variable, problems);
                 ValidateElementDefaults(variable, problems);
 
-                for (int j = i + 1; j < m_Variables.Count; j++)
+                for (int j = i + 1; j < m_Variables.Length; j++)
                 {
                     VariableDefinition other = m_Variables[j];
 
@@ -454,7 +461,7 @@ namespace RPGFramework.Core.Memory
         {
             HashSet<uint> ids = new HashSet<uint>();
 
-            for (int i = 0; i < m_Variables.Count; i++)
+            for (int i = 0; i < m_Variables.Length; i++)
             {
                 VariableDefinition variable = m_Variables[i];
 

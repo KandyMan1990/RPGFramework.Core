@@ -24,7 +24,6 @@ namespace RPGFramework.Core.Memory
 
             return bits;
         }
-#endif
 
         public static ulong FromFloat(float value)
         {
@@ -33,7 +32,6 @@ namespace RPGFramework.Core.Memory
             return bits;
         }
 
-#if UNITY_EDITOR
         /// <summary>
         /// The value of a signed or unsigned integer width, sign-extended for the signed ones.
         /// </summary>
@@ -131,6 +129,7 @@ namespace RPGFramework.Core.Memory
             }
         }
 
+#if UNITY_EDITOR
         private static ulong Mask(VariableWidth width)
         {
             int byteCount = width.GetByteCount();
@@ -139,5 +138,6 @@ namespace RPGFramework.Core.Memory
 
             return mask;
         }
+#endif
     }
 }
