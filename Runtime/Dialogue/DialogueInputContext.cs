@@ -6,8 +6,13 @@ namespace RPGFramework.Core.Dialogue
 {
     public sealed class DialogueInputContext : IInputContext
     {
-        private TaskCompletionSource<bool> m_NextConfirm = NewConfirm();
+        private TaskCompletionSource<bool> m_NextConfirm;
         private int                        m_Blockers;
+
+        public DialogueInputContext()
+        {
+            m_NextConfirm = NewConfirm();
+        }
 
         private bool IsBlocking => m_Blockers > 0;
 

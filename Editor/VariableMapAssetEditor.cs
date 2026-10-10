@@ -255,9 +255,16 @@ namespace RPGFramework.Core.Editor
         /// </summary>
         private sealed class PendingField
         {
-            internal string        Name  = "field0";
-            internal VariableWidth Width = VariableWidth.Byte;
-            internal int           Count = 1;
+            internal string        Name;
+            internal VariableWidth Width;
+            internal int           Count;
+
+            internal PendingField()
+            {
+                Name  = "field0";
+                Width = VariableWidth.Byte;
+                Count = 1;
+            }
         }
 
         private VisualElement BuildValidation()

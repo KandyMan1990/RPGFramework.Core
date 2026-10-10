@@ -34,7 +34,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private IReadOnlyList<int>          m_MessageVariables;
         private DialogueWindowStyle         m_Style;
         private IVisualElementScheduledItem m_Ticker;
-        private float                       m_TextSpeedMultiplier = 1f;
+        private float                       m_TextSpeedMultiplier;
 
         public DialogueWindowUI(IDialogueWindowUIProvider uiProvider, IAudioIntentPlayer audioIntentPlayer)
         {
@@ -46,6 +46,7 @@ namespace RPGFramework.Core.Dialogue.UI
             m_Choices                  = Array.Empty<RPGUIButton>();
             m_ChoiceViews              = Array.Empty<DialogueTextView>();
             m_ChoiceTexts              = Array.Empty<string>();
+            m_TextSpeedMultiplier      = 1f;
         }
 
         async Task IDialogueWindowUI.AnimateWindowClosedAsync()
