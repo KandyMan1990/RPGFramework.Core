@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "com.rpgframework.core.sharedtypes": "0.3.0",
-    "com.rpgframework.di": "4.0.1",
+    "com.rpgframework.di": "4.0.2",
     "com.rpgframework.hashing": "2.0.1",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.mathematics": "1.4.0",
