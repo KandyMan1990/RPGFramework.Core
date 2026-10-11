@@ -51,8 +51,8 @@ namespace RPGFramework.Core.SaveData
         private const string SAVE_FILE_EXTENSION = ".sav";
         private const int    SAVE_INDEX_DIGITS   = 3;
 
-        private static readonly int    SAVE_FILE_NAME_LENGTH    = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS                  + SAVE_FILE_EXTENSION.Length;
-        private static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX        + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
+        private static readonly int     SAVE_FILE_NAME_LENGTH    = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS                  + SAVE_FILE_EXTENSION.Length;
+        internal static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX        + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IMemoryBankAccess              m_MemoryBankAccess;

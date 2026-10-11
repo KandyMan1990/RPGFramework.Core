@@ -41,7 +41,7 @@ namespace RPGFramework.Core.Settings
 
     internal sealed class SettingsService : ISettingsService
     {
-        private const string SETTINGS_FILE_NAME = "settings.dat";
+        internal const string SETTINGS_FILE_NAME = "settings.dat";
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IDefaultSettings               m_DefaultSettings;
