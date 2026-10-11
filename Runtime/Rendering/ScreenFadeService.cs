@@ -25,6 +25,9 @@ namespace RPGFramework.Core.Rendering
         private readonly IScreenFadeServiceConfig      m_ScreenFadeServiceConfig;
         private readonly FullScreenPassRendererFeature m_RendererFeature;
 
+        // How far faded the screen is, 0 clear to 1 out, whichever material draws it.
+        private float m_Amount;
+
         internal ScreenFadeService(IScreenFadeServiceConfig config, IRendererDataProvider rendererDataProvider)
         {
             m_ScreenFadeServiceConfig = config;
@@ -39,57 +42,73 @@ namespace RPGFramework.Core.Rendering
             }
 
             m_RendererFeature = (FullScreenPassRendererFeature)rendererFeature;
+            m_Amount          = m_RendererFeature.passMaterial.GetFloat(DissolveAmount);
         }
 
         Task IScreenFadeService.FadeOutAsync(bool immediate)
         {
-            return FadeAsync(0f, 1f, m_ScreenFadeServiceConfig.FadeOutTime, immediate);
+            return FadeAsync(1f, m_ScreenFadeServiceConfig.FadeOutTime, immediate);
         }
 
         Task IScreenFadeService.FadeInAsync(bool immediate)
         {
-            return FadeAsync(1f, 0f, m_ScreenFadeServiceConfig.FadeInTime, immediate);
+            return FadeAsync(0f, m_ScreenFadeServiceConfig.FadeInTime, immediate);
         }
 
         void IScreenFadeService.SetFadeToSimple()
         {
-            m_RendererFeature.passMaterial = m_ScreenFadeServiceConfig.SimpleFadeMaterial;
+            SetMaterial(m_ScreenFadeServiceConfig.SimpleFadeMaterial);
         }
 
         void IScreenFadeService.SetFadeToBattleStart()
         {
-            m_RendererFeature.passMaterial = m_ScreenFadeServiceConfig.BattleStartMaterial;
+            SetMaterial(m_ScreenFadeServiceConfig.BattleStartMaterial);
         }
 
         void IScreenFadeService.SetFadeToBattleReveal()
         {
-            m_RendererFeature.passMaterial = m_ScreenFadeServiceConfig.BattleRevealMaterial;
+            SetMaterial(m_ScreenFadeServiceConfig.BattleRevealMaterial);
         }
 
-        private async Task FadeAsync(float from, float to, float duration, bool immediate)
+        // The new material takes the screen as it is, so a swap never shows what a fade had hidden.
+        private void SetMaterial(Material material)
         {
-            if (immediate)
+            m_RendererFeature.passMaterial = material;
+
+            SetAmount(m_Amount);
+        }
+
+        // From wherever the screen is: a screen already there stays put, rather than jumping to the far end first.
+        private async Task FadeAsync(float to, float duration, bool immediate)
+        {
+            if (immediate || m_Amount == to)
             {
-                m_RendererFeature.passMaterial.SetFloat(DissolveAmount, to);
+                SetAmount(to);
                 return;
             }
 
-            m_RendererFeature.passMaterial.SetFloat(DissolveAmount, from);
-
+            float from    = m_Amount;
             float elapsed = 0f;
 
             while (elapsed < duration)
             {
-                elapsed = math.min(elapsed + Time.deltaTime, duration);
+                elapsed = math.min(elapsed + Time.unscaledDeltaTime, duration);
                 float t     = elapsed / duration;
                 float value = math.lerp(from, to, t);
 
-                m_RendererFeature.passMaterial.SetFloat(DissolveAmount, value);
+                SetAmount(value);
 
                 await Awaitable.NextFrameAsync();
             }
 
-            m_RendererFeature.passMaterial.SetFloat(DissolveAmount, to);
+            SetAmount(to);
+        }
+
+        private void SetAmount(float amount)
+        {
+            m_Amount = amount;
+
+            m_RendererFeature.passMaterial.SetFloat(DissolveAmount, amount);
         }
     }
 }

@@ -80,7 +80,7 @@ namespace RPGFramework.Core.Dialogue.UI
                 m_UIInstance.style.width  = width;
                 m_UIInstance.style.height = height;
 
-                progress += Time.deltaTime * m_WindowSpeed;
+                progress += Time.unscaledDeltaTime * m_WindowSpeed;
 
                 await Awaitable.NextFrameAsync();
             }
@@ -108,7 +108,7 @@ namespace RPGFramework.Core.Dialogue.UI
                 m_UIInstance.style.width  = x;
                 m_UIInstance.style.height = y;
 
-                progress += Time.deltaTime * m_WindowSpeed;
+                progress += Time.unscaledDeltaTime * m_WindowSpeed;
 
                 await Awaitable.NextFrameAsync();
             }
