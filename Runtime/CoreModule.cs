@@ -169,6 +169,9 @@ namespace RPGFramework.Core
             container.BindSingleton<ICurrentModuleStore, CurrentModuleStore>();
             container.BindSingleton<ISaveEnabledStore, SaveEnabledStore>();
             container.BindSingleton<ILocationNameStore, LocationNameStore>();
+            container.BindSingleton<IBattleMusicStore, BattleMusicStore>();
+            container.BindSingleton<IMusicVolumeStore, MusicVolumeStore>();
+            container.BindSingleton<IPausedMusicStore, PausedMusicStore>();
             container.BindSingleton<IPlayTimeStore, PlayTimeCounter>();
         }
     }

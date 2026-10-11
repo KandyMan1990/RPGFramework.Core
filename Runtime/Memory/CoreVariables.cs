@@ -43,6 +43,18 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public const string LOCATION_NAME = "LocationName";
 
+        /// <summary>
+        /// The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a
+        /// new game's; zero plays none.
+        /// </summary>
+        public const string BATTLE_MUSIC = "BattleMusic";
+
+        /// <summary>
+        /// The volume the playthrough's music plays at, 0 to 1, as the scripts last set it, kept across modules,
+        /// battles and saves. A module's music plays at it, and a song a battle paused fades back in to it.
+        /// </summary>
+        public const string MUSIC_VOLUME = "MusicVolume";
+
 #if UNITY_EDITOR
         private static readonly RequiredVariable[] m_Variables =
         {
@@ -50,7 +62,9 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(LOADED_FROM_SAVE, MemoryBank.Session,    VariableWidth.Bool,  "Set when a save is loaded, and cleared once the player is back where it was made. Its default is not used"),
             new RequiredVariable(SAVE_ENABLED,     MemoryBank.Session,    VariableWidth.Bool,  "Whether the player can save from the party menu. Its default is the game's policy: false to save only where a script allows it, true to save anywhere"),
             new RequiredVariable(PLAY_TIME,        MemoryBank.Persistent, VariableWidth.UInt,  "How long the playthrough has been played, in whole seconds. Counted by the framework"),
-            new RequiredVariable(LOCATION_NAME,    MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in")
+            new RequiredVariable(LOCATION_NAME,    MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in"),
+            new RequiredVariable(BATTLE_MUSIC,     MemoryBank.Persistent, VariableWidth.ULong, "The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a new game's; zero plays none"),
+            new RequiredVariable(MUSIC_VOLUME,     MemoryBank.Persistent, VariableWidth.Float, "The volume the music plays at, 0 to 1, as the scripts last set it. Its default is a new game's", VariableDefaults.FromFloat(1f))
         };
 
         IReadOnlyList<RequiredVariable> IRequiredVariables.Variables => m_Variables;

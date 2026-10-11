@@ -2,6 +2,7 @@
     "name": "RPGFramework.Core",
     "rootNamespace": "RPGFramework.Core",
     "references": [
+        "RPGFramework.Audio",
         "RPGFramework.DI",
         "RPGFramework.Core.SharedTypes",
         "RPGFramework.Hashing",

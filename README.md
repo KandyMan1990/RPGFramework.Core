@@ -9,7 +9,8 @@ battle, each in a scene of its own. It also owns what every module shares:
 - screen fades, audio intents and the update loop.
 
 Requires Unity 6000.6 or newer, the Universal Render Pipeline (the screen fades are a full-screen renderer feature), the
-Input System, Unity.Mathematics, RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes.
+Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an Audio snapshot), RPGFramework.DI,
+RPGFramework.Hashing and RPGFramework.Core.SharedTypes.
 
 ---
 
@@ -68,6 +69,9 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `ICurrentModuleStore` | the module the playthrough is in; saved, so a loaded game resumes there |
 | `ISaveEnabledStore` | whether the game may be saved here |
 | `ILocationNameStore` | where the player is, as a localisation key's hash |
+| `IBattleMusicStore` | the track every battle plays, as its music asset's name hash; saved |
+| `IMusicVolumeStore` | the volume the music plays at, as the scripts last set it; saved |
+| `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds |
 
 **Core binds** the input router, screen fades, the save, settings and memory services, dialogue windows and the stores
@@ -110,6 +114,8 @@ Core requires these:
 | `SaveEnabled` | Session | whether saving is allowed; its default is your game's policy, saving anywhere or at save points |
 | `PlayTime` | Persistent | seconds played |
 | `LocationName` | Persistent | where the player is |
+| `BattleMusic` | Persistent | the track every battle plays until a script sets another; its default is a new game's, zero none |
+| `MusicVolume` | Persistent | the volume the music plays at, 0 to 1; its default is a new game's |
 
 Read and write Persistent and Session variables through **`IMemoryService`**, by bank and address. Temp memory belongs
 to whatever runs a script, so each script has its own.

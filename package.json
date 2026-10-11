@@ -13,6 +13,7 @@
     "url": "https://github.com/KandyMan1990/RPGFramework.Core"
   },
   "dependencies": {
+    "com.rpgframework.audio": "4.1.0",
     "com.rpgframework.core.sharedtypes": "0.3.0",
     "com.rpgframework.di": "4.0.2",
     "com.rpgframework.hashing": "2.0.1",
