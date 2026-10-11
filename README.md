@@ -179,8 +179,9 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 ## Screen fades, audio intents and the update loop
 
 - **`IScreenFadeService`** fades the screen in and out, simply or with a transition such as the start of a battle.
-- **`IAudioIntentPlayer`**: modules say what happened, such as `Play(AudioIntent.Confirm, AudioContext.Menu)`, and your
-  game's implementation decides which sound that is.
+- **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
+  your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
+  for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.
 - **`UpdateManager`** ticks `IUpdatable` every frame and `IFixedUpdatable` every physics step, so a module owns its own
   update and stops it by unregistering.
 

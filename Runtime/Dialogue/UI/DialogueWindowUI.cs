@@ -288,7 +288,7 @@ namespace RPGFramework.Core.Dialogue.UI
 
             if (UIToolkitInputUtility.Navigate(evt, root, up, down))
             {
-                m_AudioIntentPlayer.Play(AudioIntent.Navigate, AudioContext.Field);
+                m_AudioIntentPlayer.PlayAsync(AudioIntent.Navigate, AudioContext.Field).FireAndForget();
             }
         }
 
@@ -305,7 +305,7 @@ namespace RPGFramework.Core.Dialogue.UI
         private void OnChoiceChosen(byte index)
         {
             m_SelectedIndex = index;
-            m_AudioIntentPlayer.Play(AudioIntent.Confirm, AudioContext.Field);
+            m_AudioIntentPlayer.PlayAsync(AudioIntent.Confirm, AudioContext.Field).FireAndForget();
         }
 
         private async Task TypeAsync(DialogueTextView view)
