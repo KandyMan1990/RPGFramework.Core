@@ -2,8 +2,10 @@
     "name": "RPGFramework.Core.Editor",
     "rootNamespace": "RPGFramework.Core.Editor",
     "references": [
+        "RPGFramework.Audio",
         "RPGFramework.Core",
-        "RPGFramework.Core.SharedTypes"
+        "RPGFramework.Core.SharedTypes",
+        "RPGFramework.Hashing"
     ],
     "includePlatforms": [
         "Editor"
