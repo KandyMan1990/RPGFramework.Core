@@ -25,9 +25,10 @@ namespace RPGFramework.Core
 
     internal class CoreModule : ICoreModule, IModuleHost
     {
-        private readonly IDIContainer m_GlobalContainer;
-        private readonly ModuleStack  m_Modules;
-        private readonly byte         m_InitialModuleId;
+        private readonly IDIContainer         m_GlobalContainer;
+        private readonly ModuleStack          m_Modules;
+        private readonly byte                 m_InitialModuleId;
+        private readonly AudioListenerHandOff m_AudioListeners;
 
         private ISceneDatabase  m_SceneDatabase;
         private IModuleDatabase m_ModuleDatabase;
@@ -42,6 +43,7 @@ namespace RPGFramework.Core
             m_CurrentResolver = diContainer;
             m_Modules         = new ModuleStack(this);
             m_InitialModuleId = initialModuleId;
+            m_AudioListeners  = new AudioListenerHandOff();
 
             Application.quitting += OnApplicationQuit;
         }
@@ -80,7 +82,16 @@ namespace RPGFramework.Core
             Type   moduleType = m_ModuleDatabase.GetModuleType(moduleId);
             string sceneName  = m_SceneDatabase.GetSceneNameForModule(moduleType);
 
-            await SceneManager.LoadSceneAsync(sceneName, alone ? LoadSceneMode.Single : LoadSceneMode.Additive);
+            if (alone)
+            {
+                m_AudioListeners.ForgetAll();
+
+                await SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            }
+            else
+            {
+                await m_AudioListeners.LoadOverAsync(sceneName);
+            }
 
             Scene        scene          = SceneManager.GetSceneByName(sceneName);
             DIContainer  diContainer    = new DIContainer();
@@ -102,6 +113,8 @@ namespace RPGFramework.Core
         {
             if (unloadScene)
             {
+                m_AudioListeners.HandBack(module.Scene);
+
                 await SceneManager.UnloadSceneAsync(module.Scene);
             }
 
