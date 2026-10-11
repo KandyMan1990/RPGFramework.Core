@@ -2,12 +2,22 @@ using UnityEngine;
 
 namespace RPGFramework.Core.Rendering
 {
+    /// <summary>How long the screen fades take, and the materials each kind of fade draws with.</summary>
     public interface IScreenFadeServiceConfig
     {
-        float    FadeOutTime          { get; }
-        float    FadeInTime           { get; }
-        Material SimpleFadeMaterial   { get; }
-        Material BattleStartMaterial  { get; }
+        /// <summary>Seconds a fade out takes.</summary>
+        float FadeOutTime { get; }
+
+        /// <summary>Seconds a fade in takes.</summary>
+        float FadeInTime { get; }
+
+        /// <summary>The plain fade to black most changes use.</summary>
+        Material SimpleFadeMaterial { get; }
+
+        /// <summary>The transition the screen goes out with as a battle starts.</summary>
+        Material BattleStartMaterial { get; }
+
+        /// <summary>The transition the battle comes in with.</summary>
         Material BattleRevealMaterial { get; }
     }
 

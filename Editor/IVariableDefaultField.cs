@@ -13,8 +13,12 @@ namespace RPGFramework.Core.Editor
     /// </summary>
     public interface IVariableDefaultField
     {
+        /// <summary>The name of the variable whose default this draws.</summary>
         string VariableName { get; }
 
+        /// <summary>
+        /// The field the inspector shows in place of the variable's number, writing the default as it changes.
+        /// </summary>
         /// <param name="variable">The <c>VariableDefinition</c> in the map, so a field can read its siblings.</param>
         VisualElement Create(SerializedProperty variable);
     }

@@ -42,6 +42,7 @@ namespace RPGFramework.Core.Dialogue
     /// </summary>
     public interface IDialogueTextStyles
     {
+        /// <summary>The style with this name; false when there is none.</summary>
         bool TryGet(string name, out DialogueTextStyle style);
     }
 

@@ -9,7 +9,10 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ISaveEnabledStore
     {
+        /// <summary>Whether the party menu offers Save now.</summary>
         bool IsSaveEnabled { get; }
+
+        /// <summary>Allows or forbids saving until it is set again or a module resets it.</summary>
         void SetSaveEnabled(bool enabled);
 
         /// <summary>

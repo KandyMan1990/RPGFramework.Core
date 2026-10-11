@@ -4,19 +4,34 @@ using UnityEngine;
 
 namespace RPGFramework.Core
 {
+    /// <summary>
+    /// Ticked every frame while registered with <see cref="PlayerLoop.UpdateManager" />, so a module owns its own
+    /// update and stops it by unregistering.
+    /// </summary>
     public interface IUpdatable
     {
+        /// <summary>Called once a frame, in the order things registered.</summary>
         void Update();
     }
 
+    /// <summary>
+    /// Ticked every physics step while registered with <see cref="PlayerLoop.UpdateManager" />.
+    /// </summary>
     public interface IFixedUpdatable
     {
+        /// <summary>Called once a physics step, in the order things registered.</summary>
         void FixedUpdate();
     }
 
+    /// <summary>
+    /// Switches between the game's modules: enters the first, and carries out each change the game's module router
+    /// decides on as a module reports what happened.
+    /// </summary>
     public interface ICoreModule
     {
-        /// <summary>Enters the game's first module, the one <see cref="CoreModuleFactory.Create" /> was given.</summary>
+        /// <summary>
+        /// Enters the game's first module, the one <see cref="CoreModuleFactory.Create" /> was given.
+        /// </summary>
         Task StartAsync();
 
         /// <summary>
@@ -44,18 +59,41 @@ namespace RPGFramework.Core
     /// </summary>
     public interface IMemoryService
     {
-        byte   ReadByte(MemoryBank    bank, ushort address);
-        void   WriteByte(MemoryBank   bank, ushort address, byte value);
-        bool   ReadBool(MemoryBank    bank, ushort address);
-        void   WriteBool(MemoryBank   bank, ushort address, bool value);
-        ushort ReadUshort(MemoryBank  bank, ushort address);
-        void   WriteUshort(MemoryBank bank, ushort address, ushort value);
-        int    ReadInt(MemoryBank     bank, ushort address);
-        void   WriteInt(MemoryBank    bank, ushort address, int value);
-        float  ReadFloat(MemoryBank   bank, ushort address);
-        void   WriteFloat(MemoryBank  bank, ushort address, float value);
-        ulong  ReadUlong(MemoryBank   bank, ushort address);
-        void   WriteUlong(MemoryBank  bank, ushort address, ulong value);
+        /// <summary>The byte at the address in the bank.</summary>
+        byte ReadByte(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a byte at the address in the bank.</summary>
+        void WriteByte(MemoryBank bank, ushort address, byte value);
+
+        /// <summary>The byte at the address as a bool: anything but zero is true.</summary>
+        bool ReadBool(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a bool at the address as one byte, 1 or 0.</summary>
+        void WriteBool(MemoryBank bank, ushort address, bool value);
+
+        /// <summary>The two bytes from the address as a ushort, lowest first.</summary>
+        ushort ReadUshort(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a ushort's two bytes from the address, lowest first.</summary>
+        void WriteUshort(MemoryBank bank, ushort address, ushort value);
+
+        /// <summary>The four bytes from the address as an int, lowest first.</summary>
+        int ReadInt(MemoryBank bank, ushort address);
+
+        /// <summary>Writes an int's four bytes from the address, lowest first.</summary>
+        void WriteInt(MemoryBank bank, ushort address, int value);
+
+        /// <summary>The four bytes from the address as a float's bits, lowest first.</summary>
+        float ReadFloat(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a float's four bytes from the address, lowest first.</summary>
+        void WriteFloat(MemoryBank bank, ushort address, float value);
+
+        /// <summary>The eight bytes from the address as a ulong, lowest first, as a name hash is kept.</summary>
+        ulong ReadUlong(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a ulong's eight bytes from the address, lowest first.</summary>
+        void WriteUlong(MemoryBank bank, ushort address, ulong value);
     }
 
     /// <summary>

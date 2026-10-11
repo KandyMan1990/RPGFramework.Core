@@ -8,6 +8,7 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public interface IVariableMap
     {
+        /// <summary>Every variable the game declares, in both banks, as authored.</summary>
         IReadOnlyList<VariableDefinition> Variables { get; }
 
         /// <summary>
@@ -16,6 +17,7 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         uint LastVariableId { get; }
 
+        /// <summary>The variable authored under this name; false when there is none.</summary>
         bool TryGetVariable(string varName, out VariableDefinition definition);
     }
 }

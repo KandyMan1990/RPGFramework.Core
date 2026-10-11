@@ -9,7 +9,10 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ICurrentModuleStore
     {
+        /// <summary>The id of the module the playthrough is in.</summary>
         byte ModuleId { get; }
+
+        /// <summary>Records the module the playthrough is now in, as a place does on entering.</summary>
         void SetModuleId(byte moduleId);
     }
 

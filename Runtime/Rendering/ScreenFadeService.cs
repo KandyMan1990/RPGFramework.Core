@@ -7,12 +7,30 @@ using UnityEngine.Rendering.Universal;
 
 namespace RPGFramework.Core.Rendering
 {
+    /// <summary>
+    /// Covers and uncovers the screen with a full-screen pass, plainly or with a battle's transition. A fade starts
+    /// from where the screen is, so one asked for while the screen is already there does nothing. On unscaled time, so
+    /// it runs while the game is frozen.
+    /// </summary>
     public interface IScreenFadeService
     {
+        /// <summary>
+        /// Covers the screen over the configured time, or at once when <paramref name="immediate" />.
+        /// </summary>
         Task FadeOutAsync(bool immediate = false);
-        Task FadeInAsync(bool  immediate = false);
+
+        /// <summary>
+        /// Uncovers the screen over the configured time, or at once when <paramref name="immediate" />.
+        /// </summary>
+        Task FadeInAsync(bool immediate = false);
+
+        /// <summary>Fades from now on use the plain fade to black.</summary>
         void SetFadeToSimple();
+
+        /// <summary>Fades from now on use the battle-start transition.</summary>
         void SetFadeToBattleStart();
+
+        /// <summary>Fades from now on use the battle's reveal.</summary>
         void SetFadeToBattleReveal();
     }
 

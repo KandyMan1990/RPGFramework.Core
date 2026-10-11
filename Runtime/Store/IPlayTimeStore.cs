@@ -10,6 +10,7 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface IPlayTimeStore
     {
+        /// <summary>The whole seconds played so far, saved with the game.</summary>
         uint PlayTime { get; }
 
         /// <summary>

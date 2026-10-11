@@ -9,8 +9,11 @@ namespace RPGFramework.Core.Store
     /// </summary>
     public interface ILocationNameStore
     {
+        /// <summary>The hash of the place's localisation key, or zero when it has no name.</summary>
         ulong LocationName { get; }
-        void  SetLocationName(ulong keyHash);
+
+        /// <summary>Records the place the player is now in, by its localisation key's hash.</summary>
+        void SetLocationName(ulong keyHash);
     }
 
     /// <summary>

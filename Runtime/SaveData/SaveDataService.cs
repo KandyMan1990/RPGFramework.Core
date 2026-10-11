@@ -10,6 +10,10 @@ using UnityEngine;
 
 namespace RPGFramework.Core.SaveData
 {
+    /// <summary>
+    /// The playthrough's saves: beginning one from a file or a new game, writing it, and listing, previewing and
+    /// deleting the save files in the player's data folder. A save is the persistent memory bank.
+    /// </summary>
     public interface ISaveDataService
     {
         /// <summary>
@@ -28,10 +32,19 @@ namespace RPGFramework.Core.SaveData
         /// </summary>
         void CommitSave(string filename);
 
+        /// <summary>Deletes the save file.</summary>
         void DeleteSave(string filename);
 
-        string[]    GetListOfSaveFiles();
-        string      GetUnusedSaveFileName();
+        /// <summary>The names of the save files in the player's data folder, in no particular order.</summary>
+        string[] GetListOfSaveFiles();
+
+        /// <summary>The lowest-numbered save file name no file has yet; throws when every slot is taken.</summary>
+        string GetUnusedSaveFileName();
+
+        /// <summary>
+        /// What a save slot shows of the file — when it was written, the values read from it, and whether it can be
+        /// loaded — without beginning it.
+        /// </summary>
         SavePreview ReadPreview(string filename);
     }
 
@@ -267,8 +280,9 @@ namespace RPGFramework.Core.SaveData
         }
 
         /// <summary>
-        /// A save's sections, and its persistent bank laid out as this build's map lays it out. A save that is damaged or
-        /// from a newer version cannot be loaded, and its bank holds the map's defaults, so a preview of it still reads.
+        /// A save's sections, and its persistent bank laid out as this build's map lays it out. A save that is damaged
+        /// or from a newer version cannot be loaded, and its bank holds the map's defaults, so a preview of it still
+        /// reads.
         /// </summary>
         private SaveState ReadSave(string path, Dictionary<ulong, SectionBlob> sections, out byte[] bank)
         {
@@ -283,7 +297,8 @@ namespace RPGFramework.Core.SaveData
                 return unreadable;
             }
 
-            // A save written before any variables existed has no persistent memory, so every variable reads its default.
+            // A save written before any variables existed has no persistent memory, so every variable reads its
+            // default.
             byte[] persistent = sections.TryGetValue(m_PersistentMemorySectionId, out SectionBlob memory) ? memory.Data : Array.Empty<byte>();
             byte[] layout     = sections.TryGetValue(m_PersistentLayoutSectionId, out SectionBlob saved) ? saved.Data : null;
 
@@ -294,8 +309,9 @@ namespace RPGFramework.Core.SaveData
 
         /// <summary>
         /// As saved when the layouts match, otherwise moved value by value. A save with no layout was written before
-        /// saves recorded one, when the map could only ever grow at the end, so it is read by the map's own layout as far
-        /// as its bytes reach. A layout that cannot be read, or a bank shorter than its layout describes, is damage.
+        /// saves recorded one, when the map could only ever grow at the end, so it is read by the map's own layout as
+        /// far as its bytes reach. A layout that cannot be read, or a bank shorter than its layout describes, is
+        /// damage.
         /// </summary>
         private SaveState ToCurrentLayout(byte[] persistent, byte[] layout, out byte[] bank)
         {

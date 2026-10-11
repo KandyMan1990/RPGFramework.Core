@@ -38,6 +38,9 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public interface IRequiredVariables
     {
+        /// <summary>
+        /// The variables the package's code reads by name, each with the bank, width and default it needs.
+        /// </summary>
         IReadOnlyList<RequiredVariable> Variables { get; }
     }
 
@@ -47,7 +50,12 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public interface IStartModule
     {
-        byte   ModuleId   { get; }
+        /// <summary>
+        /// The module's id, which <see cref="CoreVariables.CURRENT_MODULE" />'s default holds when chosen.
+        /// </summary>
+        byte ModuleId { get; }
+
+        /// <summary>The name the Variable Map inspector offers it under.</summary>
         string ModuleName { get; }
     }
 

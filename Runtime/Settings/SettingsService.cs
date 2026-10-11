@@ -18,8 +18,16 @@ namespace RPGFramework.Core.Settings
         /// </summary>
         bool IsSaved { get; }
 
+        /// <summary>
+        /// The section with this id, read as <typeparamref name="T" />; false when the settings hold none. Check its
+        /// version before trusting the data's shape.
+        /// </summary>
         bool TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
-        void SetSection<T>(string    sectionId, SaveSection<T>     section) where T : unmanaged;
+
+        /// <summary>
+        /// Puts the section in the settings, replacing one with the same id; <see cref="Commit" /> writes it.
+        /// </summary>
+        void SetSection<T>(string sectionId, SaveSection<T> section) where T : unmanaged;
 
         /// <summary>
         /// Write every section to the settings file.
@@ -28,8 +36,8 @@ namespace RPGFramework.Core.Settings
     }
 
     /// <summary>
-    /// The game's default settings: what a first launch starts with, and what a section the settings file lacks, or holds
-    /// in a shape an older build wrote, falls back to. Called on every launch, before the file is read.
+    /// The game's default settings: what a first launch starts with, and what a section the settings file lacks, or
+    /// holds in a shape an older build wrote, falls back to. Called on every launch, before the file is read.
     /// </summary>
     public interface IDefaultSettings
     {
@@ -123,9 +131,9 @@ namespace RPGFramework.Core.Settings
         }
 
         /// <summary>
-        /// The saved sections over the game's defaults. A section the game writes is taken from the file only in the shape
-        /// the game writes it now — the same version and size — so one a later build changed, or added, starts at its
-        /// default rather than being read as something it is not. One the game no longer writes is carried through.
+        /// The saved sections over the game's defaults. A section the game writes is taken from the file only in the
+        /// shape the game writes it now — the same version and size — so one a later build changed, or added, starts at
+        /// its default rather than being read as something it is not. One the game no longer writes is carried through.
         /// </summary>
         internal static void TakeSaved(Dictionary<ulong, SectionBlob> sections, Dictionary<ulong, SectionBlob> saved)
         {
