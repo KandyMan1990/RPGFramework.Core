@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using RPGFramework.Core.SharedTypes;
+using UnityEngine;
 
 namespace RPGFramework.Core
 {
@@ -15,7 +16,23 @@ namespace RPGFramework.Core
 
     public interface ICoreModule
     {
-        Task RequestModuleChangeAsync();
+        /// <summary>Enters the game's first module, the one <see cref="CoreModuleFactory.Create" /> was given.</summary>
+        Task StartAsync();
+
+        /// <summary>
+        /// Tells Core what happened in the module on top — an outcome its shared types define — and carries out the
+        /// change the game's <see cref="IModuleRouter" /> decides on.
+        /// </summary>
+        Task RequestModuleChangeAsync(byte outcome);
+    }
+
+    /// <summary>
+    /// The scene a module runs in, for finding its own objects: other modules' scenes can be loaded beside it.
+    /// </summary>
+    public interface IModuleScene
+    {
+        /// <summary>The first component of the type in the scene, or null.</summary>
+        T Find<T>() where T : Component;
     }
 
     /// <summary>

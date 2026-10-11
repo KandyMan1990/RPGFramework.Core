@@ -25,25 +25,46 @@ Start the game from a component in your first scene:
 ```csharp
 ICoreModule core = await CoreModuleFactory.Create(m_GlobalInstaller, SplashScreenModuleId);
 
-await core.RequestModuleChangeAsync();
+await core.StartAsync();
 ```
 
 `Create` builds the global container, binding Core's services and then your global installer's, and runs its
-`Bootstrap`. A module change, `RequestModuleChangeAsync`, goes to the module whose id is in `IChangeModuleStore`:
+`Bootstrap`. `StartAsync` enters the first module.
 
-1. It exits the current module and loads the next one's scene.
-2. It builds a new scene container from the scene's `SceneInstallerMonoBehaviour`, falling back to the global one.
-3. It resolves the module from that container and enters it.
+**Modules are a stack.** The bottom one is where the game is — the title, a field — and a module can open over it, as
+the menu does over the field: the field stays loaded, suspended, and carries on exactly as it was when the menu closes.
+A module finishing tells Core what happened, as a byte its shared types define, and **your module router** decides
+what follows:
+
+```csharp
+await core.RequestModuleChangeAsync(FieldOutcomes.OPEN_MENU);
+```
+
+The router answers with a `ModuleChange`, which Core carries out:
+
+| Change | What happens |
+| --- | --- |
+| `Over` | the module on top is suspended (`OnSuspendAsync`), and the next one's scene loads beside it |
+| `Close` | the module on top exits and its scene unloads; the one under it resumes (`OnResumeAsync`) |
+| `Replace` | the module on top exits and its scene unloads; the next one's loads in its place |
+| `Clear` | every module exits, top first, and the next one's scene loads alone |
+
+Each loaded module gets a scene container built from its scene's `SceneInstallerMonoBehaviour`, falling back to the
+global one, and is resolved from it; `IDIResolver` in the global container is the top module's. A module finds its own
+objects through **`IModuleScene`**, bound in its container, rather than searching every scene, since others can be
+loaded beside it. A change says how the next module is entered — `ModuleEntries.NEW`, or `RETURN` to one a battle
+replaced, which carries on from what it kept — and the module gets it in `OnEnterAsync`.
 
 **Bind each module in its own scene installer.** It is then built fresh on every entry and goes with its scene. A
 module missing from its scene installer fails with *No binding exists*, which is how you find out.
+
+**Bind an `IModuleRouter` in your global installer.** RPGFramework.ModuleRouter's `DefaultModuleRouter` has the
+framework's routes; derive from it for your own modules' (see its README).
 
 Modules talk through **stores**, small services that hold one thing for another module to read:
 
 | Store | Holds |
 | --- | --- |
-| `IChangeModuleStore` | the module the next change goes to |
-| `IResumeModuleStore` | the module a menu or battle returns to |
 | `ICurrentModuleStore` | the module the playthrough is in; saved, so a loaded game resumes there |
 | `ISaveEnabledStore` | whether the game may be saved here |
 | `ILocationNameStore` | where the player is, as a localisation key's hash |
@@ -52,7 +73,7 @@ Modules talk through **stores**, small services that hold one thing for another 
 **Core binds** the input router, screen fades, the save, settings and memory services, dialogue windows and the stores
 above. **Your global installer binds**:
 
-- the two databases;
+- the two databases, and a module router;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
 - an **`IDefaultSettings`**;
 - an **`IRendererDataProvider`**, with your URP renderer data, and a **Screen Fade Config** (Create > RPG Framework >

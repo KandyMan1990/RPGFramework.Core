@@ -12,7 +12,6 @@ using RPGFramework.Core.Store;
 using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
 
 namespace RPGFramework.Core
 {
@@ -24,87 +23,132 @@ namespace RPGFramework.Core
         }
     }
 
-    internal class CoreModule : ICoreModule
+    internal class CoreModule : ICoreModule, IModuleHost
     {
         private readonly IDIContainer m_GlobalContainer;
+        private readonly ModuleStack  m_Modules;
+        private readonly byte         m_InitialModuleId;
 
-        private ISceneDatabase     m_SceneDatabase;
-        private IChangeModuleStore m_ChangeModuleStore;
-        private IModuleDatabase    m_ModuleDatabase;
+        private ISceneDatabase  m_SceneDatabase;
+        private IModuleDatabase m_ModuleDatabase;
+        private IModuleRouter   m_Router;
+        private IDIResolver     m_CurrentResolver;
 
-        private IDIContainer m_SceneContainer;
-        private IDIResolver  m_SceneResolver;
-        private IModule      m_CurrentModule;
-
-        private CoreModule()
+        private CoreModule(byte initialModuleId)
         {
             DIContainer diContainer = new DIContainer();
 
             m_GlobalContainer = diContainer;
-            m_SceneContainer  = new NullDIContainer();
-            m_SceneResolver   = diContainer;
-            m_CurrentModule   = new NullModule();
+            m_CurrentResolver = diContainer;
+            m_Modules         = new ModuleStack(this);
+            m_InitialModuleId = initialModuleId;
 
             Application.quitting += OnApplicationQuit;
         }
 
         public static async Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
-            CoreModule core = new CoreModule();
+            CoreModule core = new CoreModule(initialModuleId);
 
             InstallCoreBindings(core, core.m_GlobalContainer);
 
             globalInstaller.InstallBindings(core.m_GlobalContainer);
 
-            await globalInstaller.Bootstrap(core.m_SceneResolver);
+            await globalInstaller.Bootstrap(core.m_CurrentResolver);
 
-            core.m_SceneDatabase     = core.m_SceneResolver.Resolve<ISceneDatabase>();
-            core.m_ChangeModuleStore = core.m_SceneResolver.Resolve<IChangeModuleStore>();
-            core.m_ModuleDatabase    = core.m_SceneResolver.Resolve<IModuleDatabase>();
-
-            core.m_ChangeModuleStore.SetModuleId(initialModuleId);
+            core.m_SceneDatabase  = core.m_CurrentResolver.Resolve<ISceneDatabase>();
+            core.m_ModuleDatabase = core.m_CurrentResolver.Resolve<IModuleDatabase>();
+            core.m_Router         = core.m_CurrentResolver.Resolve<IModuleRouter>();
 
             return core;
         }
 
-        async Task ICoreModule.RequestModuleChangeAsync()
+        Task ICoreModule.StartAsync()
         {
-            await m_CurrentModule.OnExitAsync();
+            return m_Modules.ApplyAsync(ModuleChange.Clear(m_InitialModuleId));
+        }
 
-            byte   moduleId   = m_ChangeModuleStore.ModuleId;
+        Task ICoreModule.RequestModuleChangeAsync(byte outcome)
+        {
+            ModuleChange change = m_Router.Route(m_Modules.TopModuleId, outcome);
+
+            return m_Modules.ApplyAsync(change);
+        }
+
+        async Task<StackedModule> IModuleHost.LoadAsync(byte moduleId, bool alone)
+        {
             Type   moduleType = m_ModuleDatabase.GetModuleType(moduleId);
             string sceneName  = m_SceneDatabase.GetSceneNameForModule(moduleType);
 
-            await SceneManager.LoadSceneAsync(sceneName);
+            await SceneManager.LoadSceneAsync(sceneName, alone ? LoadSceneMode.Single : LoadSceneMode.Additive);
 
-            IDIResolver previousResolver = m_SceneResolver;
+            Scene        scene          = SceneManager.GetSceneByName(sceneName);
+            DIContainer  diContainer    = new DIContainer();
+            IDIContainer sceneContainer = diContainer;
 
-            m_SceneContainer.Dispose();
+            sceneContainer.BindSingletonFromInstance<IModuleScene>(new ModuleScene(scene));
+            FindSceneInstaller(scene).InstallBindings(sceneContainer);
+            sceneContainer.SetFallback(m_GlobalContainer);
 
-            DIContainer sceneContainer = new DIContainer();
+            SetCurrentResolver(diContainer);
 
-            m_SceneContainer = sceneContainer;
-            m_SceneResolver  = sceneContainer;
+            IModule       module  = (IModule)m_CurrentResolver.Resolve(moduleType);
+            StackedModule stacked = new StackedModule(moduleId, module, scene, sceneContainer);
 
-            SceneInstallerMonoBehaviour sceneInstallerMonoBehaviour = Object.FindAnyObjectByType<SceneInstallerMonoBehaviour>();
-            SceneInstallerBase          sceneInstaller              = sceneInstallerMonoBehaviour.SceneInstaller;
-            sceneInstaller.InstallBindings(m_SceneContainer);
+            return stacked;
+        }
 
-            m_GlobalContainer.Unbind<IDIResolver>(previousResolver);
-            m_GlobalContainer.BindSingletonFromInstance<IDIResolver>(m_SceneResolver);
+        async Task IModuleHost.UnloadAsync(StackedModule module, bool unloadScene)
+        {
+            if (unloadScene)
+            {
+                await SceneManager.UnloadSceneAsync(module.Scene);
+            }
 
-            m_SceneContainer.SetFallback(m_GlobalContainer);
+            module.Container.Dispose();
+        }
 
-            m_CurrentModule = (IModule)m_SceneResolver.Resolve(moduleType);
+        void IModuleHost.MakeCurrent(StackedModule module)
+        {
+            SetCurrentResolver((IDIResolver)module.Container);
+        }
 
-            // TODO: allow a module to register its own internal types so we don't have to make them public and registered in scene installers
+        private static SceneInstallerBase FindSceneInstaller(Scene scene)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
 
-            await m_CurrentModule.OnEnterAsync();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                SceneInstallerMonoBehaviour installer = roots[i].GetComponentInChildren<SceneInstallerMonoBehaviour>();
+
+                if (installer != null)
+                {
+                    SceneInstallerBase sceneInstaller = installer.SceneInstaller;
+
+                    return sceneInstaller;
+                }
+            }
+
+            throw new InvalidOperationException($"{nameof(CoreModule)}::{nameof(FindSceneInstaller)} Scene [{scene.name}] has no {nameof(SceneInstallerMonoBehaviour)}");
+        }
+
+        // Global bindings resolve IDIResolver as the module on top's container, so whatever resolves later finds that
+        // module's bindings as well as the global ones.
+        private void SetCurrentResolver(IDIResolver resolver)
+        {
+            m_GlobalContainer.Unbind<IDIResolver>(m_CurrentResolver);
+            m_GlobalContainer.BindSingletonFromInstance(resolver);
+
+            m_CurrentResolver = resolver;
         }
 
         private void OnApplicationQuit()
         {
-            m_SceneContainer.Dispose();
+            foreach (StackedModule module in m_Modules.Modules)
+            {
+                module.Container.Dispose();
+            }
+
             m_GlobalContainer.Dispose();
         }
 
@@ -122,8 +166,6 @@ namespace RPGFramework.Core
             container.BindTransient<IDialogueWindow, DialogueWindow>();
             container.BindTransient<IDialogueWindowUI, DialogueWindowUI>();
 
-            container.BindSingleton<IChangeModuleStore, ChangeModuleStore>();
-            container.BindSingleton<IResumeModuleStore, ResumeModuleStore>();
             container.BindSingleton<ICurrentModuleStore, CurrentModuleStore>();
             container.BindSingleton<ISaveEnabledStore, SaveEnabledStore>();
             container.BindSingleton<ILocationNameStore, LocationNameStore>();

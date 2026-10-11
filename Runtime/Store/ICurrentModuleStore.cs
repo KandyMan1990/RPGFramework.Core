@@ -4,9 +4,8 @@ using RPGFramework.Core.SharedTypes;
 namespace RPGFramework.Core.Store
 {
     /// <summary>
-    /// The module the playthrough is in: where a new game begins and where a loaded one resumes. Not the same
-    /// as <see cref="IChangeModuleStore" />, which is the next transition's target and is a menu or a battle as
-    /// often as it is a place.
+    /// The module the playthrough is in: where a new game begins and where a loaded one resumes — a place, never a
+    /// menu or a battle.
     /// </summary>
     public interface ICurrentModuleStore
     {
