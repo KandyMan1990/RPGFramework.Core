@@ -27,13 +27,29 @@ namespace RPGFramework.Core.Input
         void RouteMovement(Vector2 move);
     }
 
-    internal sealed class InputRouter : IInputRouter
+    /// <summary>
+    /// Holds routed input back while it must not act — while the screen fades, so nothing pressed during a change starts
+    /// another. Locks nest; input flows again once every one is released.
+    /// </summary>
+    internal interface IInputLock
+    {
+        /// <summary>Holds input back; the first lock also stops whatever was moving.</summary>
+        void Lock();
+
+        /// <summary>Releases one lock.</summary>
+        void Unlock();
+    }
+
+    internal sealed class InputRouter : IInputRouter, IInputLock
     {
         private readonly List<IInputContext> m_Stack;
+
+        private int m_Locks;
 
         public InputRouter()
         {
             m_Stack = new List<IInputContext>();
+            m_Locks = 0;
         }
 
         void IInputRouter.Push(IInputContext context)
@@ -62,6 +78,11 @@ namespace RPGFramework.Core.Input
 
         void IInputRouter.Route(ControlSlot slot)
         {
+            if (m_Locks > 0)
+            {
+                return;
+            }
+
             for (int i = m_Stack.Count - 1; i >= 0; i--)
             {
                 if (m_Stack[i].Handle(slot))
@@ -72,6 +93,35 @@ namespace RPGFramework.Core.Input
         }
 
         void IInputRouter.RouteMovement(Vector2 move)
+        {
+            if (m_Locks > 0)
+            {
+                return;
+            }
+
+            RouteMove(move);
+        }
+
+        // A move held as the lock begins would otherwise carry on unseen, as its release is held back too.
+        void IInputLock.Lock()
+        {
+            m_Locks++;
+
+            if (m_Locks == 1)
+            {
+                RouteMove(Vector2.zero);
+            }
+        }
+
+        void IInputLock.Unlock()
+        {
+            if (m_Locks > 0)
+            {
+                m_Locks--;
+            }
+        }
+
+        private void RouteMove(Vector2 move)
         {
             for (int i = m_Stack.Count - 1; i >= 0; i--)
             {

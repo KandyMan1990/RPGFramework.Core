@@ -169,7 +169,7 @@ namespace RPGFramework.Core
         {
             container.BindSingletonFromInstance<ICoreModule>(core);
 
-            container.BindSingleton<IInputRouter, InputRouter>();
+            container.BindInterfacesToSelfSingleton<InputRouter>();
             container.BindSingleton<IScreenFadeService, ScreenFadeService>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();

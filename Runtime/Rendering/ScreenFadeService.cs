@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using RPGFramework.Core.Input;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -10,7 +11,8 @@ namespace RPGFramework.Core.Rendering
     /// <summary>
     /// Covers and uncovers the screen with a full-screen pass, plainly or with a battle's transition. A fade starts
     /// from where the screen is, so one asked for while the screen is already there does nothing. On unscaled time, so
-    /// it runs while the game is frozen.
+    /// it runs while the game is frozen. Input routed through the <see cref="IInputRouter" /> is held back while a
+    /// fade runs.
     /// </summary>
     public interface IScreenFadeService
     {
@@ -42,13 +44,15 @@ namespace RPGFramework.Core.Rendering
 
         private readonly IScreenFadeServiceConfig      m_ScreenFadeServiceConfig;
         private readonly FullScreenPassRendererFeature m_RendererFeature;
+        private readonly IInputLock                    m_InputLock;
 
         // How far faded the screen is, 0 clear to 1 out, whichever material draws it.
         private float m_Amount;
 
-        internal ScreenFadeService(IScreenFadeServiceConfig config, IRendererDataProvider rendererDataProvider)
+        internal ScreenFadeService(IScreenFadeServiceConfig config, IRendererDataProvider rendererDataProvider, IInputLock inputLock)
         {
             m_ScreenFadeServiceConfig = config;
+            m_InputLock               = inputLock;
 
             UniversalRendererData rendererData = rendererDataProvider.Get();
             ScriptableRendererFeature rendererFeature =
@@ -108,18 +112,27 @@ namespace RPGFramework.Core.Rendering
             float from    = m_Amount;
             float elapsed = 0f;
 
-            while (elapsed < duration)
+            m_InputLock.Lock();
+
+            try
             {
-                elapsed = math.min(elapsed + Time.unscaledDeltaTime, duration);
-                float t     = elapsed / duration;
-                float value = math.lerp(from, to, t);
+                while (elapsed < duration)
+                {
+                    elapsed = math.min(elapsed + Time.unscaledDeltaTime, duration);
+                    float t     = elapsed / duration;
+                    float value = math.lerp(from, to, t);
 
-                SetAmount(value);
+                    SetAmount(value);
 
-                await Awaitable.NextFrameAsync();
+                    await Awaitable.NextFrameAsync();
+                }
+
+                SetAmount(to);
             }
-
-            SetAmount(to);
+            finally
+            {
+                m_InputLock.Unlock();
+            }
         }
 
         private void SetAmount(float amount)

@@ -151,7 +151,8 @@ first launch. A game can add sections of its own.
 - **`InputAdapter`**, one per module scene, turns Input System actions into Core's controls (Primary, Secondary,
   Tertiary, Quaternary, the shoulders, triggers, Start and Select) and movement.
 - **`IInputRouter`** passes them down a stack of **input contexts** until one uses them. A conversation the player can
-  walk away from takes only confirm, and movement goes on to the field beneath.
+  walk away from takes only confirm, and movement goes on to the field beneath. Nothing is passed on while the screen
+  fades, so a press during a change of module does nothing.
 
 ## Dialogue
 
