@@ -14,9 +14,13 @@ namespace RPGFramework.Core.Store
         uint PlayTime { get; }
 
         /// <summary>
-        /// Start the clock, as the player leaves the title for the game. It runs from then on, in every module.
+        /// Start the clock, as the player leaves the title for the game. It runs from then on, in every module, until
+        /// <see cref="StopCounting" />; starting it while it runs does nothing.
         /// </summary>
         void StartCounting();
+
+        /// <summary>Stop the clock, as the game goes back to the title.</summary>
+        void StopCounting();
     }
 
     /// <summary>
@@ -30,6 +34,7 @@ namespace RPGFramework.Core.Store
         private readonly ushort         m_Address;
 
         private float m_Fraction;
+        private bool  m_Counting;
 
         public PlayTimeCounter(IMemoryService memoryService, IVariableMap variableMap)
         {
@@ -37,6 +42,8 @@ namespace RPGFramework.Core.Store
 
             m_MemoryService = memoryService;
             m_Address       = (ushort)playTime.Offset;
+            m_Fraction      = 0f;
+            m_Counting      = false;
         }
 
         uint IPlayTimeStore.PlayTime
@@ -51,7 +58,27 @@ namespace RPGFramework.Core.Store
 
         void IPlayTimeStore.StartCounting()
         {
+            if (m_Counting)
+            {
+                return;
+            }
+
+            m_Counting = true;
+            m_Fraction = 0f;
+
             UpdateManager.RegisterUpdatable(this);
+        }
+
+        void IPlayTimeStore.StopCounting()
+        {
+            if (!m_Counting)
+            {
+                return;
+            }
+
+            m_Counting = false;
+
+            UpdateManager.UnregisterUpdatable(this);
         }
 
         void IUpdatable.Update()

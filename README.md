@@ -72,7 +72,7 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `IBattleMusicStore` | the track every battle plays, as its music asset's name hash; saved |
 | `IMusicVolumeStore` | the volume the music plays at, as the scripts last set it; saved |
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
-| `IPlayTimeStore` | how long the playthrough has been played, in seconds |
+| `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
 
 **Core binds** the input router, screen fades, the save, settings and memory services, dialogue windows and the stores
 above. **Your global installer binds**:
