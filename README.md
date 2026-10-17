@@ -6,11 +6,11 @@ battle, each in a scene of its own. It also owns what every module shares:
 - the game's variables and the memory they live in;
 - saves and settings;
 - input routing and dialogue windows;
-- screen fades, audio intents and the update loop.
+- transitions, audio intents and the update loop.
 
-Requires Unity 6000.6 or newer, the Universal Render Pipeline (the screen fades are a full-screen renderer feature), the
-Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an Audio snapshot), RPGFramework.DI,
-RPGFramework.Hashing and RPGFramework.Core.SharedTypes.
+Requires Unity 6000.6 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
+Audio snapshot), RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes. It works with any render
+pipeline: its transitions are drawn with UI Toolkit.
 
 ---
 
@@ -56,6 +56,11 @@ objects through **`IModuleScene`**, bound in its container, rather than searchin
 loaded beside it. A change says how the next module is entered — `ModuleEntries.NEW`, or `RETURN` to one a battle
 replaced, which carries on from what it kept — and the module gets it in `OnEnterAsync`.
 
+**Every change happens under a covered screen.** Core covers the screen before it touches a module, carries the
+change out, and reveals the module on top, then tells it so with **`OnRevealed`**: that is where a module starts taking
+input, or starts anything the player should see from its beginning. A module does not fade itself for a change. Changes
+run one at a time: one asked for during another waits for it, and is routed from whichever module is then on top.
+
 **Bind each module in its own scene installer.** It is then built fresh on every entry and goes with its scene. A
 module missing from its scene installer fails with *No binding exists*, which is how you find out.
 
@@ -74,14 +79,15 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
 
-**Core binds** the input router, screen fades, the save, settings and memory services, dialogue windows and the stores
+**Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
 above. **Your global installer binds**:
 
 - the two databases, and a module router;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
 - an **`IDefaultSettings`**;
-- an **`IRendererDataProvider`**, with your URP renderer data, and a **Screen Fade Config** (Create > RPG Framework >
-  Rendering);
+- a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
+  draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
+  named, such as a **Colour Transition**;
 - a **Dialogue Window UI Provider** (Create > RPG Framework > Dialogue);
 - an **`IAudioIntentPlayer`**;
 - whatever your modules need globally.
@@ -183,9 +189,13 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   press or a click answers. They take input only once the last answer has typed.
 - **RPG Framework > Dialogue > Dialogue Preview** types a line as the game will and lists any mistakes in its markup.
 
-## Screen fades, audio intents and the update loop
+## Transitions, audio intents and the update loop
 
-- **`IScreenFadeService`** fades the screen in and out, simply or with a transition such as the start of a battle.
+- **`ITransitionService`** covers and reveals the screen, drawing on a panel above every module's UI, so menus and
+  dialogue are covered too. Core uses it around every change; a module uses it for its own steps, such as a field jump
+  or a menu change. A **transition** is an asset that covers or reveals over its own seconds and curve: Core has the
+  **Colour Transition**, and your own derives from `TransitionAsset`. A cover while the screen is covered, or a reveal
+  while it is clear, does nothing, and nothing routed reaches a module from a cover starting until the screen is clear.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
   your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
   for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.

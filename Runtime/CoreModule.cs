@@ -4,11 +4,11 @@ using RPGFramework.Core.Databases;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
-using RPGFramework.Core.Rendering;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.Settings;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.Core.Store;
+using RPGFramework.Core.Transitions;
 using RPGFramework.DI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -30,10 +30,12 @@ namespace RPGFramework.Core
         private readonly byte                 m_InitialModuleId;
         private readonly AudioListenerHandOff m_AudioListeners;
 
-        private ISceneDatabase  m_SceneDatabase;
-        private IModuleDatabase m_ModuleDatabase;
-        private IModuleRouter   m_Router;
-        private IDIResolver     m_CurrentResolver;
+        private ISceneDatabase     m_SceneDatabase;
+        private IModuleDatabase    m_ModuleDatabase;
+        private IModuleRouter      m_Router;
+        private ITransitionService m_Transitions;
+        private IDIResolver        m_CurrentResolver;
+        private Task               m_Changing;
 
         private CoreModule(byte initialModuleId)
         {
@@ -44,6 +46,7 @@ namespace RPGFramework.Core
             m_Modules         = new ModuleStack(this);
             m_InitialModuleId = initialModuleId;
             m_AudioListeners  = new AudioListenerHandOff();
+            m_Changing        = Task.CompletedTask;
 
             Application.quitting += OnApplicationQuit;
         }
@@ -61,20 +64,36 @@ namespace RPGFramework.Core
             core.m_SceneDatabase  = core.m_CurrentResolver.Resolve<ISceneDatabase>();
             core.m_ModuleDatabase = core.m_CurrentResolver.Resolve<IModuleDatabase>();
             core.m_Router         = core.m_CurrentResolver.Resolve<IModuleRouter>();
+            core.m_Transitions    = core.m_CurrentResolver.Resolve<ITransitionService>();
 
             return core;
         }
 
         Task ICoreModule.StartAsync()
         {
-            return m_Modules.ApplyAsync(ModuleChange.Clear(m_InitialModuleId));
+            Task started = m_Modules.ApplyAsync(ModuleChange.Clear(m_InitialModuleId));
+
+            m_Changing = started;
+
+            return started;
         }
 
         Task ICoreModule.RequestModuleChangeAsync(byte outcome)
         {
+            Task change = ChangeAfterAsync(m_Changing, outcome);
+
+            m_Changing = change;
+
+            return change;
+        }
+
+        private async Task ChangeAfterAsync(Task previous, byte outcome)
+        {
+            await Task.WhenAny(previous);
+
             ModuleChange change = m_Router.Route(m_Modules.TopModuleId, outcome);
 
-            return m_Modules.ApplyAsync(change);
+            await m_Modules.ApplyAsync(change);
         }
 
         async Task<StackedModule> IModuleHost.LoadAsync(byte moduleId, bool alone)
@@ -126,6 +145,16 @@ namespace RPGFramework.Core
             SetCurrentResolver((IDIResolver)module.Container);
         }
 
+        Task IModuleHost.CoverAsync()
+        {
+            return m_Transitions.CoverAsync();
+        }
+
+        Task IModuleHost.RevealAsync()
+        {
+            return m_Transitions.RevealAsync();
+        }
+
         private static SceneInstallerBase FindSceneInstaller(Scene scene)
         {
             GameObject[] roots = scene.GetRootGameObjects();
@@ -170,7 +199,7 @@ namespace RPGFramework.Core
             container.BindSingletonFromInstance<ICoreModule>(core);
 
             container.BindInterfacesToSelfSingleton<InputRouter>();
-            container.BindSingleton<IScreenFadeService, ScreenFadeService>();
+            container.BindSingleton<ITransitionService, TransitionService>();
 
             container.BindSingleton<ISaveDataService, SaveDataService>();
             container.BindSingleton<ISettingsService, SettingsService>();

@@ -23,6 +23,12 @@ namespace RPGFramework.Core
 
         /// <summary>Makes the module's container the current resolver again, once the one over it has gone.</summary>
         void MakeCurrent(StackedModule module);
+
+        /// <summary>Covers the screen, before a change touches any module.</summary>
+        Task CoverAsync();
+
+        /// <summary>Reveals the screen, once the change has entered or resumed its module.</summary>
+        Task RevealAsync();
     }
 
     /// <summary>A module on the stack, with the scene and container its host loaded it into.</summary>
@@ -43,8 +49,9 @@ namespace RPGFramework.Core
     }
 
     /// <summary>
-    /// The modules loaded. Carries out a change in a fixed order: a module suspended is told before anything over it
-    /// exists, and resumed only once what was over it has gone.
+    /// The modules loaded. Carries out a change in a fixed order, under a covered screen: a module suspended is told
+    /// before anything over it exists, and resumed only once what was over it has gone; the module on top is told it is
+    /// on screen once it has been revealed.
     /// </summary>
     internal sealed class ModuleStack
     {
@@ -71,8 +78,15 @@ namespace RPGFramework.Core
             }
         }
 
-        internal Task ApplyAsync(ModuleChange change)
+        internal async Task ApplyAsync(ModuleChange change)
         {
+            if (change.Kind == ModuleChangeKind.Close && m_Modules.Count < 2)
+            {
+                throw new InvalidOperationException($"{nameof(ModuleStack)}::{nameof(ApplyAsync)} Nothing is under module [{TopModuleId}] to go back to");
+            }
+
+            await m_Host.CoverAsync();
+
             Task applying = change.Kind switch
                             {
                                 ModuleChangeKind.Over    => OverAsync(change),
@@ -82,7 +96,11 @@ namespace RPGFramework.Core
                                 _                        => throw new ArgumentOutOfRangeException(nameof(change), change.Kind, null)
                             };
 
-            return applying;
+            await applying;
+
+            await m_Host.RevealAsync();
+
+            Top().Module.OnRevealed();
         }
 
         private async Task OverAsync(ModuleChange change)
@@ -97,11 +115,6 @@ namespace RPGFramework.Core
 
         private async Task CloseAsync()
         {
-            if (m_Modules.Count < 2)
-            {
-                throw new InvalidOperationException($"{nameof(ModuleStack)}::{nameof(CloseAsync)} Nothing is under module [{TopModuleId}] to go back to");
-            }
-
             StackedModule closed = Top();
 
             await closed.Module.OnExitAsync();
