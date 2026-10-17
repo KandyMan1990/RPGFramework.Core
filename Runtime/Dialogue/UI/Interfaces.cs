@@ -20,14 +20,26 @@ namespace RPGFramework.Core.Dialogue.UI
         /// <summary>Removes the window from the screen for good.</summary>
         void Destroy();
 
-        /// <summary>The choice focused when the player confirmed, counting from 0.</summary>
+        /// <summary>The choice the player answered with, counting from 0.</summary>
         byte GetSelectedChoice();
+
+        /// <summary>
+        /// Answers the question with the focused choice, as a confirm press does. A question is answered once.
+        /// </summary>
+        void ChooseFocusedChoice();
+
+        /// <summary>
+        /// Completes once the question is answered: a click or a submit on a choice, or
+        /// <see cref="ChooseFocusedChoice" />.
+        /// </summary>
+        Task WaitForChoiceAsync();
 
         /// <summary>Builds the window, hidden, in the container, from the provider's layout.</summary>
         void Init(VisualElement container);
 
         /// <summary>
-        /// Types the page's text, then each choice in turn, focusing the first; done when everything is shown.
+        /// Types the page's text, then each choice in turn; done when everything is shown, the first choice focused and
+        /// the choices taking the cursor.
         /// </summary>
         Task RunAsync();
 

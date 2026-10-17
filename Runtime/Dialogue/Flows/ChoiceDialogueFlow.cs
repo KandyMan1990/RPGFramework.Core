@@ -25,7 +25,7 @@ namespace RPGFramework.Core.Dialogue.Flows
 
             uiInstance.SetChoices(dialogues.AsSpan(1));
 
-            await DialogueUtils.RunPageAsync(uiInstance, lastPage, inputContext, close);
+            await DialogueUtils.RunQuestionPageAsync(uiInstance, lastPage, inputContext, close);
         }
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGFramework.Core.Audio;
-using RPGFramework.Core.Input;
 using RPGFramework.Core.UI;
 using Unity.Mathematics;
 using UnityEngine;
@@ -31,6 +30,8 @@ namespace RPGFramework.Core.Dialogue.UI
         private DialogueTextView[]          m_ChoiceViews;
         private string[]                    m_ChoiceTexts;
         private byte                        m_SelectedIndex;
+        private TaskCompletionSource<bool>  m_Chosen;
+        private SelectionScope              m_Selection;
         private IReadOnlyList<int>          m_MessageVariables;
         private DialogueWindowStyle         m_Style;
         private IVisualElementScheduledItem m_Ticker;
@@ -46,21 +47,23 @@ namespace RPGFramework.Core.Dialogue.UI
             m_Choices                  = Array.Empty<RPGUIButton>();
             m_ChoiceViews              = Array.Empty<DialogueTextView>();
             m_ChoiceTexts              = Array.Empty<string>();
+            m_Chosen                   = NewChosen();
             m_TextSpeedMultiplier      = 1f;
         }
 
         async Task IDialogueWindowUI.AnimateWindowClosedAsync()
         {
-            for (byte i = 0; i < m_Choices.Length; i++)
-            {
-                m_Choices[i].UnregisterCallback<ClickEvent, byte>(OnChoiceChosenBtnClicked);
-                m_Choices[i].UnregisterCallback<NavigationSubmitEvent, byte>(OnChoiceChosenBtnSubmitted);
-                m_Choices[i].UnregisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate);
+            m_Selection.SetInputEnabled(false);
 
+            for (int i = 0; i < m_Choices.Length; i++)
+            {
                 m_ChoiceViews[i].Clear();
                 m_Choices[i].RemoveFromHierarchy();
-                m_Choices[i] = null;
             }
+
+            m_Choices     = Array.Empty<RPGUIButton>();
+            m_ChoiceViews = Array.Empty<DialogueTextView>();
+            m_ChoiceTexts = Array.Empty<string>();
 
             m_TextView.Clear();
 
@@ -126,9 +129,17 @@ namespace RPGFramework.Core.Dialogue.UI
 
         byte IDialogueWindowUI.GetSelectedChoice()
         {
-            m_Choices[m_SelectedIndex].SendEvent(new NavigationSubmitEvent());
-
             return m_SelectedIndex;
+        }
+
+        void IDialogueWindowUI.ChooseFocusedChoice()
+        {
+            Choose(m_SelectedIndex);
+        }
+
+        Task IDialogueWindowUI.WaitForChoiceAsync()
+        {
+            return m_Chosen.Task;
         }
 
         void IDialogueWindowUI.Init(VisualElement container)
@@ -145,6 +156,8 @@ namespace RPGFramework.Core.Dialogue.UI
             m_TextView  = new DialogueTextView(m_Text);
 
             ApplyStyle();
+
+            m_Selection = new SelectionScope(m_UIInstance, m_AudioIntentPlayer, AudioContext.Field);
 
             // One tick for the window drives the typing and keeps blinking text flashing while a page waits.
             m_Ticker = m_UIInstance.schedule.Execute(Tick).Every(0);
@@ -164,8 +177,9 @@ namespace RPGFramework.Core.Dialogue.UI
                     await TypeAsync(m_ChoiceViews[i]);
                 }
 
-                m_Choices[0].Focus();
                 m_SelectedIndex = 0;
+                m_Choices[0].Focus();
+                m_Selection.SetInputEnabled(true);
             }
         }
 
@@ -173,9 +187,11 @@ namespace RPGFramework.Core.Dialogue.UI
         {
             int length = choices.Length;
 
-            m_Choices     = new RPGUIButton[length];
-            m_ChoiceViews = new DialogueTextView[length];
-            m_ChoiceTexts = choices.ToArray();
+            m_Choices       = new RPGUIButton[length];
+            m_ChoiceViews   = new DialogueTextView[length];
+            m_ChoiceTexts   = choices.ToArray();
+            m_SelectedIndex = 0;
+            m_Chosen        = NewChosen();
 
             for (byte i = 0; i < length; i++)
             {
@@ -188,15 +204,18 @@ namespace RPGFramework.Core.Dialogue.UI
                                          }
                                      };
 
-                button.RegisterCallback<NavigationMoveEvent, byte>(OnChoiceChosenBtnNavigate, i);
-                button.RegisterCallback<NavigationSubmitEvent, byte>(OnChoiceChosenBtnSubmitted, i);
-                button.RegisterCallback<ClickEvent, byte>(OnChoiceChosenBtnClicked, i);
+                byte index = i;
+
+                button.Chosen += () => Choose(index);
+                button.RegisterCallback<FocusInEvent, byte>(OnChoiceFocused, i);
                 button.SetEnabledAndVisible(false);
 
                 m_UIInstance.Add(button);
                 m_Choices[i]     = button;
                 m_ChoiceViews[i] = new DialogueTextView(button.Label);
             }
+
+            RPGUIButton.LinkColumn(m_Choices, true);
         }
 
         void IDialogueWindowUI.SetMessageVariables(IReadOnlyList<int> variables)
@@ -280,32 +299,27 @@ namespace RPGFramework.Core.Dialogue.UI
             }
         }
 
-        private void OnChoiceChosenBtnNavigate(NavigationMoveEvent evt, byte index)
-        {
-            RPGUIButton root = m_Choices[index];
-            RPGUIButton up   = m_Choices[(index - 1 + m_Choices.Length) % m_Choices.Length];
-            RPGUIButton down = m_Choices[(index     + 1)                % m_Choices.Length];
-
-            if (UIToolkitInputUtility.Navigate(evt, root, up, down))
-            {
-                m_AudioIntentPlayer.PlayAsync(AudioIntent.Navigate, AudioContext.Field).FireAndForget();
-            }
-        }
-
-        private void OnChoiceChosenBtnSubmitted(NavigationSubmitEvent evt, byte index)
-        {
-            OnChoiceChosen(index);
-        }
-
-        private void OnChoiceChosenBtnClicked(ClickEvent evt, byte index)
-        {
-            OnChoiceChosen(index);
-        }
-
-        private void OnChoiceChosen(byte index)
+        private void OnChoiceFocused(FocusInEvent evt, byte index)
         {
             m_SelectedIndex = index;
+        }
+
+        private void Choose(byte index)
+        {
+            if (m_Chosen.Task.IsCompleted)
+            {
+                return;
+            }
+
+            m_SelectedIndex = index;
+            m_Selection.SetInputEnabled(false);
             m_AudioIntentPlayer.PlayAsync(AudioIntent.Confirm, AudioContext.Field).FireAndForget();
+            m_Chosen.TrySetResult(true);
+        }
+
+        private static TaskCompletionSource<bool> NewChosen()
+        {
+            return new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         private async Task TypeAsync(DialogueTextView view)

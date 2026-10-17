@@ -153,6 +153,10 @@ first launch. A game can add sections of its own.
 - **`IInputRouter`** passes them down a stack of **input contexts** until one uses them. A conversation the player can
   walk away from takes only confirm, and movement goes on to the field beneath. Nothing is passed on while the screen
   fades, so a press during a change of module does nothing.
+- **`SelectionScope`** is for UI Toolkit screens you build yourself, such as a battle's commands. Over a root element,
+  it moves the cursor only between **`RPGUIButton`s' neighbours** (link them with `RPGUIButton.LinkColumn` and
+  `LinkRow`), by key, pad or pointer alike, plays the cursor sound as focus moves, and while its input is off lets
+  nothing in it react at all. A button's `Chosen` is a click or a submit.
 
 ## Dialogue
 
@@ -175,6 +179,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 - **Name a style for what a thing is**, such as a location or a key item, rather than giving it a colour. Recolouring
   every location is then one edit.
 - **Windows have styles**, spoken, thought or transparent, and type at the player's message speed.
+- **A question's answers are chosen like a menu's**, by key, pad or pointer: hovering one selects it, and a confirm
+  press or a click answers. They take input only once the last answer has typed.
 - **RPG Framework > Dialogue > Dialogue Preview** types a line as the game will and lists any mistakes in its markup.
 
 ## Screen fades, audio intents and the update loop

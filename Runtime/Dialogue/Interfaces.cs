@@ -34,7 +34,7 @@ namespace RPGFramework.Core.Dialogue
         /// <summary>Removes the window from the screen for good.</summary>
         void Destroy();
 
-        /// <summary>The choice the player confirmed, counting from 0.</summary>
+        /// <summary>The choice the player answered with, counting from 0.</summary>
         byte GetSelectedChoice();
 
         /// <summary>Builds the window, hidden, in the container.</summary>

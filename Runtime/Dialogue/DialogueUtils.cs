@@ -69,11 +69,45 @@ namespace RPGFramework.Core.Dialogue
 
         internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
         {
+            Task closedTask = WhenClosed(close);
+
+            if (await TypePageAsync(uiInstance, dialoguePage, inputContext, closedTask))
+            {
+                return;
+            }
+
+            await Task.WhenAny(inputContext.WaitForConfirmAsync(), closedTask);
+        }
+
+        /// <summary>
+        /// A page asking a question, its choices set: answered by a confirm press, with the focused choice, or by a
+        /// click or a submit on a choice.
+        /// </summary>
+        internal static async Task RunQuestionPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
+        {
+            Task closedTask = WhenClosed(close);
+
+            if (await TypePageAsync(uiInstance, dialoguePage, inputContext, closedTask))
+            {
+                return;
+            }
+
+            Task confirmTask = inputContext.WaitForConfirmAsync();
+            Task completed   = await Task.WhenAny(confirmTask, uiInstance.WaitForChoiceAsync(), closedTask);
+
+            if (completed == confirmTask)
+            {
+                uiInstance.ChooseFocusedChoice();
+            }
+        }
+
+        // A press while the page types finishes the typing rather than moving on. True if the window was closed.
+        private static async Task<bool> TypePageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, Task closedTask)
+        {
             uiInstance.SetText(dialoguePage);
 
             Task animationTask = uiInstance.RunAsync();
             Task confirmTask   = inputContext.WaitForConfirmAsync();
-            Task closedTask    = WhenClosed(close);
 
             Task completed = await Task.WhenAny(animationTask, confirmTask, closedTask);
 
@@ -83,12 +117,9 @@ namespace RPGFramework.Core.Dialogue
                 await animationTask;
             }
 
-            if (completed == closedTask)
-            {
-                return;
-            }
+            bool closed = completed == closedTask;
 
-            await Task.WhenAny(inputContext.WaitForConfirmAsync(), closedTask);
+            return closed;
         }
 
         internal static async Task RunUnansweredPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, CancellationToken close)
