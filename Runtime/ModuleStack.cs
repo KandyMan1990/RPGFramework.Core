@@ -24,11 +24,11 @@ namespace RPGFramework.Core
         /// <summary>Makes the module's container the current resolver again, once the one over it has gone.</summary>
         void MakeCurrent(StackedModule module);
 
-        /// <summary>Covers the screen, before a change touches any module.</summary>
-        Task CoverAsync();
+        /// <summary>Covers the screen as the change asks, before it touches any module.</summary>
+        Task CoverAsync(ModuleChange change);
 
-        /// <summary>Reveals the screen, once the change has entered or resumed its module.</summary>
-        Task RevealAsync();
+        /// <summary>Reveals the screen as the change asks, once it has entered or resumed its module.</summary>
+        Task RevealAsync(ModuleChange change);
     }
 
     /// <summary>A module on the stack, with the scene and container its host loaded it into.</summary>
@@ -85,7 +85,7 @@ namespace RPGFramework.Core
                 throw new InvalidOperationException($"{nameof(ModuleStack)}::{nameof(ApplyAsync)} Nothing is under module [{TopModuleId}] to go back to");
             }
 
-            await m_Host.CoverAsync();
+            await m_Host.CoverAsync(change);
 
             Task applying = change.Kind switch
                             {
@@ -98,7 +98,7 @@ namespace RPGFramework.Core
 
             await applying;
 
-            await m_Host.RevealAsync();
+            await m_Host.RevealAsync(change);
 
             Top().Module.OnRevealed();
         }

@@ -15,27 +15,41 @@ namespace RPGFramework.Core.Transitions
     /// </summary>
     public interface ITransitionService
     {
-        /// <summary>Covers the screen with <paramref name="transition" />, or the game's default cover.</summary>
-        Task CoverAsync(TransitionAsset transition = null);
+        /// <summary>
+        /// Covers the screen with the transition whose name hashes to <paramref name="transition" /> in the game's
+        /// <see cref="ITransitionDatabase" />, or with the default cover for <c>0</c>.
+        /// </summary>
+        Task CoverAsync(ulong transition = 0);
 
-        /// <summary>Uncovers the screen with <paramref name="transition" />, or the game's default reveal.</summary>
-        Task RevealAsync(TransitionAsset transition = null);
+        /// <summary>
+        /// Uncovers the screen with the transition whose name hashes to <paramref name="transition" />, or with the
+        /// default reveal for <c>0</c>.
+        /// </summary>
+        Task RevealAsync(ulong transition = 0);
+
+        /// <summary>
+        /// How long the cover <paramref name="transition" /> names takes, <c>0</c> for the default's, for a music fade
+        /// timed to it.
+        /// </summary>
+        float CoverSeconds(ulong transition = 0);
     }
 
     // The screen starts covered, so nothing shows until the first module is revealed.
     internal sealed class TransitionService : ITransitionService
     {
-        private readonly ITransitionConfig m_Config;
-        private readonly IInputLock        m_InputLock;
-        private readonly VisualElement     m_Host;
+        private readonly ITransitionConfig   m_Config;
+        private readonly ITransitionDatabase m_Database;
+        private readonly IInputLock          m_InputLock;
+        private readonly VisualElement       m_Host;
 
         private TransitionPlayback m_Playback;
         private float              m_Covered;
         private int                m_Run;
 
-        public TransitionService(ITransitionConfig config, IInputLock inputLock)
+        public TransitionService(ITransitionConfig config, ITransitionDatabase database, IInputLock inputLock)
         {
             m_Config    = config;
+            m_Database  = database;
             m_InputLock = inputLock;
             m_Host      = CreateOverlay(config.PanelSettings);
             m_Playback  = config.DefaultCover.Begin(m_Host);
@@ -46,7 +60,7 @@ namespace RPGFramework.Core.Transitions
             m_InputLock.Lock();
         }
 
-        async Task ITransitionService.CoverAsync(TransitionAsset transition)
+        async Task ITransitionService.CoverAsync(ulong transition)
         {
             if (m_Covered >= 1f)
             {
@@ -59,7 +73,7 @@ namespace RPGFramework.Core.Transitions
                 m_Host.pickingMode = PickingMode.Position;
             }
 
-            TransitionAsset cover = transition != null ? transition : m_Config.DefaultCover;
+            TransitionAsset cover = Find(transition, m_Config.DefaultCover);
             int             run   = ++m_Run;
 
             Begin(cover);
@@ -67,14 +81,14 @@ namespace RPGFramework.Core.Transitions
             await AnimateAsync(run, cover, 1f);
         }
 
-        async Task ITransitionService.RevealAsync(TransitionAsset transition)
+        async Task ITransitionService.RevealAsync(ulong transition)
         {
             if (m_Covered <= 0f)
             {
                 return;
             }
 
-            TransitionAsset reveal = transition != null ? transition : m_Config.DefaultReveal;
+            TransitionAsset reveal = Find(transition, m_Config.DefaultReveal);
             int             run    = ++m_Run;
 
             Begin(reveal);
@@ -91,6 +105,20 @@ namespace RPGFramework.Core.Transitions
 
             m_Host.pickingMode = PickingMode.Ignore;
             m_InputLock.Unlock();
+        }
+
+        float ITransitionService.CoverSeconds(ulong transition)
+        {
+            float seconds = Find(transition, m_Config.DefaultCover).Seconds;
+
+            return seconds;
+        }
+
+        private TransitionAsset Find(ulong transition, TransitionAsset fallback)
+        {
+            TransitionAsset found = transition == 0 ? fallback : m_Database.Get(transition);
+
+            return found;
         }
 
         // The new transition is drawn at the old one's amount before the old one goes, so the swap never shows what

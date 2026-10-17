@@ -87,7 +87,8 @@ above. **Your global installer binds**:
 - an **`IDefaultSettings`**;
 - a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
   draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
-  named, such as a **Colour Transition**;
+  named, such as a **Colour Transition**; and a **Transition Database**, as `ITransitionDatabase`, holding every
+  transition a router, a script or a module names;
 - a **Dialogue Window UI Provider** (Create > RPG Framework > Dialogue);
 - an **`IAudioIntentPlayer`**;
 - whatever your modules need globally.
@@ -194,8 +195,11 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 - **`ITransitionService`** covers and reveals the screen, drawing on a panel above every module's UI, so menus and
   dialogue are covered too. Core uses it around every change; a module uses it for its own steps, such as a field jump
   or a menu change. A **transition** is an asset that covers or reveals over its own seconds and curve: Core has the
-  **Colour Transition**, and your own derives from `TransitionAsset`. A cover while the screen is covered, or a reveal
-  while it is clear, does nothing, and nothing routed reaches a module from a cover starting until the screen is clear.
+  **Colour Transition**, and your own derives from `TransitionAsset`. Transitions are named by the hash of their names
+  (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal (`WithTransitions`), and
+  `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
+  screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover
+  starting until the screen is clear.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
   your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
   for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.

@@ -145,15 +145,16 @@ namespace RPGFramework.Core
             SetCurrentResolver((IDIResolver)module.Container);
         }
 
-        Task IModuleHost.CoverAsync()
+        Task IModuleHost.CoverAsync(ModuleChange change)
         {
-            return m_Transitions.CoverAsync();
+            return m_Transitions.CoverAsync(change.Cover);
         }
 
-        Task IModuleHost.RevealAsync()
+        Task IModuleHost.RevealAsync(ModuleChange change)
         {
-            return m_Transitions.RevealAsync();
+            return m_Transitions.RevealAsync(change.Reveal);
         }
+
 
         private static SceneInstallerBase FindSceneInstaller(Scene scene)
         {
