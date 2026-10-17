@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Transitions
 {
-    /// <summary>The screen fading to or from a colour.</summary>
+    /// <summary>The screen fading to or from a colour, laid over it by opacity.</summary>
     [CreateAssetMenu(menuName = "RPG Framework/Transitions/Colour Transition", fileName = "ColourTransition")]
     public sealed class ColourTransition : TransitionAsset
     {
@@ -12,17 +12,10 @@ namespace RPGFramework.Core.Transitions
 
         protected internal override TransitionPlayback Begin(VisualElement host, Texture capturedFrame)
         {
-            VisualElement colour = new VisualElement { pickingMode = PickingMode.Ignore };
+            VisualElement colour = AddFill(host, new VisualElement());
 
-            colour.style.position        = Position.Absolute;
-            colour.style.left            = 0f;
-            colour.style.top             = 0f;
-            colour.style.right           = 0f;
-            colour.style.bottom          = 0f;
             colour.style.backgroundColor = m_Colour;
             colour.style.opacity         = 0f;
-
-            host.Add(colour);
 
             TransitionPlayback playback = new ColourPlayback(colour);
 

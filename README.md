@@ -10,7 +10,7 @@ battle, each in a scene of its own. It also owns what every module shares:
 
 Requires Unity 6000.6 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
 Audio snapshot), RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes. It works with any render
-pipeline: its transitions are drawn with UI Toolkit.
+pipeline: its transitions are drawn with UI Toolkit, though the Subtractive Transition needs URP (below).
 
 ---
 
@@ -87,10 +87,11 @@ above. **Your global installer binds**:
 - an **`IDefaultSettings`**;
 - a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
   draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
-  named, such as a **Colour Transition**; and a **Transition Database**, as `ITransitionDatabase`, holding every
+  named, such as Core's **`SubtractiveFade`**; and a **Transition Database**, as `ITransitionDatabase`, holding every
   transition a router, a script or a module names;
 - a **Dialogue Window UI Provider** (Create > RPG Framework > Dialogue);
 - an **`IAudioIntentPlayer`**;
+- an **`ISfxPlayer`** (RPGFramework.Audio), which transitions play their sounds through;
 - whatever your modules need globally.
 
 ---
@@ -194,10 +195,28 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 
 - **`ITransitionService`** covers and reveals the screen, drawing on a panel above every module's UI, so menus and
   dialogue are covered too. Core uses it around every change; a module uses it for its own steps, such as a field jump
-  or a menu change. A **transition** is an asset that covers or reveals over its own seconds and curve: Core has the
-  **Colour Transition**, and your own derives from `TransitionAsset`: it builds what it draws in `Begin` and shows it as
-  covered as the screen in its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the
-  screen as it starts, and owns the whole screen, so the change it covers is carried out beneath it at once. Transitions
+  or a menu change. A **transition** is an asset that covers or reveals over its own seconds and curve, and may play a
+  **sound** as it starts — chosen in its inspector by name from your sound effect providers and stored as the name's
+  hash, so it loads from wherever your `ISfxPlayer` gets its sounds, bundles included. Core has five kinds (Create >
+  RPG Framework > Transitions):
+  - **Colour** — a colour laid over the screen by opacity.
+  - **Subtractive** — an amount taken from each channel of the live screen and clamped at zero, so colours sink into
+    black, dark ones first: the look of PS1-era fades. Its colour is what is taken once covered; white takes
+    everything. It is a UI Toolkit backdrop filter, which only URP draws, so on another pipeline fade with a colour.
+    Core ships **`SubtractiveFade`**, half a second to black.
+  - **Mask Wipe** — a greyscale texture stretched over the screen, with a softness for its edge: a cover reaches the
+    texture's black first and its white last, and a reveal through the same texture uncovers its white first.
+  - **Material** — any UI material, such as a UI Shader Graph's, given how covered the screen is, 0 to 1, in its
+    `_Covered` float; one that captures the frame draws over a picture of the screen as its element's texture.
+  - **Sequence** — stages played one after another, each through its own curve in a share of the sequence's seconds
+    in proportion to its own, and staying as it finished beneath those after it, as a flash before a wipe. It plays
+    its own sound, not its stages'.
+
+  Your own derives from `TransitionAsset`: it builds what it draws in `Begin` and shows it as covered as the screen in
+  its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
+  owns the whole screen, so the change it covers is carried out beneath it at once. Black lies beneath a transition
+  once the screen is fully covered, and beneath a captured frame, so a frame in which no camera renders never shows,
+  as between one module's scene going and the next's loading. Transitions
   are named by the hash of their names (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal
   (`WithTransitions`), and `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
   screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using RPGFramework.Audio;
 using RPGFramework.Core.Input;
 using Unity.Mathematics;
 using UnityEngine;
@@ -10,8 +11,9 @@ namespace RPGFramework.Core.Transitions
     /// Covers and uncovers the screen, drawing on an overlay above every module's UI that lasts across module changes.
     /// Core covers and reveals around every change between modules; a module asks for its own steps, such as a field
     /// jump or a menu change. A cover asked for while the screen is covered, or a reveal while it is clear, does
-    /// nothing; one asked for during another takes over from wherever the screen is. Routed input is held back from a
-    /// cover starting until the screen is clear again. On unscaled time, so it runs while the game is frozen.
+    /// nothing; one asked for during another takes over from wherever the screen is, each playing its sound as it starts.
+    /// Routed input is held back from a cover starting until the screen is clear again. On unscaled time, so it runs
+    /// while the game is frozen.
     /// </summary>
     public interface ITransitionService
     {
@@ -36,12 +38,15 @@ namespace RPGFramework.Core.Transitions
         float CoverSeconds(ulong transition = 0);
     }
 
-    // The screen starts covered, so nothing shows until the first module is revealed.
+    // The screen starts covered, so nothing shows until the first module is revealed. Black lies beneath the transition
+    // while the screen is covered and under a captured frame: a transition drawn by a backdrop filter draws nothing in a
+    // frame no camera renders, as when one module's scene has gone and the next's has not yet loaded.
     internal sealed class TransitionService : ITransitionService
     {
         private readonly ITransitionConfig   m_Config;
         private readonly ITransitionDatabase m_Database;
         private readonly IInputLock          m_InputLock;
+        private readonly ISfxPlayer          m_SfxPlayer;
         private readonly VisualElement       m_Host;
         private readonly VisualElement       m_Backdrop;
 
@@ -51,11 +56,12 @@ namespace RPGFramework.Core.Transitions
         private float              m_Covered;
         private int                m_Run;
 
-        public TransitionService(ITransitionConfig config, ITransitionDatabase database, IInputLock inputLock)
+        public TransitionService(ITransitionConfig config, ITransitionDatabase database, IInputLock inputLock, ISfxPlayer sfxPlayer)
         {
             m_Config    = config;
             m_Database  = database;
             m_InputLock = inputLock;
+            m_SfxPlayer = sfxPlayer;
             m_Host      = CreateOverlay(config.PanelSettings);
             m_Backdrop  = CreateBackdrop(m_Host);
             m_Playback  = config.DefaultCover.Begin(m_Host, null);
@@ -81,7 +87,7 @@ namespace RPGFramework.Core.Transitions
             int             run    = ++m_Run;
 
             Begin(reveal, null);
-            ReleaseFrame();
+            ClearBackdrop();
 
             bool finished = await AnimateAsync(run, reveal, 0f);
 
@@ -120,13 +126,18 @@ namespace RPGFramework.Core.Transitions
             TransitionAsset cover = Find(transition, m_Config.DefaultCover);
             int             run   = ++m_Run;
 
-            ReleaseFrame();
+            ClearBackdrop();
 
             if (!cover.CapturesFrame)
             {
                 Begin(cover, null);
 
-                await AnimateAsync(run, cover, 1f);
+                bool covered = await AnimateAsync(run, cover, 1f);
+
+                if (covered)
+                {
+                    m_Backdrop.style.display = DisplayStyle.Flex;
+                }
 
                 return;
             }
@@ -156,6 +167,11 @@ namespace RPGFramework.Core.Transitions
             m_Playback.Show(m_Covered);
 
             previous?.End();
+
+            if (transition.Sound != 0)
+            {
+                m_SfxPlayer.PlayAsync(transition.Sound).FireAndForget();
+            }
         }
 
         // False if another cover or reveal took over before it finished.
@@ -191,8 +207,10 @@ namespace RPGFramework.Core.Transitions
             m_Playback.Show(covered);
         }
 
-        private void ReleaseFrame()
+        private void ClearBackdrop()
         {
+            m_Backdrop.style.display = DisplayStyle.None;
+
             if (m_Frame == null)
             {
                 return;
@@ -201,8 +219,7 @@ namespace RPGFramework.Core.Transitions
             m_Frame.Release();
             Object.Destroy(m_Frame);
 
-            m_Frame                  = null;
-            m_Backdrop.style.display = DisplayStyle.None;
+            m_Frame = null;
         }
 
         // Taken once the frame has drawn, UI included. Where a texture's rows start at the top the capture comes out
@@ -252,7 +269,6 @@ namespace RPGFramework.Core.Transitions
 
             Fill(backdrop);
             backdrop.style.backgroundColor = Color.black;
-            backdrop.style.display         = DisplayStyle.None;
 
             host.Add(backdrop);
 
