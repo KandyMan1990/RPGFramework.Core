@@ -195,9 +195,11 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 - **`ITransitionService`** covers and reveals the screen, drawing on a panel above every module's UI, so menus and
   dialogue are covered too. Core uses it around every change; a module uses it for its own steps, such as a field jump
   or a menu change. A **transition** is an asset that covers or reveals over its own seconds and curve: Core has the
-  **Colour Transition**, and your own derives from `TransitionAsset`. Transitions are named by the hash of their names
-  (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal (`WithTransitions`), and
-  `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
+  **Colour Transition**, and your own derives from `TransitionAsset`: it builds what it draws in `Begin` and shows it as
+  covered as the screen in its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the
+  screen as it starts, and owns the whole screen, so the change it covers is carried out beneath it at once. Transitions
+  are named by the hash of their names (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal
+  (`WithTransitions`), and `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
   screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover
   starting until the screen is clear.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and

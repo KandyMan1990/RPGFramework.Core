@@ -24,10 +24,16 @@ namespace RPGFramework.Core
         /// <summary>Makes the module's container the current resolver again, once the one over it has gone.</summary>
         void MakeCurrent(StackedModule module);
 
-        /// <summary>Covers the screen as the change asks, before it touches any module.</summary>
+        /// <summary>
+        /// Covers the screen as the change asks, completing once the change may touch its modules: once covered, or at
+        /// once under a captured frame.
+        /// </summary>
         Task CoverAsync(ModuleChange change);
 
-        /// <summary>Reveals the screen as the change asks, once it has entered or resumed its module.</summary>
+        /// <summary>
+        /// Reveals the screen as the change asks, once it has entered or resumed its module and the cover has played its
+        /// full time.
+        /// </summary>
         Task RevealAsync(ModuleChange change);
     }
 
@@ -49,9 +55,9 @@ namespace RPGFramework.Core
     }
 
     /// <summary>
-    /// The modules loaded. Carries out a change in a fixed order, under a covered screen: a module suspended is told
-    /// before anything over it exists, and resumed only once what was over it has gone; the module on top is told it is
-    /// on screen once it has been revealed.
+    /// The modules loaded. Carries out a change in a fixed order under a cover: a module suspended is told before
+    /// anything over it exists, and resumed only once what was over it has gone; the module on top is told it is on
+    /// screen once it has been revealed.
     /// </summary>
     internal sealed class ModuleStack
     {

@@ -33,8 +33,17 @@ namespace RPGFramework.Core.Transitions
             return progress;
         }
 
-        /// <summary>Builds what this transition draws in <paramref name="host" />, which fills the screen.</summary>
-        protected internal abstract TransitionPlayback Begin(VisualElement host);
+        /// <summary>
+        /// Whether it draws over a picture of the screen taken as it starts rather than over the live screen. A cover
+        /// that does owns the whole screen, black beneath it, so what it covers can change at once.
+        /// </summary>
+        protected internal virtual bool CapturesFrame => false;
+
+        /// <summary>
+        /// Builds what this transition draws in <paramref name="host" />, which fills the screen: over
+        /// <paramref name="capturedFrame" />, upright, when it captures one, and null otherwise.
+        /// </summary>
+        protected internal abstract TransitionPlayback Begin(VisualElement host, Texture capturedFrame);
     }
 
     /// <summary>One play of a <see cref="TransitionAsset" />: what it drew, shown as covered as the screen.</summary>

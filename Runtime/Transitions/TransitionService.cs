@@ -17,13 +17,15 @@ namespace RPGFramework.Core.Transitions
     {
         /// <summary>
         /// Covers the screen with the transition whose name hashes to <paramref name="transition" /> in the game's
-        /// <see cref="ITransitionDatabase" />, or with the default cover for <c>0</c>.
+        /// <see cref="ITransitionDatabase" />, or with the default cover for <c>0</c>, completing once what it hides may
+        /// change: once covered, or at once for a cover over a captured frame, which hides the screen from its first
+        /// frame and plays on.
         /// </summary>
         Task CoverAsync(ulong transition = 0);
 
         /// <summary>
         /// Uncovers the screen with the transition whose name hashes to <paramref name="transition" />, or with the
-        /// default reveal for <c>0</c>.
+        /// default reveal for <c>0</c>, once a cover still playing has finished: a cover always plays its full time.
         /// </summary>
         Task RevealAsync(ulong transition = 0);
 
@@ -41,8 +43,11 @@ namespace RPGFramework.Core.Transitions
         private readonly ITransitionDatabase m_Database;
         private readonly IInputLock          m_InputLock;
         private readonly VisualElement       m_Host;
+        private readonly VisualElement       m_Backdrop;
 
         private TransitionPlayback m_Playback;
+        private Task               m_Covering;
+        private RenderTexture      m_Frame;
         private float              m_Covered;
         private int                m_Run;
 
@@ -52,7 +57,10 @@ namespace RPGFramework.Core.Transitions
             m_Database  = database;
             m_InputLock = inputLock;
             m_Host      = CreateOverlay(config.PanelSettings);
-            m_Playback  = config.DefaultCover.Begin(m_Host);
+            m_Backdrop  = CreateBackdrop(m_Host);
+            m_Playback  = config.DefaultCover.Begin(m_Host, null);
+            m_Covering  = Task.CompletedTask;
+            m_Frame     = null;
             m_Covered   = 1f;
             m_Run       = 0;
 
@@ -60,29 +68,10 @@ namespace RPGFramework.Core.Transitions
             m_InputLock.Lock();
         }
 
-        async Task ITransitionService.CoverAsync(ulong transition)
-        {
-            if (m_Covered >= 1f)
-            {
-                return;
-            }
-
-            if (m_Covered <= 0f)
-            {
-                m_InputLock.Lock();
-                m_Host.pickingMode = PickingMode.Position;
-            }
-
-            TransitionAsset cover = Find(transition, m_Config.DefaultCover);
-            int             run   = ++m_Run;
-
-            Begin(cover);
-
-            await AnimateAsync(run, cover, 1f);
-        }
-
         async Task ITransitionService.RevealAsync(ulong transition)
         {
+            await m_Covering;
+
             if (m_Covered <= 0f)
             {
                 return;
@@ -91,7 +80,8 @@ namespace RPGFramework.Core.Transitions
             TransitionAsset reveal = Find(transition, m_Config.DefaultReveal);
             int             run    = ++m_Run;
 
-            Begin(reveal);
+            Begin(reveal, null);
+            ReleaseFrame();
 
             bool finished = await AnimateAsync(run, reveal, 0f);
 
@@ -114,6 +104,41 @@ namespace RPGFramework.Core.Transitions
             return seconds;
         }
 
+        async Task ITransitionService.CoverAsync(ulong transition)
+        {
+            if (m_Covered >= 1f)
+            {
+                return;
+            }
+
+            if (m_Covered <= 0f)
+            {
+                m_InputLock.Lock();
+                m_Host.pickingMode = PickingMode.Position;
+            }
+
+            TransitionAsset cover = Find(transition, m_Config.DefaultCover);
+            int             run   = ++m_Run;
+
+            ReleaseFrame();
+
+            if (!cover.CapturesFrame)
+            {
+                Begin(cover, null);
+
+                await AnimateAsync(run, cover, 1f);
+
+                return;
+            }
+
+            m_Frame                  = await CaptureAsync();
+            m_Backdrop.style.display = DisplayStyle.Flex;
+
+            Begin(cover, m_Frame);
+
+            m_Covering = AnimateAsync(run, cover, 1f);
+        }
+
         private TransitionAsset Find(ulong transition, TransitionAsset fallback)
         {
             TransitionAsset found = transition == 0 ? fallback : m_Database.Get(transition);
@@ -123,11 +148,11 @@ namespace RPGFramework.Core.Transitions
 
         // The new transition is drawn at the old one's amount before the old one goes, so the swap never shows what
         // the screen was hiding.
-        private void Begin(TransitionAsset transition)
+        private void Begin(TransitionAsset transition, Texture frame)
         {
             TransitionPlayback previous = m_Playback;
 
-            m_Playback = transition.Begin(m_Host);
+            m_Playback = transition.Begin(m_Host, frame);
             m_Playback.Show(m_Covered);
 
             previous?.End();
@@ -166,6 +191,45 @@ namespace RPGFramework.Core.Transitions
             m_Playback.Show(covered);
         }
 
+        private void ReleaseFrame()
+        {
+            if (m_Frame == null)
+            {
+                return;
+            }
+
+            m_Frame.Release();
+            Object.Destroy(m_Frame);
+
+            m_Frame                  = null;
+            m_Backdrop.style.display = DisplayStyle.None;
+        }
+
+        // Taken once the frame has drawn, UI included. Where a texture's rows start at the top the capture comes out
+        // upside down, so it is turned the right way up before a transition sees it.
+        private static async Task<RenderTexture> CaptureAsync()
+        {
+            await Awaitable.EndOfFrameAsync();
+
+            RenderTexture captured = new RenderTexture(Screen.width, Screen.height, 0);
+
+            ScreenCapture.CaptureScreenshotIntoRenderTexture(captured);
+
+            if (!SystemInfo.graphicsUVStartsAtTop)
+            {
+                return captured;
+            }
+
+            RenderTexture upright = new RenderTexture(Screen.width, Screen.height, 0);
+
+            Graphics.Blit(captured, upright, new Vector2(1f, -1f), new Vector2(0f, 1f));
+
+            captured.Release();
+            Object.Destroy(captured);
+
+            return upright;
+        }
+
         private static VisualElement CreateOverlay(PanelSettings panelSettings)
         {
             GameObject overlay = new GameObject("Transitions");
@@ -176,14 +240,32 @@ namespace RPGFramework.Core.Transitions
 
             VisualElement host = document.rootVisualElement;
 
-            host.style.position = Position.Absolute;
-            host.style.left     = 0f;
-            host.style.top      = 0f;
-            host.style.right    = 0f;
-            host.style.bottom   = 0f;
-            host.pickingMode    = PickingMode.Position;
+            Fill(host);
+            host.pickingMode = PickingMode.Position;
 
             return host;
+        }
+
+        private static VisualElement CreateBackdrop(VisualElement host)
+        {
+            VisualElement backdrop = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            Fill(backdrop);
+            backdrop.style.backgroundColor = Color.black;
+            backdrop.style.display         = DisplayStyle.None;
+
+            host.Add(backdrop);
+
+            return backdrop;
+        }
+
+        private static void Fill(VisualElement element)
+        {
+            element.style.position = Position.Absolute;
+            element.style.left     = 0f;
+            element.style.top      = 0f;
+            element.style.right    = 0f;
+            element.style.bottom   = 0f;
         }
     }
 }
