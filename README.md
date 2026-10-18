@@ -87,7 +87,8 @@ above. **Your global installer binds**:
 - an **`IDefaultSettings`**;
 - a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
   draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
-  named, such as Core's **`SubtractiveFade`**; and a **Transition Database**, as `ITransitionDatabase`, holding every
+  named, such as Core's **`SubtractiveFade`**, and the two shaders Core's transitions draw with, set to Core's when the
+  config is made; and a **Transition Database**, as `ITransitionDatabase`, holding every
   transition a router, a script or a module names;
 - a **Dialogue Window UI Provider** (Create > RPG Framework > Dialogue);
 - an **`IAudioIntentPlayer`**;
@@ -212,8 +213,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
     in proportion to its own, and staying as it finished beneath those after it, as a flash before a wipe. It plays
     its own sound, not its stages'.
 
-  Your own derives from `TransitionAsset`: it builds what it draws in `Begin` and shows it as covered as the screen in
-  its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
+  Your own derives from `TransitionAsset`: it builds what it draws in `Begin`, in the context's `Host`, and shows it as
+  covered as the screen in its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
   owns the whole screen, so the change it covers is carried out beneath it at once. Black lies beneath a transition
   once the screen is fully covered, and beneath a captured frame, so a frame in which no camera renders never shows,
   as between one module's scene going and the next's loading. Transitions
@@ -221,6 +222,11 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   (`WithTransitions`), and `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
   screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover
   starting until the screen is clear.
+- **A module's own transitions**: a **`TransitionLayer`** plays the same transitions into an element of the module's
+  own, beneath its UI — Field fades the screen under its message windows with one — each from wherever the last left
+  it, with `Cut` to cover or clear at once. A **`ScreenColour`** takes a colour from everything beneath an element, or
+  adds one, live, drawn with the config's `ScreenColourShader`; it is what the Subtractive kind draws with, and needs
+  URP.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
   your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
   for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.

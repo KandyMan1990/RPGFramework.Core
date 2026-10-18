@@ -10,9 +10,9 @@ namespace RPGFramework.Core.Transitions
         [SerializeField]
         private Color m_Colour = Color.black;
 
-        protected internal override TransitionPlayback Begin(VisualElement host, Texture capturedFrame)
+        protected internal override TransitionPlayback Begin(TransitionContext context)
         {
-            VisualElement colour = AddFill(host, new VisualElement());
+            VisualElement colour = AddFill(context.Host, new VisualElement());
 
             colour.style.backgroundColor = m_Colour;
             colour.style.opacity         = 0f;

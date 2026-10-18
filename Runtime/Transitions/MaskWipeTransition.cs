@@ -27,11 +27,7 @@ namespace RPGFramework.Core.Transitions
         [Tooltip("How much of the mask's range the edge blends over: 0 is a hard edge")]
         private float m_Softness;
 
-        [SerializeField]
-        [HideInInspector]
-        private Shader m_Shader;
-
-        protected internal override TransitionPlayback Begin(VisualElement host, Texture capturedFrame)
+        protected internal override TransitionPlayback Begin(TransitionContext context)
         {
             FilterParameterDeclaration[] parameters =
             {
@@ -40,8 +36,8 @@ namespace RPGFramework.Core.Transitions
                 new FilterParameterDeclaration { name = "colour" }
             };
 
-            TransitionFilter wipe = new TransitionFilter("mask-wipe", m_Shader, parameters, ApplySettings);
-            VisualElement    mask = AddFill(host, new VisualElement());
+            TransitionFilter wipe = new TransitionFilter("mask-wipe", context.MaskWipeShader, parameters, ApplySettings);
+            VisualElement    mask = AddFill(context.Host, new VisualElement());
 
             mask.style.backgroundImage = new StyleBackground(m_Mask);
             mask.style.backgroundSize  = new BackgroundSize(Length.Percent(100f), Length.Percent(100f));
@@ -63,11 +59,6 @@ namespace RPGFramework.Core.Transitions
         }
 
 #if UNITY_EDITOR
-        private void Reset()
-        {
-            m_Shader = Shader.Find("Hidden/RPG Framework/Mask Wipe Transition");
-        }
-
         private void OnValidate()
         {
             if (m_Mask == null)

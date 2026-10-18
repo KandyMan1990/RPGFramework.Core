@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Transitions
 {
@@ -34,7 +33,7 @@ namespace RPGFramework.Core.Transitions
             }
         }
 
-        protected internal override TransitionPlayback Begin(VisualElement host, Texture capturedFrame)
+        protected internal override TransitionPlayback Begin(TransitionContext context)
         {
             TransitionPlayback[] playbacks = new TransitionPlayback[m_Stages.Length];
             float[]              ends      = new float[m_Stages.Length];
@@ -53,7 +52,7 @@ namespace RPGFramework.Core.Transitions
                 reached += stage.Seconds;
 
                 ends[i]      = seconds > 0f ? reached / seconds : (i + 1f) / m_Stages.Length;
-                playbacks[i] = stage.Begin(host, stage.CapturesFrame ? capturedFrame : null);
+                playbacks[i] = stage.Begin(stage.CapturesFrame ? context : context.WithoutFrame());
             }
 
             TransitionPlayback playback = new SequencePlayback(m_Stages, playbacks, ends);

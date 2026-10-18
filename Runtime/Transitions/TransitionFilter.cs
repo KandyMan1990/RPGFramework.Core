@@ -4,8 +4,8 @@ using UnityEngine.UIElements;
 namespace RPGFramework.Core.Transitions
 {
     /// <summary>
-    /// A UI Toolkit filter of one pass, made from a shader for one play of a transition and destroyed as it ends. The
-    /// pass's settings come from its callback, which sees the filter's parameters as they are.
+    /// A UI Toolkit filter of one pass, made from one of the config's shaders for as long as something draws with it,
+    /// and destroyed after. The pass's settings come from its callback, which sees the filter's parameters as they are.
     /// </summary>
     internal sealed class TransitionFilter
     {

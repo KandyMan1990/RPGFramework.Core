@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using RPGFramework.Audio;
 using RPGFramework.Core.Input;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -43,34 +42,24 @@ namespace RPGFramework.Core.Transitions
     // frame no camera renders, as when one module's scene has gone and the next's has not yet loaded.
     internal sealed class TransitionService : ITransitionService
     {
-        private readonly ITransitionConfig   m_Config;
-        private readonly ITransitionDatabase m_Database;
-        private readonly IInputLock          m_InputLock;
-        private readonly ISfxPlayer          m_SfxPlayer;
-        private readonly VisualElement       m_Host;
-        private readonly VisualElement       m_Backdrop;
+        private readonly IInputLock      m_InputLock;
+        private readonly VisualElement   m_Host;
+        private readonly VisualElement   m_Backdrop;
+        private readonly TransitionLayer m_Layer;
 
-        private TransitionPlayback m_Playback;
-        private Task               m_Covering;
-        private RenderTexture      m_Frame;
-        private float              m_Covered;
-        private int                m_Run;
+        private Task          m_Covering;
+        private RenderTexture m_Frame;
 
         public TransitionService(ITransitionConfig config, ITransitionDatabase database, IInputLock inputLock, ISfxPlayer sfxPlayer)
         {
-            m_Config    = config;
-            m_Database  = database;
             m_InputLock = inputLock;
-            m_SfxPlayer = sfxPlayer;
             m_Host      = CreateOverlay(config.PanelSettings);
             m_Backdrop  = CreateBackdrop(m_Host);
-            m_Playback  = config.DefaultCover.Begin(m_Host, null);
+            m_Layer     = new TransitionLayer(m_Host, config, database, sfxPlayer);
             m_Covering  = Task.CompletedTask;
             m_Frame     = null;
-            m_Covered   = 1f;
-            m_Run       = 0;
 
-            m_Playback.Show(1f);
+            m_Layer.Cut(0, true);
             m_InputLock.Lock();
         }
 
@@ -78,26 +67,21 @@ namespace RPGFramework.Core.Transitions
         {
             await m_Covering;
 
-            if (m_Covered <= 0f)
+            if (m_Layer.Covered <= 0f)
             {
                 return;
             }
 
-            TransitionAsset reveal = Find(transition, m_Config.DefaultReveal);
-            int             run    = ++m_Run;
+            Task<bool> revealing = m_Layer.RevealAsync(transition);
 
-            Begin(reveal, null);
             ClearBackdrop();
 
-            bool finished = await AnimateAsync(run, reveal, 0f);
+            bool finished = await revealing;
 
             if (!finished)
             {
                 return;
             }
-
-            m_Playback.End();
-            m_Playback = null;
 
             m_Host.pickingMode = PickingMode.Ignore;
             m_InputLock.Unlock();
@@ -105,34 +89,31 @@ namespace RPGFramework.Core.Transitions
 
         float ITransitionService.CoverSeconds(ulong transition)
         {
-            float seconds = Find(transition, m_Config.DefaultCover).Seconds;
+            float seconds = m_Layer.FindCover(transition).Seconds;
 
             return seconds;
         }
 
         async Task ITransitionService.CoverAsync(ulong transition)
         {
-            if (m_Covered >= 1f)
+            if (m_Layer.Covered >= 1f)
             {
                 return;
             }
 
-            if (m_Covered <= 0f)
+            if (m_Layer.Covered <= 0f)
             {
                 m_InputLock.Lock();
                 m_Host.pickingMode = PickingMode.Position;
             }
 
-            TransitionAsset cover = Find(transition, m_Config.DefaultCover);
-            int             run   = ++m_Run;
+            TransitionAsset cover = m_Layer.FindCover(transition);
 
             ClearBackdrop();
 
             if (!cover.CapturesFrame)
             {
-                Begin(cover, null);
-
-                bool covered = await AnimateAsync(run, cover, 1f);
+                bool covered = await m_Layer.PlayAsync(cover, 1f, null);
 
                 if (covered)
                 {
@@ -145,66 +126,7 @@ namespace RPGFramework.Core.Transitions
             m_Frame                  = await CaptureAsync();
             m_Backdrop.style.display = DisplayStyle.Flex;
 
-            Begin(cover, m_Frame);
-
-            m_Covering = AnimateAsync(run, cover, 1f);
-        }
-
-        private TransitionAsset Find(ulong transition, TransitionAsset fallback)
-        {
-            TransitionAsset found = transition == 0 ? fallback : m_Database.Get(transition);
-
-            return found;
-        }
-
-        // The new transition is drawn at the old one's amount before the old one goes, so the swap never shows what
-        // the screen was hiding.
-        private void Begin(TransitionAsset transition, Texture frame)
-        {
-            TransitionPlayback previous = m_Playback;
-
-            m_Playback = transition.Begin(m_Host, frame);
-            m_Playback.Show(m_Covered);
-
-            previous?.End();
-
-            if (transition.Sound != 0)
-            {
-                m_SfxPlayer.PlayAsync(transition.Sound).FireAndForget();
-            }
-        }
-
-        // False if another cover or reveal took over before it finished.
-        private async Task<bool> AnimateAsync(int run, TransitionAsset transition, float to)
-        {
-            float from     = m_Covered;
-            float duration = transition.Seconds * math.abs(to - from);
-            float elapsed  = 0f;
-
-            while (elapsed < duration)
-            {
-                elapsed = math.min(elapsed + Time.unscaledDeltaTime, duration);
-
-                SetCovered(math.lerp(from, to, transition.Evaluate(elapsed / duration)));
-
-                await Awaitable.NextFrameAsync();
-
-                if (run != m_Run)
-                {
-                    return false;
-                }
-            }
-
-            SetCovered(to);
-
-            return true;
-        }
-
-        private void SetCovered(float covered)
-        {
-            m_Covered = covered;
-
-            m_Playback.Show(covered);
+            m_Covering = m_Layer.PlayAsync(cover, 1f, m_Frame);
         }
 
         private void ClearBackdrop()

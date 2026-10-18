@@ -49,13 +49,12 @@ namespace RPGFramework.Core.Transitions
         protected internal virtual bool CapturesFrame => false;
 
         /// <summary>
-        /// Builds what this transition draws in <paramref name="host" />, which fills the screen: over
-        /// <paramref name="capturedFrame" />, upright, when it captures one, and null otherwise.
+        /// Builds what this transition draws in the context's host, over its captured frame when it captures one.
         /// </summary>
-        protected internal abstract TransitionPlayback Begin(VisualElement host, Texture capturedFrame);
+        protected internal abstract TransitionPlayback Begin(TransitionContext context);
 
         /// <summary>Adds an element filling <paramref name="host" />, which the pointer passes through.</summary>
-        private protected static T AddFill<T>(VisualElement host, T element) where T : VisualElement
+        internal static T AddFill<T>(VisualElement host, T element) where T : VisualElement
         {
             element.pickingMode    = PickingMode.Ignore;
             element.style.position = Position.Absolute;

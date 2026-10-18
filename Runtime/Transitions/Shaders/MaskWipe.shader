@@ -1,5 +1,6 @@
-// A UI Toolkit filter: takes _Subtract from each channel of its source and clamps at zero.
-Shader "Hidden/RPG Framework/Subtractive Transition"
+// A UI Toolkit filter over a greyscale mask: _Colour where the mask is below how covered the screen is, clear above,
+// blended over _Softness of the mask's range.
+Shader "Hidden/RPG Framework/Mask Wipe"
 {
     Properties
     {
@@ -29,19 +30,11 @@ Shader "Hidden/RPG Framework/Subtractive Transition"
 
             sampler2D _MainTex;
             float4    _MainTex_ST;
-            float4    _Subtract;
+            float4    _Colour;
+            float     _Covered;
+            float     _Softness;
             float     _ReadsGamma;
             float     _WritesGamma;
-
-            float3 ToGamma(float3 colour)
-            {
-                return float3(LinearToGammaSpaceExact(colour.r), LinearToGammaSpaceExact(colour.g), LinearToGammaSpaceExact(colour.b));
-            }
-
-            float3 ToLinear(float3 colour)
-            {
-                return float3(GammaToLinearSpaceExact(colour.r), GammaToLinearSpaceExact(colour.g), GammaToLinearSpaceExact(colour.b));
-            }
 
             Varyings Vertex(FilterVertexInput input)
             {
@@ -51,25 +44,27 @@ Shader "Hidden/RPG Framework/Subtractive Transition"
                 return output;
             }
 
-            // Subtracted in gamma space, where the amounts are authored, and written opaque, since the screen's alpha
-            // beneath can be anything.
+            // The threshold runs from 0 to 1 + softness, so nothing is covered at 0 and everything at 1, the edge
+            // included. Thresholded in gamma space, where the mask's greys are authored.
             half4 Fragment(Varyings input) : SV_Target
             {
-                float3 colour = saturate(tex2D(_MainTex, input.uv).rgb);
+                float mask = tex2D(_MainTex, input.uv).r;
 
                 if (_ReadsGamma < 0.5)
                 {
-                    colour = ToGamma(colour);
+                    mask = LinearToGammaSpaceExact(mask);
                 }
 
-                colour = max(colour - _Subtract.rgb, 0.0);
+                float softness = max(_Softness, 1.0 / 255.0);
+                float covered  = saturate((_Covered * (1.0 + softness) - mask) / softness) * _Colour.a;
+                float3 colour  = _Colour.rgb;
 
                 if (_WritesGamma < 0.5)
                 {
-                    colour = ToLinear(colour);
+                    colour = float3(GammaToLinearSpaceExact(colour.r), GammaToLinearSpaceExact(colour.g), GammaToLinearSpaceExact(colour.b));
                 }
 
-                return half4(colour, 1.0);
+                return half4(colour * covered, covered);
             }
             ENDCG
         }

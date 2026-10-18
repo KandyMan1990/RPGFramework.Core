@@ -37,5 +37,5 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  m_Sound: 0
   m_Colour: {r: 1, g: 1, b: 1, a: 1}
-  m_Shader: {fileID: 4800000, guid: 8be2b53566cb24932bec16a4bf45a819, type: 3}

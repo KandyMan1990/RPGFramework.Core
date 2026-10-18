@@ -23,11 +23,11 @@ namespace RPGFramework.Core.Transitions
 
         protected internal override bool CapturesFrame => m_CapturesFrame;
 
-        protected internal override TransitionPlayback Begin(VisualElement host, Texture capturedFrame)
+        protected internal override TransitionPlayback Begin(TransitionContext context)
         {
-            Image element = AddFill(host, new Image { image = capturedFrame, scaleMode = ScaleMode.StretchToFill });
+            Image element = AddFill(context.Host, new Image { image = context.CapturedFrame, scaleMode = ScaleMode.StretchToFill });
 
-            if (capturedFrame == null)
+            if (context.CapturedFrame == null)
             {
                 element.style.backgroundColor = Color.white;
             }
