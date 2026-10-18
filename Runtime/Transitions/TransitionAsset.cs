@@ -30,7 +30,8 @@ namespace RPGFramework.Core.Transitions
         /// <summary>What names it to a change, a script or a module's data: the hash of its asset's name.</summary>
         public ulong NameHash => Fnv1a64.Hash(name);
 
-        internal float Seconds => m_Seconds;
+        /// <summary>How long it takes, from clear to covered or back, for a transition timing its own motion.</summary>
+        protected internal float Seconds => m_Seconds;
 
         /// <summary>The name hash of the sound played as it starts; 0 for none.</summary>
         internal ulong Sound => m_Sound;

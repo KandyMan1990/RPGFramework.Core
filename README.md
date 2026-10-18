@@ -214,7 +214,7 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
     its own sound, not its stages'.
 
   Your own derives from `TransitionAsset`: it builds what it draws in `Begin`, in the context's `Host`, and shows it as
-  covered as the screen in its playback's `Show`. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
+  covered as the screen in its playback's `Show`; `Seconds` tells it how long it lasts, for motion it times itself. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
   owns the whole screen, so the change it covers is carried out beneath it at once. Black lies beneath a transition
   once the screen is fully covered, and beneath a captured frame, so a frame in which no camera renders never shows,
   as between one module's scene going and the next's loading. Transitions
