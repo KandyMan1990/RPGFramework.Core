@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using RPGFramework.Core.Data;
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.SharedTypes;
 using RPGFramework.Hashing;
-using UnityEngine;
 
 namespace RPGFramework.Core.SaveData
 {
@@ -64,27 +62,33 @@ namespace RPGFramework.Core.SaveData
         private const string SAVE_FILE_EXTENSION = ".sav";
         private const int    SAVE_INDEX_DIGITS   = 3;
 
-        private static readonly int     SAVE_FILE_NAME_LENGTH    = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS                  + SAVE_FILE_EXTENSION.Length;
-        internal static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX        + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
+        private static readonly int SAVE_FILE_NAME_LENGTH = SAVE_FILE_PREFIX.Length + SAVE_INDEX_DIGITS + SAVE_FILE_EXTENSION.Length;
+
+#if UNITY_EDITOR
+        internal static readonly string SAVE_FILE_SEARCH_PATTERN = SAVE_FILE_PREFIX + new string('?', SAVE_INDEX_DIGITS) + SAVE_FILE_EXTENSION;
+#endif
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IMemoryBankAccess              m_MemoryBankAccess;
         private readonly IMemoryService                 m_MemoryService;
         private readonly IVariableMap                   m_VariableMap;
+        private readonly ISaveStorage                   m_SaveStorage;
         private readonly ulong                          m_PersistentMemorySectionId;
         private readonly ulong                          m_PersistentLayoutSectionId;
         private readonly byte[]                         m_PersistentLayout;
 
-        private string m_CurrentPath;
+        private string m_CurrentFileName;
 
         public SaveDataService(IMemoryBankAccess memoryBankAccess,
                                IMemoryService    memoryService,
-                               IVariableMap      variableMap)
+                               IVariableMap      variableMap,
+                               ISaveStorage      saveStorage)
         {
             m_Sections                  = new Dictionary<ulong, SectionBlob>();
             m_MemoryBankAccess          = memoryBankAccess;
             m_MemoryService             = memoryService;
             m_VariableMap               = variableMap;
+            m_SaveStorage               = saveStorage;
             m_PersistentMemorySectionId = Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY);
             m_PersistentLayoutSectionId = Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT);
             m_PersistentLayout          = PersistentLayout.Write(variableMap);
@@ -93,9 +97,9 @@ namespace RPGFramework.Core.SaveData
         void ISaveDataService.BeginSave(string filename)
         {
             m_Sections.Clear();
-            m_CurrentPath = Path.Combine(Application.persistentDataPath, filename);
+            m_CurrentFileName = filename;
 
-            if (!File.Exists(m_CurrentPath))
+            if (!m_SaveStorage.Exists(filename))
             {
                 // A new save. The banks still hold the previous playthrough's state, so clear them
                 // rather than letting it leak into this one, then start every variable at its default.
@@ -108,7 +112,7 @@ namespace RPGFramework.Core.SaveData
                 return;
             }
 
-            SaveState state = ReadSave(m_CurrentPath, m_Sections, out byte[] bank);
+            SaveState state = ReadSave(filename, m_Sections, out byte[] bank);
 
             if (state != SaveState.Loadable)
             {
@@ -127,46 +131,42 @@ namespace RPGFramework.Core.SaveData
 
         string ISaveDataService.GetCurrentSaveFileName()
         {
-            string filename = Path.GetFileName(m_CurrentPath);
+            string filename = m_CurrentFileName;
 
             return filename;
         }
 
         void ISaveDataService.CommitSave(string filename)
         {
-            m_CurrentPath = Path.Combine(Application.persistentDataPath, filename);
+            m_CurrentFileName = filename;
 
             CapturePersistentMemory();
 
-            SectionFile.Write(m_CurrentPath, m_Sections);
+            m_SaveStorage.Write(filename, SectionFile.Write(m_Sections));
         }
 
         void ISaveDataService.DeleteSave(string filename)
         {
-            string path = Path.Combine(Application.persistentDataPath, filename);
-
-            File.Delete(path);
+            m_SaveStorage.Delete(filename);
         }
 
         SavePreview ISaveDataService.ReadPreview(string filename)
         {
-            string path = Path.Combine(Application.persistentDataPath, filename);
+            SaveState state = ReadSave(filename, new Dictionary<ulong, SectionBlob>(), out byte[] bank);
 
-            SaveState state = ReadSave(path, new Dictionary<ulong, SectionBlob>(), out byte[] bank);
-
-            SavePreview preview = new SavePreview(filename, File.GetLastWriteTime(path), bank, m_VariableMap, state);
+            SavePreview preview = new SavePreview(filename, m_SaveStorage.GetLastWriteTime(filename), bank, m_VariableMap, state);
 
             return preview;
         }
 
         string[] ISaveDataService.GetListOfSaveFiles()
         {
-            FileInfo[] candidates = new DirectoryInfo(Application.persistentDataPath).GetFiles(SAVE_FILE_SEARCH_PATTERN);
-            int        count      = 0;
+            string[] candidates = m_SaveStorage.GetFileNames();
+            int      count      = 0;
 
             for (int i = 0; i < candidates.Length; i++)
             {
-                if (TryGetSaveSlotIndex(candidates[i].Name, out byte _))
+                if (TryGetSaveSlotIndex(candidates[i], out byte _))
                 {
                     count++;
                 }
@@ -177,9 +177,9 @@ namespace RPGFramework.Core.SaveData
 
             for (int i = 0; i < candidates.Length; i++)
             {
-                if (TryGetSaveSlotIndex(candidates[i].Name, out byte _))
+                if (TryGetSaveSlotIndex(candidates[i], out byte _))
                 {
-                    filenames[next++] = candidates[i].Name;
+                    filenames[next++] = candidates[i];
                 }
             }
 
@@ -212,19 +212,15 @@ namespace RPGFramework.Core.SaveData
             return filename;
         }
 
-        private static HashSet<byte> GetUsedSaveSlotIndices()
+        private HashSet<byte> GetUsedSaveSlotIndices()
         {
-            DirectoryInfo directoryInfo = new DirectoryInfo(Application.persistentDataPath);
-
             HashSet<byte> usedIndices = new HashSet<byte>();
 
-            FileInfo[] files = directoryInfo.GetFiles(SAVE_FILE_SEARCH_PATTERN);
+            string[] files = m_SaveStorage.GetFileNames();
 
             for (int i = 0; i < files.Length; i++)
             {
-                FileInfo file = files[i];
-
-                if (TryGetSaveSlotIndex(file.Name, out byte index))
+                if (TryGetSaveSlotIndex(files[i], out byte index))
                 {
                     usedIndices.Add(index);
                 }
@@ -284,9 +280,9 @@ namespace RPGFramework.Core.SaveData
         /// or from a newer version cannot be loaded, and its bank holds the map's defaults, so a preview of it still
         /// reads.
         /// </summary>
-        private SaveState ReadSave(string path, Dictionary<ulong, SectionBlob> sections, out byte[] bank)
+        private SaveState ReadSave(string filename, Dictionary<ulong, SectionBlob> sections, out byte[] bank)
         {
-            SectionFileStatus file = SectionFile.Read(path, sections);
+            SectionFileStatus file = SectionFile.Read(m_SaveStorage.Read(filename), sections);
 
             if (file != SectionFileStatus.Intact)
             {

@@ -4,6 +4,7 @@ using RPGFramework.Core.Databases;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.UI;
 using RPGFramework.Core.Input;
+using RPGFramework.Core.PlayerLoop;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.Settings;
 using RPGFramework.Core.SharedTypes;
@@ -202,6 +203,7 @@ namespace RPGFramework.Core
             container.BindInterfacesToSelfSingleton<InputRouter>();
             container.BindSingleton<ITransitionService, TransitionService>();
 
+            container.BindSingletonFromInstance<ISaveStorage>(new FileSaveStorage(Application.persistentDataPath));
             container.BindSingleton<ISaveDataService, SaveDataService>();
             container.BindSingleton<ISettingsService, SettingsService>();
             container.BindInterfacesToSelfSingleton<MemoryService>();
@@ -215,6 +217,7 @@ namespace RPGFramework.Core
             container.BindSingleton<IBattleMusicStore, BattleMusicStore>();
             container.BindSingleton<IMusicVolumeStore, MusicVolumeStore>();
             container.BindSingleton<IPausedMusicStore, PausedMusicStore>();
+            container.BindSingleton<IFrameClock, UnityFrameClock>();
             container.BindSingleton<IPlayTimeStore, PlayTimeCounter>();
         }
     }

@@ -1,7 +1,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
 using RPGFramework.Hashing;
 
@@ -30,7 +29,7 @@ namespace RPGFramework.Core.SaveData
     /// everything after it — then a section count, a table of contents giving each section's id hash, version, offset
     /// and size, then each section's bytes. A section is found by its id, so a section nothing reads is carried through
     /// a rewrite rather than lost. A file without the magic number was written before the header existed, and starts
-    /// at its section count.
+    /// at its section count. The format only: where a file is kept is the <see cref="ISaveStorage" />'s.
     /// </summary>
     internal static class SectionFile
     {
@@ -38,15 +37,12 @@ namespace RPGFramework.Core.SaveData
         private const ushort CONTAINER_VERSION = 1;
         private const int    HEADER_SIZE       = sizeof(uint) + sizeof(ushort) + sizeof(ulong);
         private const int    TOC_ENTRY_SIZE    = sizeof(ulong) + sizeof(uint) + sizeof(int) + sizeof(int);
-        private const string TEMPORARY_SUFFIX  = ".tmp";
 
         /// <summary>
-        /// Every section of the file at <paramref name="path" />, or none if it is not intact.
+        /// Every section of the file, or none if it is not intact.
         /// </summary>
-        internal static SectionFileStatus Read(string path, Dictionary<ulong, SectionBlob> sections)
+        internal static SectionFileStatus Read(byte[] bytes, Dictionary<ulong, SectionBlob> sections)
         {
-            byte[] bytes = File.ReadAllBytes(path);
-
             SectionFileStatus status = Parse(bytes, sections);
 
             if (status != SectionFileStatus.Intact)
@@ -57,28 +53,8 @@ namespace RPGFramework.Core.SaveData
             return status;
         }
 
-        /// <summary>
-        /// Written to a temporary file and then moved over the old one, so a write cut short leaves the previous file
-        /// as it was.
-        /// </summary>
-        internal static void Write(string path, Dictionary<ulong, SectionBlob> sections)
-        {
-            byte[] bytes     = Build(sections);
-            string temporary = path + TEMPORARY_SUFFIX;
-
-            File.WriteAllBytes(temporary, bytes);
-
-            if (File.Exists(path))
-            {
-                File.Replace(temporary, path, null);
-            }
-            else
-            {
-                File.Move(temporary, path);
-            }
-        }
-
-        private static byte[] Build(Dictionary<ulong, SectionBlob> sections)
+        /// <summary>The file holding every section.</summary>
+        internal static byte[] Write(Dictionary<ulong, SectionBlob> sections)
         {
             int length = HEADER_SIZE + sizeof(int) + TOC_ENTRY_SIZE * sections.Count;
 

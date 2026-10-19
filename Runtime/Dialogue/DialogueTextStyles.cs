@@ -61,11 +61,9 @@ namespace RPGFramework.Core.Dialogue
         internal Color  Colour => m_Colour;
         internal bool   Blink  => m_Blink;
 
-        internal DialogueTextStyle(string name, Color colour, bool blink)
+        // Unity makes these from the styles asset; nothing else does.
+        private DialogueTextStyle()
         {
-            m_Name   = name;
-            m_Colour = colour;
-            m_Blink  = blink;
         }
     }
 }

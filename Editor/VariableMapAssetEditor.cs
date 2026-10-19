@@ -348,7 +348,7 @@ namespace RPGFramework.Core.Editor
             bool   nameTaken = hasName && m_IMap.TryGetVariable(name, out VariableDefinition _);
 
             string fieldProblem = record ? FindPendingFieldProblem(fields) : null;
-            bool   blocked      = nameTaken || count < 1 || (hasName && !VariableMapAsset.IsScriptName(name)) || fieldProblem != null;
+            bool   blocked      = nameTaken || count < 1 || (hasName && !VariableMapValidation.IsScriptName(name)) || fieldProblem != null;
 
             string problem = null;
 
@@ -356,7 +356,7 @@ namespace RPGFramework.Core.Editor
             {
                 problem = $"'{name}' is already declared in this map.";
             }
-            else if (hasName && !VariableMapAsset.IsScriptName(name))
+            else if (hasName && !VariableMapValidation.IsScriptName(name))
             {
                 problem = "Scripts name variables in text, so use letters, digits and underscores, not starting with a digit.";
             }
@@ -387,7 +387,7 @@ namespace RPGFramework.Core.Editor
             {
                 VariableRecordField field = fields[i];
 
-                if (!VariableMapAsset.IsScriptName(field.Name))
+                if (!VariableMapValidation.IsScriptName(field.Name))
                 {
                     problem = $"The field '{field.Name}' needs a name scripts can use: letters, digits and underscores, not starting with a digit.";
                 }

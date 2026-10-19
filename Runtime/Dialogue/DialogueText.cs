@@ -7,7 +7,7 @@ namespace RPGFramework.Core.Dialogue
     /// A page of dialogue with its markup resolved: the characters shown, and by character position, what colour
     /// they are, which blink, and where the typing pauses. See <see cref="DialogueMarkup" />.
     /// </summary>
-    public sealed class DialogueText
+    internal sealed class DialogueText
     {
         public  string                          Text   { get; }
         public  IReadOnlyList<DialoguePause>    Pauses { get; }
@@ -90,7 +90,7 @@ namespace RPGFramework.Core.Dialogue
     /// <summary>
     /// Typing stops for <see cref="Seconds" /> once <see cref="Index" /> characters are showing.
     /// </summary>
-    public readonly struct DialoguePause
+    internal readonly struct DialoguePause
     {
         public readonly int   Index;
         public readonly float Seconds;

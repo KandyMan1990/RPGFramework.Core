@@ -235,6 +235,19 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 
 ---
 
+## Tests
+
+Core's tests are in `Tests/Editor`, on Unity's Test Framework. They compile only in a project that lists Core as
+testable, so a game that doesn't builds none of them. To run them, add Core to `testables` in `Packages/manifest.json`:
+
+```json
+"testables": [
+  "com.rpgframework.core"
+]
+```
+
+then open **Window › General › Test Runner** and run the **EditMode** tests.
+
 ## Not in this version
 
 - **Controls can't be rebound**, and there are no named actions above the fixed controls.

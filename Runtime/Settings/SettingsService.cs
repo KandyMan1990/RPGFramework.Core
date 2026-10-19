@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
 using RPGFramework.Core.SaveData;
-using UnityEngine;
 
 namespace RPGFramework.Core.Settings
 {
@@ -53,16 +51,16 @@ namespace RPGFramework.Core.Settings
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
         private readonly IDefaultSettings               m_DefaultSettings;
-        private readonly string                         m_Path;
+        private readonly ISaveStorage                   m_SaveStorage;
 
         private bool m_Loaded;
         private bool m_IsSaved;
 
-        public SettingsService(IDefaultSettings defaultSettings)
+        public SettingsService(IDefaultSettings defaultSettings, ISaveStorage saveStorage)
         {
             m_Sections        = new Dictionary<ulong, SectionBlob>();
             m_DefaultSettings = defaultSettings;
-            m_Path            = Path.Combine(Application.persistentDataPath, SETTINGS_FILE_NAME);
+            m_SaveStorage     = saveStorage;
         }
 
         bool ISettingsService.IsSaved
@@ -95,7 +93,7 @@ namespace RPGFramework.Core.Settings
         {
             EnsureLoaded();
 
-            SectionFile.Write(m_Path, m_Sections);
+            m_SaveStorage.Write(SETTINGS_FILE_NAME, SectionFile.Write(m_Sections));
 
             m_IsSaved = true;
         }
@@ -112,7 +110,7 @@ namespace RPGFramework.Core.Settings
 
             m_DefaultSettings.Populate(this);
 
-            if (!File.Exists(m_Path))
+            if (!m_SaveStorage.Exists(SETTINGS_FILE_NAME))
             {
                 return;
             }
@@ -120,7 +118,7 @@ namespace RPGFramework.Core.Settings
             Dictionary<ulong, SectionBlob> saved = new Dictionary<ulong, SectionBlob>();
 
             // A damaged file, or one in a newer format, is a first launch: the defaults stand until the player commits.
-            if (SectionFile.Read(m_Path, saved) != SectionFileStatus.Intact)
+            if (SectionFile.Read(m_SaveStorage.Read(SETTINGS_FILE_NAME), saved) != SectionFileStatus.Intact)
             {
                 return;
             }
@@ -135,7 +133,7 @@ namespace RPGFramework.Core.Settings
         /// shape the game writes it now — the same version and size — so one a later build changed, or added, starts at
         /// its default rather than being read as something it is not. One the game no longer writes is carried through.
         /// </summary>
-        internal static void TakeSaved(Dictionary<ulong, SectionBlob> sections, Dictionary<ulong, SectionBlob> saved)
+        private static void TakeSaved(Dictionary<ulong, SectionBlob> sections, Dictionary<ulong, SectionBlob> saved)
         {
             foreach (KeyValuePair<ulong, SectionBlob> section in saved)
             {

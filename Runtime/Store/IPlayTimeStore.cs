@@ -1,7 +1,6 @@
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.PlayerLoop;
 using RPGFramework.Core.SharedTypes;
-using UnityEngine;
 
 namespace RPGFramework.Core.Store
 {
@@ -31,16 +30,18 @@ namespace RPGFramework.Core.Store
     internal sealed class PlayTimeCounter : IPlayTimeStore, IUpdatable
     {
         private readonly IMemoryService m_MemoryService;
+        private readonly IFrameClock    m_FrameClock;
         private readonly ushort         m_Address;
 
         private float m_Fraction;
         private bool  m_Counting;
 
-        public PlayTimeCounter(IMemoryService memoryService, IVariableMap variableMap)
+        public PlayTimeCounter(IMemoryService memoryService, IVariableMap variableMap, IFrameClock frameClock)
         {
             variableMap.TryGetVariable(CoreVariables.PLAY_TIME, out VariableDefinition playTime);
 
             m_MemoryService = memoryService;
+            m_FrameClock    = frameClock;
             m_Address       = (ushort)playTime.Offset;
             m_Fraction      = 0f;
             m_Counting      = false;
@@ -83,7 +84,7 @@ namespace RPGFramework.Core.Store
 
         void IUpdatable.Update()
         {
-            Advance(Time.unscaledDeltaTime);
+            Advance(m_FrameClock.UnscaledDeltaTime);
         }
 
         private void Advance(float deltaTime)
