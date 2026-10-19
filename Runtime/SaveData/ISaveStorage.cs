@@ -3,9 +3,8 @@ using System;
 namespace RPGFramework.Core.SaveData
 {
     /// <summary>
-    /// Where the save and settings files are kept: the player's data folder on a desktop, and on a console the
-    /// platform's own save storage, which item 117 will let a platform supply. Files are named, side by side, and
-    /// written whole.
+    /// Where the save and settings files are kept: the player's data folder on a desktop, or a platform's own save
+    /// storage. Files are named, side by side, and written whole.
     /// </summary>
     internal interface ISaveStorage
     {
