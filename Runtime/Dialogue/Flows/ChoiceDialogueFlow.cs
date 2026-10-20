@@ -5,7 +5,7 @@ using RPGFramework.Core.Dialogue.UI;
 
 namespace RPGFramework.Core.Dialogue.Flows
 {
-    public class ChoiceDialogueFlow : IDialogueFlow
+    public sealed class ChoiceDialogueFlow : IDialogueFlow
     {
         async Task IDialogueFlow.RunAsync(IDialogueWindowUI uiInstance, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {

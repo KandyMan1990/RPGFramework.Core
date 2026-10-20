@@ -24,7 +24,7 @@ namespace RPGFramework.Core
         }
     }
 
-    internal class CoreModule : ICoreModule, IModuleHost
+    internal sealed class CoreModule : ICoreModule, IModuleHost
     {
         private readonly IDIContainer         m_GlobalContainer;
         private readonly ModuleStack          m_Modules;

@@ -8,7 +8,7 @@ namespace RPGFramework.Core.UI
     /// click or a submit. Its neighbours say where each direction takes the cursor in a <see cref="SelectionScope" />.
     /// </summary>
     [UxmlElement]
-    public partial class RPGUIButton : VisualElement
+    public sealed partial class RPGUIButton : VisualElement
     {
         /// <summary>A click on the button, or a submit while it has focus.</summary>
         public event Action Chosen;
