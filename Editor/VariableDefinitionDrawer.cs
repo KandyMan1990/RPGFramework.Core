@@ -112,20 +112,16 @@ namespace RPGFramework.Core.Editor
                 return;
             }
 
-            if (VariableDefaultFields.TryGet(name, out IVariableDefaultField field))
-            {
-                slot.Add(field.Create(variable));
-                return;
-            }
+            // A package's picker stands for the whole variable, so an array with one sets no element apart.
+            VariableValueField field = new VariableValueField(count <= 1 ? LABEL : ARRAY_LABEL, width, defaultValue.ulongValue, bits => Write(defaultValue, bits),
+                                                              name, new MapDefaults(variable.serializedObject));
 
-            if (count <= 1)
-            {
-                slot.Add(CreateTyped(defaultValue, width, LABEL));
-                return;
-            }
+            slot.Add(field);
 
-            slot.Add(CreateTyped(defaultValue, width, ARRAY_LABEL));
-            slot.Add(BuildElementDefaults(variable, width, count, rebuild));
+            if (count > 1 && !field.IsPicker)
+            {
+                slot.Add(BuildElementDefaults(variable, width, count, rebuild));
+            }
         }
 
         private static VisualElement BuildElementDefaults(SerializedProperty variable, VariableWidth width, int count, Action rebuild)
@@ -471,7 +467,7 @@ namespace RPGFramework.Core.Editor
 
                     VisualElement value = entry != null
                                               ? CreateTyped(entry.FindPropertyRelative(ELEMENT_VALUE), fieldWidth, label)
-                                              : CreateTyped(fallback, fieldWidth, label, bits => SetElementDefault(elementDefaults, record, fieldName, element, bits));
+                                              : new VariableValueField(label, fieldWidth, fallback, bits => SetElementDefault(elementDefaults, record, fieldName, element, bits));
 
                     box.Add(value);
                 }
@@ -631,75 +627,7 @@ namespace RPGFramework.Core.Editor
 
         private static VisualElement CreateTyped(SerializedProperty defaultValue, VariableWidth width, string label)
         {
-            VisualElement typed = CreateTyped(defaultValue.ulongValue, width, label, bits => Write(defaultValue, bits));
-
-            return typed;
-        }
-
-        private static VisualElement CreateTyped(ulong bits, VariableWidth width, string label, Action<ulong> write)
-        {
-            switch (width)
-            {
-                case VariableWidth.Bool:
-                {
-                    Toggle toggle = new Toggle(label) { value = VariableDefaults.ToBool(bits) };
-                    toggle.RegisterValueChangedCallback(e => write(VariableDefaults.FromBool(e.newValue)));
-
-                    return toggle;
-                }
-
-                case VariableWidth.Float:
-                {
-                    FloatField floatField = new FloatField(label) { value = VariableDefaults.ToFloat(bits) };
-                    floatField.RegisterValueChangedCallback(e => write(VariableDefaults.FromFloat(e.newValue)));
-
-                    return floatField;
-                }
-
-                case VariableWidth.ULong:
-                {
-                    UnsignedLongField ulongField = new UnsignedLongField(label) { value = bits };
-                    ulongField.RegisterValueChangedCallback(e => write(e.newValue));
-
-                    return ulongField;
-                }
-
-                default:
-                {
-                    (long min, long max) = GetRange(width);
-
-                    LongField longField = new LongField(label) { value = VariableDefaults.ToInteger(bits, width) };
-                    longField.RegisterValueChangedCallback(e =>
-                                                           {
-                                                               long clamped = e.newValue < min ? min : e.newValue > max ? max : e.newValue;
-
-                                                               if (clamped != e.newValue)
-                                                               {
-                                                                   longField.SetValueWithoutNotify(clamped);
-                                                               }
-
-                                                               write(VariableDefaults.FromInteger(clamped, width));
-                                                           });
-
-                    return longField;
-                }
-            }
-        }
-
-        private static (long min, long max) GetRange(VariableWidth width)
-        {
-            (long min, long max) range = width switch
-                                         {
-                                             VariableWidth.SByte  => (sbyte.MinValue, sbyte.MaxValue),
-                                             VariableWidth.Byte   => (byte.MinValue, byte.MaxValue),
-                                             VariableWidth.Short  => (short.MinValue, short.MaxValue),
-                                             VariableWidth.UShort => (ushort.MinValue, ushort.MaxValue),
-                                             VariableWidth.Int    => (int.MinValue, int.MaxValue),
-                                             VariableWidth.UInt   => (uint.MinValue, uint.MaxValue),
-                                             _                    => (long.MinValue, long.MaxValue)
-                                         };
-
-            return range;
+            return new VariableValueField(label, width, defaultValue.ulongValue, bits => Write(defaultValue, bits));
         }
 
         public static void Write(SerializedProperty defaultValue, ulong bits)

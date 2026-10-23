@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using RPGFramework.Core.Memory;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,10 +14,9 @@ namespace RPGFramework.Core.Editor
     {
         string IVariableDefaultField.VariableName => CoreVariables.CURRENT_MODULE;
 
-        VisualElement IVariableDefaultField.Create(SerializedProperty variable)
+        VisualElement IVariableDefaultField.Create(ulong value, Action<ulong> write, IVariableValueContext context)
         {
-            SerializedProperty defaultValue = variable.FindPropertyRelative(VariableDefinitionDrawer.DEFAULT_VALUE);
-            IStartModule[]     modules      = RequiredVariables.FindStartModules();
+            IStartModule[] modules = RequiredVariables.FindStartModules();
 
             if (modules.Length == 0)
             {
@@ -33,7 +32,7 @@ namespace RPGFramework.Core.Editor
             {
                 names.Add(modules[i].ModuleName);
 
-                if (modules[i].ModuleId == (byte)defaultValue.ulongValue)
+                if (modules[i].ModuleId == (byte)value)
                 {
                     chosen = i;
                 }
@@ -43,10 +42,10 @@ namespace RPGFramework.Core.Editor
 
             if (chosen < 0)
             {
-                field.SetValueWithoutNotify($"Module {defaultValue.ulongValue}");
+                field.SetValueWithoutNotify($"Module {value}");
             }
 
-            field.RegisterValueChangedCallback(e => VariableDefinitionDrawer.Write(defaultValue, modules[names.IndexOf(e.newValue)].ModuleId));
+            field.RegisterValueChangedCallback(e => write(modules[names.IndexOf(e.newValue)].ModuleId));
 
             return field;
         }

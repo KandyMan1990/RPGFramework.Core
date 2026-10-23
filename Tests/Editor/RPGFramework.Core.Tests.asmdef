@@ -3,6 +3,7 @@
     "rootNamespace": "RPGFramework.Core.Tests",
     "references": [
         "RPGFramework.Core",
+        "RPGFramework.Core.Editor",
         "RPGFramework.Core.SharedTypes",
         "RPGFramework.DI",
         "RPGFramework.Hashing"

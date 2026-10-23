@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using RPGFramework.Core.Memory;
 using RPGFramework.Hashing;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -15,14 +15,13 @@ namespace RPGFramework.Core.Editor
     {
         string IVariableDefaultField.VariableName => CoreVariables.BATTLE_MUSIC;
 
-        VisualElement IVariableDefaultField.Create(SerializedProperty variable)
+        VisualElement IVariableDefaultField.Create(ulong value, Action<ulong> write, IVariableValueContext context)
         {
-            SerializedProperty defaultValue = variable.FindPropertyRelative(VariableDefinitionDrawer.DEFAULT_VALUE);
-            List<string>       names        = ProviderNames.Music();
+            List<string> names = ProviderNames.Music();
 
             names.Insert(0, ProviderNames.NONE);
 
-            int chosen = defaultValue.ulongValue == 0 ? 0 : ProviderNames.IndexOfHash(names, defaultValue.ulongValue);
+            int chosen = value == 0 ? 0 : ProviderNames.IndexOfHash(names, value);
 
             DropdownField field = new DropdownField("Battle music", names, Mathf.Max(0, chosen));
 
@@ -31,7 +30,7 @@ namespace RPGFramework.Core.Editor
                 field.SetValueWithoutNotify(string.Empty);
             }
 
-            field.RegisterValueChangedCallback(e => VariableDefinitionDrawer.Write(defaultValue, names.IndexOf(e.newValue) == 0 ? 0UL : Fnv1a64.Hash(e.newValue)));
+            field.RegisterValueChangedCallback(e => write(names.IndexOf(e.newValue) == 0 ? 0UL : Fnv1a64.Hash(e.newValue)));
 
             return field;
         }

@@ -204,7 +204,7 @@ namespace RPGFramework.Core
             container.BindSingleton<ITransitionService, TransitionService>();
 
             container.BindSingletonFromInstance<ISaveStorage>(new FileSaveStorage(Application.persistentDataPath));
-            container.BindSingleton<ISaveDataService, SaveDataService>();
+            container.BindInterfacesToSelfSingleton<SaveDataService>();
             container.BindSingleton<ISettingsService, SettingsService>();
             container.BindInterfacesToSelfSingleton<MemoryService>();
 
