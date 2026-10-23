@@ -6,6 +6,9 @@ using UnityEngine.InputSystem;
 namespace RPGFramework.Core.Input
 {
     public sealed class InputAdapter : MonoBehaviour
+#if ENABLE_RPG_FRAMEWORK_DEBUG
+        , IDebugHeldControls
+#endif
     {
         private static readonly int m_SlotCount = Enum.GetValues(typeof(ControlSlot)).Length;
 
@@ -127,6 +130,16 @@ namespace RPGFramework.Core.Input
             m_Actions[(int)ControlSlot.Start]         = ReadAction(m_Start);
             m_Actions[(int)ControlSlot.Select]        = ReadAction(m_Select);
         }
+
+#if ENABLE_RPG_FRAMEWORK_DEBUG
+        // The actions are enabled only while input is on.
+        bool IDebugHeldControls.IsHeld(ControlSlot slot)
+        {
+            InputAction action = m_Subscribed ? m_Actions[(int)slot] : null;
+
+            return action != null && action.IsPressed();
+        }
+#endif
 
         private static InputAction ReadAction(InputActionReference reference)
         {
