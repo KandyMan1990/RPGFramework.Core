@@ -8,10 +8,10 @@ namespace RPGFramework.Core.Memory
     /// carries any width — a flag, a float or a field name's hash. These convert it to and from the value an
     /// author means, and put a map's defaults into memory when a game begins.
     /// </summary>
-    public static class VariableDefaults
+    internal static class VariableDefaults
     {
 #if UNITY_EDITOR
-        public static ulong FromInteger(long value, VariableWidth width)
+        internal static ulong FromInteger(long value, VariableWidth width)
         {
             ulong bits = (ulong)value & Mask(width);
 
@@ -25,7 +25,7 @@ namespace RPGFramework.Core.Memory
             return bits;
         }
 
-        public static ulong FromFloat(float value)
+        internal static ulong FromFloat(float value)
         {
             ulong bits = (uint)BitConverter.SingleToInt32Bits(value);
 
@@ -35,7 +35,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>
         /// The value of a signed or unsigned integer width, sign-extended for the signed ones.
         /// </summary>
-        public static long ToInteger(ulong bits, VariableWidth width)
+        internal static long ToInteger(ulong bits, VariableWidth width)
         {
             int   shift = 64 - width.GetByteCount() * 8;
             ulong value = bits & Mask(width);

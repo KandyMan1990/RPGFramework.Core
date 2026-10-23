@@ -51,11 +51,9 @@ namespace RPGFramework.Core
     }
 
     /// <summary>
-    /// This service is used to read and write data to persistent and session memory.<br /><br />
-    /// <see cref="MemoryBank.Persistent" /> will be written to and loaded from the save file.<br /><br />
-    /// <see cref="MemoryBank.Session" /> will be temporary storage for use during the game session.<br /><br />
-    /// When creating the args object for the service, remember not to under allocate or overallocate too much memory.<br /><br />
-    /// Since persistent memory is stored in the save file, over allocating will bloat the save file.
+    /// The game's variables, read and written by address in a bank: <see cref="MemoryBank.Persistent" />, which a save
+    /// holds, and <see cref="MemoryBank.Session" />, which lasts until the game closes. Each value is held lowest byte
+    /// first, at the offset the variable map gives it.
     /// </summary>
     public interface IMemoryService
     {
@@ -96,20 +94,13 @@ namespace RPGFramework.Core
         void WriteUlong(MemoryBank bank, ushort address, ulong value);
     }
 
-    /// <summary>
-    /// This args object is used to determine how big the persistent and session memory arrays are in bytes.<br /><br />
-    /// Make sure they are big enough to handle the game but not so big that you overallocate memory for the game.
-    /// </summary>
+    /// <summary>How big the persistent and session banks are, in bytes: as much as the variable map lays out.</summary>
     public interface IMemoryServiceArgs
     {
-        /// <summary>
-        /// How many bytes will be available in the persistent array (new byte[PersistentBytes])
-        /// </summary>
+        /// <summary>The persistent bank's size, which every save holds whole.</summary>
         int PersistentBytes { get; }
 
-        /// <summary>
-        /// How many bytes will be available in the session array (new byte[SessionBytes])
-        /// </summary>
+        /// <summary>The session bank's size.</summary>
         int SessionBytes { get; }
     }
 

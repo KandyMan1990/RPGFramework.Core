@@ -4,8 +4,8 @@ namespace RPGFramework.Core.Audio
 {
     public readonly struct AudioIntentKey : IEquatable<AudioIntentKey>
     {
-        public readonly AudioIntent  Intent;
-        public readonly AudioContext Context;
+        public AudioIntent  Intent  { get; }
+        public AudioContext Context { get; }
 
         public AudioIntentKey(AudioIntent intent, AudioContext context)
         {

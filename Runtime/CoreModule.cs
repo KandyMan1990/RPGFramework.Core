@@ -52,7 +52,7 @@ namespace RPGFramework.Core
             Application.quitting += OnApplicationQuit;
         }
 
-        public static async Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
+        internal static async Task<ICoreModule> Create(GlobalInstallerBase globalInstaller, byte initialModuleId)
         {
             CoreModule core = new CoreModule(initialModuleId);
 
@@ -124,7 +124,7 @@ namespace RPGFramework.Core
             SetCurrentResolver(diContainer);
 
             IModule       module  = (IModule)m_CurrentResolver.Resolve(moduleType);
-            StackedModule stacked = new StackedModule(moduleId, module, scene, sceneContainer);
+            StackedModule stacked = new StackedModule(moduleId, module, scene, sceneContainer, diContainer);
 
             return stacked;
         }
@@ -143,7 +143,7 @@ namespace RPGFramework.Core
 
         void IModuleHost.MakeCurrent(StackedModule module)
         {
-            SetCurrentResolver((IDIResolver)module.Container);
+            SetCurrentResolver(module.Resolver);
         }
 
         Task IModuleHost.CoverAsync(ModuleChange change)
@@ -188,6 +188,8 @@ namespace RPGFramework.Core
 
         private void OnApplicationQuit()
         {
+            Application.quitting -= OnApplicationQuit;
+
             foreach (StackedModule module in m_Modules.Modules)
             {
                 module.Container.Dispose();

@@ -4,13 +4,13 @@ using UnityEditor;
 
 namespace RPGFramework.Core.Editor.Dialogue
 {
-    public static class DialogueEditorUtility
+    internal static class ProjectDialogueStyles
     {
         /// <summary>
         /// The styles dialogue uses in play: those on the project's dialogue window UI provider, or failing that the
         /// first styles asset in the project. Null when there are none.
         /// </summary>
-        public static DialogueTextStyles FindProjectTextStyles()
+        internal static DialogueTextStyles Find()
         {
             string[] guids = AssetDatabase.FindAssets($"t:{nameof(DialogueWindowUIProvider)}");
 

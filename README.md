@@ -231,7 +231,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
   for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.
 - **`UpdateManager`** ticks `IUpdatable` every frame and `IFixedUpdatable` every physics step, so a module owns its own
-  update and stops it by unregistering.
+  update and stops it by unregistering. A change asked for during a tick takes effect before the next, the last asked
+  for each standing, and registering twice ticks once.
 
 ---
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using RPGFramework.Core.SaveData;
 using UnityEditor;
@@ -67,12 +66,12 @@ namespace RPGFramework.Core.Editor
                 return Array.Empty<string>();
             }
 
-            List<string> files = new List<string>();
+            string[] settings = Directory.GetFiles(folder, SettingsService.SETTINGS_FILE_NAME + "*");
+            string[] saves    = Directory.GetFiles(folder, SaveDataService.SAVE_FILE_SEARCH_PATTERN + "*");
+            string[] found    = new string[settings.Length + saves.Length];
 
-            files.AddRange(Directory.GetFiles(folder, SettingsService.SETTINGS_FILE_NAME + "*"));
-            files.AddRange(Directory.GetFiles(folder, SaveDataService.SAVE_FILE_SEARCH_PATTERN + "*"));
-
-            string[] found = files.ToArray();
+            settings.CopyTo(found, 0);
+            saves.CopyTo(found, settings.Length);
 
             return found;
         }

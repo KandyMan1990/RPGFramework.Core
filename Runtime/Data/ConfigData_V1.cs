@@ -11,7 +11,9 @@ namespace RPGFramework.Core.Data
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct ConfigData_V1
     {
-        private fixed byte  Language[8];
+        private const int LANGUAGE_BYTES = 8;
+
+        private fixed byte  Language[LANGUAGE_BYTES];
         public        float MusicVolume;
         public        float SfxVolume;
         public        float BattleMessageSpeed;
@@ -23,7 +25,7 @@ namespace RPGFramework.Core.Data
             fixed (byte* ptr = Language)
             {
                 int length = 0;
-                while (length < 8 && ptr[length] != 0)
+                while (length < LANGUAGE_BYTES && ptr[length] != 0)
                 {
                     length++;
                 }
@@ -35,7 +37,7 @@ namespace RPGFramework.Core.Data
         public void SetLanguage(string value)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
-            if (bytes.Length > 8)
+            if (bytes.Length > LANGUAGE_BYTES)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), "The language string is too long.");
             }
@@ -45,7 +47,7 @@ namespace RPGFramework.Core.Data
                 Language[i] = bytes[i];
             }
 
-            for (int i = bytes.Length; i < 8; i++)
+            for (int i = bytes.Length; i < LANGUAGE_BYTES; i++)
             {
                 Language[i] = 0;
             }

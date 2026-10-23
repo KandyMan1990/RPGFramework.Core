@@ -105,7 +105,7 @@ namespace RPGFramework.Core.Memory
 
         private void EnsureLookup()
         {
-            if (m_ByName != null && m_ByName.Count == m_Variables.Length)
+            if (m_ByName != null)
             {
                 return;
             }
@@ -371,7 +371,7 @@ namespace RPGFramework.Core.Memory
         /// Authoring only. Every problem <see cref="VariableMapValidation" /> finds with this map, against the variables
         /// the framework requires and the modules a game can begin in. An empty list means the map is well formed.
         /// </summary>
-        public string[] Validate()
+        internal string[] Validate()
         {
             string[] problems = VariableMapValidation.Validate(m_Variables, m_LastVariableId, RequiredVariables.FindAll(), RequiredVariables.FindStartModules());
 

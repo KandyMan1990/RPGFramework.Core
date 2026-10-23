@@ -6,32 +6,21 @@ namespace RPGFramework.Core
 {
     public static class TaskExtensions
     {
-        public static void FireAndForget(this Task task, Action<Exception> onException = null, bool continueOnMainThread = false)
+        /// <summary>Lets the task run on without being awaited, logging an exception it ends with.</summary>
+        public static void FireAndForget(this Task task)
         {
-            _ = HandleTaskAsync(task, onException, continueOnMainThread);
+            _ = LogFailureAsync(task);
         }
 
-        private static async Task HandleTaskAsync(Task task, Action<Exception> onException, bool continueOnMainThread)
+        private static async Task LogFailureAsync(Task task)
         {
             try
             {
-                await task.ConfigureAwait(!continueOnMainThread);
+                await task;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                try
-                {
-                    onException?.Invoke(ex);
-                }
-                catch (Exception handlerEx)
-                {
-                    Debug.LogError($"FireAndForget exception handler threw: {handlerEx}");
-                }
-
-                if (onException == null)
-                {
-                    Debug.LogException(ex);
-                }
+                Debug.LogException(exception);
             }
         }
     }

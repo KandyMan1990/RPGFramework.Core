@@ -44,13 +44,15 @@ namespace RPGFramework.Core
         internal readonly IModule      Module;
         internal readonly Scene        Scene;
         internal readonly IDIContainer Container;
+        internal readonly IDIResolver  Resolver;
 
-        internal StackedModule(byte moduleId, IModule module, Scene scene, IDIContainer container)
+        internal StackedModule(byte moduleId, IModule module, Scene scene, IDIContainer container, IDIResolver resolver)
         {
             ModuleId  = moduleId;
             Module    = module;
             Scene     = scene;
             Container = container;
+            Resolver  = resolver;
         }
     }
 

@@ -168,7 +168,7 @@ namespace RPGFramework.Core.Dialogue
         /// <summary>
         /// Parse only to find mistakes, as the editor does when text arrives from a sheet.
         /// </summary>
-        public static string[] Validate(string source, IDialogueTextStyles styles)
+        internal static string[] Validate(string source, IDialogueTextStyles styles)
         {
             List<string> problems = new List<string>();
 

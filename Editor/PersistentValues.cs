@@ -59,21 +59,50 @@ namespace RPGFramework.Core.Editor
 
         private static PersistentValue[] LayOut(IVariableMap map)
         {
-            List<PersistentValue>             values    = new List<PersistentValue>();
             IReadOnlyList<VariableDefinition> variables = map.Variables;
+            int                               count     = 0;
 
             for (int i = 0; i < variables.Count; i++)
             {
                 if (variables[i].Bank == MemoryBank.Persistent)
                 {
-                    LayOut(variables[i], values);
+                    count += CountValues(variables[i]);
                 }
             }
 
-            return values.ToArray();
+            PersistentValue[] values = new PersistentValue[count];
+            int               next   = 0;
+
+            for (int i = 0; i < variables.Count; i++)
+            {
+                if (variables[i].Bank == MemoryBank.Persistent)
+                {
+                    next = LayOut(variables[i], values, next);
+                }
+            }
+
+            return values;
         }
 
-        private static void LayOut(VariableDefinition variable, List<PersistentValue> values)
+        private static int CountValues(VariableDefinition variable)
+        {
+            if (!variable.IsRecord)
+            {
+                return variable.Count;
+            }
+
+            int perRecord = 0;
+
+            for (int f = 0; f < variable.Fields.Count; f++)
+            {
+                perRecord += variable.Fields[f].Count;
+            }
+
+            return variable.Count * perRecord;
+        }
+
+        // Fills the variable's values from next, returning the index after its last.
+        private static int LayOut(VariableDefinition variable, PersistentValue[] values, int next)
         {
             for (int index = 0; index < variable.Count; index++)
             {
@@ -82,7 +111,7 @@ namespace RPGFramework.Core.Editor
 
                 if (!variable.IsRecord)
                 {
-                    values.Add(new PersistentValue(variable, element, index, null, 0, offset, variable.GetDefault(index)));
+                    values[next++] = new PersistentValue(variable, element, index, null, 0, offset, variable.GetDefault(index));
                     continue;
                 }
 
@@ -97,12 +126,14 @@ namespace RPGFramework.Core.Editor
                     {
                         string label = field.Count == 1 ? $"{element}.{field.Name}" : $"{element}.{field.Name}[{fieldIndex}]";
 
-                        values.Add(new PersistentValue(variable, label, index, field, fieldIndex, offset + fieldIndex * size, variable.GetDefault(index, field, fieldIndex)));
+                        values[next++] = new PersistentValue(variable, label, index, field, fieldIndex, offset + fieldIndex * size, variable.GetDefault(index, field, fieldIndex));
                     }
 
                     offset += field.ByteCount;
                 }
             }
+
+            return next;
         }
     }
 }

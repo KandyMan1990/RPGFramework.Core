@@ -54,27 +54,12 @@ namespace RPGFramework.Core
 
         byte IMemoryService.ReadByte(MemoryBank bank, ushort address)
         {
-            return bank switch
-                   {
-                       MemoryBank.Persistent => m_Persistent[address],
-                       MemoryBank.Session    => m_Session[address],
-                       _                     => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
-                   };
+            return GetBank(bank)[address];
         }
 
         void IMemoryService.WriteByte(MemoryBank bank, ushort address, byte value)
         {
-            switch (bank)
-            {
-                case MemoryBank.Persistent:
-                    m_Persistent[address] = value;
-                    break;
-                case MemoryBank.Session:
-                    m_Session[address] = value;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(bank), bank, null);
-            }
+            GetBank(bank)[address] = value;
         }
 
         bool IMemoryService.ReadBool(MemoryBank bank, ushort address)

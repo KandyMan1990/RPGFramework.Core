@@ -42,29 +42,7 @@ namespace RPGFramework.Core.Dialogue
 
         internal static string[] SplitPages(string dialogue)
         {
-            int count = 1;
-            int found = dialogue.IndexOf(NEW_PAGE_MARKER, StringComparison.Ordinal);
-
-            while (found >= 0)
-            {
-                count++;
-                found = dialogue.IndexOf(NEW_PAGE_MARKER, found + NEW_PAGE_MARKER.Length, StringComparison.Ordinal);
-            }
-
-            string[] pages = new string[count];
-            int      start = 0;
-
-            for (int i = 0; i < count - 1; i++)
-            {
-                int marker = dialogue.IndexOf(NEW_PAGE_MARKER, start, StringComparison.Ordinal);
-
-                pages[i] = dialogue.Substring(start, marker - start);
-                start    = marker + NEW_PAGE_MARKER.Length;
-            }
-
-            pages[count - 1] = dialogue.Substring(start);
-
-            return pages;
+            return dialogue.Split(NEW_PAGE_MARKER);
         }
 
         internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)

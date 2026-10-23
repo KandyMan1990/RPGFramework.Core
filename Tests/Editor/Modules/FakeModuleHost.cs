@@ -25,7 +25,7 @@ namespace RPGFramework.Core.Tests.Modules
         {
             m_Log.Add($"load {moduleId} {(alone ? "alone" : "beside")}");
 
-            StackedModule stacked = new StackedModule(moduleId, new FakeModule(moduleId, m_Log), default, null);
+            StackedModule stacked = new StackedModule(moduleId, new FakeModule(moduleId, m_Log), default, null, null);
 
             return Task.FromResult(stacked);
         }

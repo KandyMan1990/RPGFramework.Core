@@ -125,23 +125,36 @@ namespace RPGFramework.Core
 
         private static AudioListener[] ListenersIn(Scene scene)
         {
-            GameObject[]        roots     = scene.GetRootGameObjects();
-            List<AudioListener> listeners = new List<AudioListener>();
+            GameObject[]      roots = scene.GetRootGameObjects();
+            AudioListener[][] found = new AudioListener[roots.Length][];
+            int               count = 0;
 
             for (int i = 0; i < roots.Length; i++)
             {
-                AudioListener[] found = roots[i].GetComponentsInChildren<AudioListener>();
+                found[i] = roots[i].GetComponentsInChildren<AudioListener>();
 
-                for (int j = 0; j < found.Length; j++)
+                for (int j = 0; j < found[i].Length; j++)
                 {
-                    if (found[j].enabled)
+                    if (found[i][j].enabled)
                     {
-                        listeners.Add(found[j]);
+                        count++;
                     }
                 }
             }
 
-            AudioListener[] enabled = listeners.ToArray();
+            AudioListener[] enabled = new AudioListener[count];
+            int             next    = 0;
+
+            for (int i = 0; i < found.Length; i++)
+            {
+                for (int j = 0; j < found[i].Length; j++)
+                {
+                    if (found[i][j].enabled)
+                    {
+                        enabled[next++] = found[i][j];
+                    }
+                }
+            }
 
             return enabled;
         }

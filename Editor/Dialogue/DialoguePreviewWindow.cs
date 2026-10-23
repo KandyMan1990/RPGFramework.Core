@@ -44,7 +44,7 @@ namespace RPGFramework.Core.Editor.Dialogue
 
             if (m_Styles == null)
             {
-                m_Styles = DialogueEditorUtility.FindProjectTextStyles();
+                m_Styles = ProjectDialogueStyles.Find();
             }
 
             VisualElement root = rootVisualElement;
