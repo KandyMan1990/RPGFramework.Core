@@ -1,44 +1,43 @@
-using RPGFramework.Core.Audio;
+using System;
 using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.UI
 {
     /// <summary>
     /// A part of the UI the player moves a cursor through — a menu, a question's answers, a battle's commands. The
-    /// cursor moves only by its <see cref="RPGUIButton" />s' neighbours, the cursor sound plays as focus moves, and
-    /// while its input is off nothing in it reacts to keys, pads or the pointer. It starts off.
+    /// cursor moves only by its <see cref="RPGUIButton" />s' neighbours, each move the player makes is reported for the
+    /// logic behind it to sound, and while its input is off nothing in it reacts to keys, pads or the pointer. It starts
+    /// off.
     /// </summary>
     public sealed class SelectionScope
     {
-        private readonly VisualElement      m_Root;
-        private readonly IAudioIntentPlayer m_AudioIntentPlayer;
-        private readonly AudioContext       m_Context;
+        /// <summary>
+        /// The player moved the cursor to another button, by a direction or the pointer. Focus the code sets is not a
+        /// move.
+        /// </summary>
+        public event Action Moved;
+
+        private readonly VisualElement m_Root;
 
         private bool m_InputEnabled;
 
         // UI Toolkit moves focus by itself — along its own focus ring on a navigation key, to a button the pointer
         // enters or presses — so every event is taken at the root as it trickles down, before it reaches a button.
-        public SelectionScope(VisualElement root, IAudioIntentPlayer audioIntentPlayer, AudioContext context)
+        public SelectionScope(VisualElement root)
         {
-            m_Root              = root;
-            m_AudioIntentPlayer = audioIntentPlayer;
-            m_Context           = context;
-            m_InputEnabled      = false;
+            m_Root         = root;
+            m_InputEnabled = false;
 
             root.RegisterCallback<NavigationMoveEvent>(OnNavigationMove, TrickleDown.TrickleDown);
             root.RegisterCallback<NavigationSubmitEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
             root.RegisterCallback<NavigationCancelEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
-            root.RegisterCallback<PointerEnterEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
+            root.RegisterCallback<PointerEnterEvent>(OnPointerEnter, TrickleDown.TrickleDown);
             root.RegisterCallback<PointerDownEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
             root.RegisterCallback<ClickEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
             root.RegisterCallback<WheelEvent>(StopIfInputDisabled, TrickleDown.TrickleDown);
-            root.RegisterCallback<FocusInEvent>(OnFocusIn, TrickleDown.TrickleDown);
         }
 
-        /// <summary>
-        /// Starts or stops the scope reacting to the player. Focus set while it is off — a menu's default as it
-        /// opens — plays no sound.
-        /// </summary>
+        /// <summary>Starts or stops the scope reacting to the player.</summary>
         public void SetInputEnabled(bool enabled)
         {
             m_InputEnabled = enabled;
@@ -66,6 +65,25 @@ namespace RPGFramework.Core.UI
 
             next.Focus();
             evt.StopImmediatePropagation();
+
+            Moved?.Invoke();
+        }
+
+        // A button focuses itself as the pointer enters it, after this has seen the event on its way down.
+        private void OnPointerEnter(PointerEnterEvent evt)
+        {
+            if (!m_InputEnabled)
+            {
+                Stop(evt);
+                return;
+            }
+
+            RPGUIButton button = FindButton(evt.target as VisualElement);
+
+            if (button != null && button != m_Root.focusController.focusedElement)
+            {
+                Moved?.Invoke();
+            }
         }
 
         private void StopIfInputDisabled(EventBase evt)
@@ -73,14 +91,6 @@ namespace RPGFramework.Core.UI
             if (!m_InputEnabled)
             {
                 Stop(evt);
-            }
-        }
-
-        private void OnFocusIn(FocusInEvent evt)
-        {
-            if (m_InputEnabled)
-            {
-                m_AudioIntentPlayer.PlayAsync(AudioIntent.Navigate, m_Context).FireAndForget();
             }
         }
 

@@ -33,8 +33,8 @@ namespace RPGFramework.Core.Transitions
         /// <summary>How long it takes, from clear to covered or back, for a transition timing its own motion.</summary>
         protected internal float Seconds => m_Seconds;
 
-        /// <summary>The name hash of the sound played as it starts; 0 for none.</summary>
-        internal ulong Sound => m_Sound;
+        /// <summary>The name hash of the sound what starts it plays; 0 for none.</summary>
+        public ulong Sound => m_Sound;
 
         internal float Evaluate(float time)
         {

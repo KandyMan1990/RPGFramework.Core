@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using RPGFramework.Core.Dialogue.UI;
 using UnityEngine;
 
 namespace RPGFramework.Core.Dialogue
@@ -45,11 +44,11 @@ namespace RPGFramework.Core.Dialogue
             return dialogue.Split(NEW_PAGE_MARKER);
         }
 
-        internal static async Task RunPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
+        internal static async Task RunPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
         {
             Task closedTask = WhenClosed(close);
 
-            if (await TypePageAsync(uiInstance, dialoguePage, inputContext, closedTask))
+            if (await TypePageAsync(window, dialoguePage, inputContext, closedTask))
             {
                 return;
             }
@@ -61,37 +60,40 @@ namespace RPGFramework.Core.Dialogue
         /// A page asking a question, its choices set: answered by a confirm press, with the focused choice, or by a
         /// click or a submit on a choice.
         /// </summary>
-        internal static async Task RunQuestionPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
+        /// <returns>True once answered, false if the window was closed first.</returns>
+        internal static async Task<bool> RunQuestionPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
         {
             Task closedTask = WhenClosed(close);
 
-            if (await TypePageAsync(uiInstance, dialoguePage, inputContext, closedTask))
+            if (await TypePageAsync(window, dialoguePage, inputContext, closedTask))
             {
-                return;
+                return false;
             }
 
             Task confirmTask = inputContext.WaitForConfirmAsync();
-            Task completed   = await Task.WhenAny(confirmTask, uiInstance.WaitForChoiceAsync(), closedTask);
+            Task completed   = await Task.WhenAny(confirmTask, window.WaitForChoiceAsync(), closedTask);
 
             if (completed == confirmTask)
             {
-                uiInstance.ChooseFocusedChoice();
+                window.ChooseFocusedChoice();
             }
+
+            return completed != closedTask;
         }
 
         // A press while the page types finishes the typing rather than moving on. True if the window was closed.
-        private static async Task<bool> TypePageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, DialogueInputContext inputContext, Task closedTask)
+        private static async Task<bool> TypePageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, Task closedTask)
         {
-            uiInstance.SetText(dialoguePage);
+            window.SetText(dialoguePage);
 
-            Task animationTask = uiInstance.RunAsync();
+            Task animationTask = window.RunAsync();
             Task confirmTask   = inputContext.WaitForConfirmAsync();
 
             Task completed = await Task.WhenAny(animationTask, confirmTask, closedTask);
 
             if (completed != animationTask)
             {
-                uiInstance.SkipToAnimationEnd();
+                window.SkipToAnimationEnd();
                 await animationTask;
             }
 
@@ -100,16 +102,16 @@ namespace RPGFramework.Core.Dialogue
             return closed;
         }
 
-        internal static async Task RunUnansweredPageAsync(IDialogueWindowUI uiInstance, DialoguePage dialoguePage, CancellationToken close)
+        internal static async Task RunUnansweredPageAsync(IDialogueWindow window, DialoguePage dialoguePage, CancellationToken close)
         {
-            uiInstance.SetText(dialoguePage);
+            window.SetText(dialoguePage);
 
-            Task animationTask = uiInstance.RunAsync();
+            Task animationTask = window.RunAsync();
             Task closedTask    = WhenClosed(close);
 
             if (await Task.WhenAny(animationTask, closedTask) == closedTask)
             {
-                uiInstance.SkipToAnimationEnd();
+                window.SkipToAnimationEnd();
             }
 
             await animationTask;

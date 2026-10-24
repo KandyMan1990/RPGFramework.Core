@@ -1,80 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Dialogue.UI
 {
-    /// <summary>
-    /// What a dialogue window shows: its frame, its text typed out, and any choices. A flow drives it a page at a time.
-    /// </summary>
-    public interface IDialogueWindowUI
-    {
-        /// <summary>Shrinks the window shut and clears its text and choices.</summary>
-        Task AnimateWindowClosedAsync();
-
-        /// <summary>Grows the window open at its rect.</summary>
-        Task AnimateWindowOpenAsync();
-
-        /// <summary>Removes the window from the screen for good.</summary>
-        void Destroy();
-
-        /// <summary>The choice the player answered with, counting from 0.</summary>
-        byte GetSelectedChoice();
-
-        /// <summary>
-        /// Answers the question with the focused choice, as a confirm press does. A question is answered once.
-        /// </summary>
-        void ChooseFocusedChoice();
-
-        /// <summary>
-        /// Completes once the question is answered: a click or a submit on a choice, or
-        /// <see cref="ChooseFocusedChoice" />.
-        /// </summary>
-        Task WaitForChoiceAsync();
-
-        /// <summary>Builds the window, hidden, in the container, from the provider's layout.</summary>
-        void Init(VisualElement container);
-
-        /// <summary>
-        /// Types the page's text, then each choice in turn; done when everything is shown, the first choice focused and
-        /// the choices taking the cursor.
-        /// </summary>
-        Task RunAsync();
-
-        /// <summary>The answers the page offers, typed after its text; none for a page without a question.</summary>
-        void SetChoices(ReadOnlySpan<string> choices);
-
-        /// <summary>The values the text's variable markup shows, by index.</summary>
-        void SetMessageVariables(IReadOnlyList<int> variables);
-
-        /// <summary>
-        /// How fast the text types, as the player's message speed setting: 0 is half the authored speed, 0.5 the
-        /// authored speed and 1 double it.
-        /// </summary>
-        void SetMessageSpeed(float messageSpeed);
-
-        /// <summary>Where the window sits on screen, and how big it is when open.</summary>
-        void SetRect(RectInt rect);
-
-        /// <summary>Which look the window takes — spoken, thought, caption — as a USS class on it.</summary>
-        void SetStyle(DialogueWindowStyle style);
-
-        /// <summary>Shows a page, its speaker's name on the first line, ready to type.</summary>
-        void SetText(DialoguePage dialoguePage);
-
-        /// <summary>Finishes typing at once, as a press during it asks.</summary>
-        void SkipToAnimationEnd();
-    }
-
     /// <summary>
     /// The dialogue window's layout, the speeds it types and opens at, and the text styles, set by the game.
     /// </summary>
     public interface IDialogueWindowUIProvider
     {
         /// <summary>The layout a window of this kind is built from.</summary>
-        VisualTreeAsset Get<T>() where T : IDialogueWindowUI;
+        VisualTreeAsset Get<T>() where T : IDialogueWindow;
 
         /// <summary>How many characters a second the text types at the authored speed.</summary>
         float TextSpeed { get; }

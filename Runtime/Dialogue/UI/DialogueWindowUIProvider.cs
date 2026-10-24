@@ -24,8 +24,8 @@ namespace RPGFramework.Core.Dialogue.UI
         {
             m_Assets = new Dictionary<Type, VisualTreeAsset>
                        {
-                               { typeof(MyDialogueWindowUI), m_MyDialogueWindow },
-                               { typeof(MyDifferentDialogueWindowUI), m_MyDifferentDialogueWindow },
+                               { typeof(MyDialogueWindow), m_MyDialogueWindow },
+                               { typeof(MyDifferentDialogueWindow), m_MyDifferentDialogueWindow },
                        };
         }
 

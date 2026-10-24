@@ -46,6 +46,7 @@ namespace RPGFramework.Core.Transitions
         private readonly VisualElement   m_Host;
         private readonly VisualElement   m_Backdrop;
         private readonly TransitionLayer m_Layer;
+        private readonly ISfxPlayer      m_SfxPlayer;
 
         private Task          m_Covering;
         private RenderTexture m_Frame;
@@ -55,7 +56,8 @@ namespace RPGFramework.Core.Transitions
             m_InputLock = inputLock;
             m_Host      = CreateOverlay(config.PanelSettings);
             m_Backdrop  = CreateBackdrop(m_Host);
-            m_Layer     = new TransitionLayer(m_Host, config, database, sfxPlayer);
+            m_Layer     = new TransitionLayer(m_Host, config, database);
+            m_SfxPlayer = sfxPlayer;
             m_Covering  = Task.CompletedTask;
             m_Frame     = null;
 
@@ -72,7 +74,11 @@ namespace RPGFramework.Core.Transitions
                 return;
             }
 
-            Task<bool> revealing = m_Layer.RevealAsync(transition);
+            TransitionAsset reveal = m_Layer.FindReveal(transition);
+
+            PlaySound(reveal);
+
+            Task<bool> revealing = m_Layer.PlayAsync(reveal, 0f, null);
 
             ClearBackdrop();
 
@@ -113,6 +119,8 @@ namespace RPGFramework.Core.Transitions
 
             if (!cover.CapturesFrame)
             {
+                PlaySound(cover);
+
                 bool covered = await m_Layer.PlayAsync(cover, 1f, null);
 
                 if (covered)
@@ -126,7 +134,17 @@ namespace RPGFramework.Core.Transitions
             m_Frame                  = await CaptureAsync();
             m_Backdrop.style.display = DisplayStyle.Flex;
 
+            PlaySound(cover);
+
             m_Covering = m_Layer.PlayAsync(cover, 1f, m_Frame);
+        }
+
+        private void PlaySound(TransitionAsset transition)
+        {
+            if (transition.Sound != 0)
+            {
+                m_SfxPlayer.PlayAsync(transition.Sound).FireAndForget();
+            }
         }
 
         private void ClearBackdrop()

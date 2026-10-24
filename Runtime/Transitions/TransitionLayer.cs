@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using RPGFramework.Audio;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,14 +9,14 @@ namespace RPGFramework.Core.Transitions
     /// An element transitions play into, each from wherever the last left it. Core's overlay is one; a module makes its
     /// own for what belongs beneath its UI, as a field's scripts fade the screen under its message windows. A transition
     /// started during another takes over at its amount, drawn before the old one goes so the swap never shows what was
-    /// hidden, and plays its sound as it starts; one that has cleared the element is removed. On unscaled time.
+    /// hidden; one that has cleared the element is removed. On unscaled time. It plays no sound: what starts a transition
+    /// plays its sound, found through <see cref="FindCover" /> or <see cref="FindReveal" />.
     /// </summary>
     public sealed class TransitionLayer
     {
         private readonly VisualElement       m_Host;
         private readonly ITransitionConfig   m_Config;
         private readonly ITransitionDatabase m_Database;
-        private readonly ISfxPlayer          m_SfxPlayer;
 
         private TransitionPlayback m_Playback;
         private float              m_Covered;
@@ -25,17 +24,16 @@ namespace RPGFramework.Core.Transitions
 
         /// <summary>
         /// Plays into <paramref name="host" />, which transitions fill, finding them in the game's database and the
-        /// config's defaults, and playing their sounds through <paramref name="sfxPlayer" />. It starts clear.
+        /// config's defaults. It starts clear.
         /// </summary>
-        public TransitionLayer(VisualElement host, ITransitionConfig config, ITransitionDatabase database, ISfxPlayer sfxPlayer)
+        public TransitionLayer(VisualElement host, ITransitionConfig config, ITransitionDatabase database)
         {
-            m_Host      = host;
-            m_Config    = config;
-            m_Database  = database;
-            m_SfxPlayer = sfxPlayer;
-            m_Playback  = null;
-            m_Covered   = 0f;
-            m_Run       = 0;
+            m_Host     = host;
+            m_Config   = config;
+            m_Database = database;
+            m_Playback = null;
+            m_Covered  = 0f;
+            m_Run      = 0;
         }
 
         /// <summary>How covered it is: 0 clear, 1 covered entirely.</summary>
@@ -83,7 +81,8 @@ namespace RPGFramework.Core.Transitions
             Begin(FindCover(transition), null);
         }
 
-        internal TransitionAsset FindCover(ulong transition)
+        /// <summary>The cover <paramref name="transition" /> names, or the default cover for <c>0</c>.</summary>
+        public TransitionAsset FindCover(ulong transition)
         {
             TransitionAsset cover = transition == 0 ? m_Config.DefaultCover : m_Database.Get(transition);
 
@@ -96,17 +95,13 @@ namespace RPGFramework.Core.Transitions
 
             Begin(transition, capturedFrame);
 
-            if (transition.Sound != 0)
-            {
-                m_SfxPlayer.PlayAsync(transition.Sound).FireAndForget();
-            }
-
             Task<bool> playing = AnimateAsync(run, transition, to);
 
             return playing;
         }
 
-        private TransitionAsset FindReveal(ulong transition)
+        /// <summary>The reveal <paramref name="transition" /> names, or the default reveal for <c>0</c>.</summary>
+        public TransitionAsset FindReveal(ulong transition)
         {
             TransitionAsset reveal = transition == 0 ? m_Config.DefaultReveal : m_Database.Get(transition);
 

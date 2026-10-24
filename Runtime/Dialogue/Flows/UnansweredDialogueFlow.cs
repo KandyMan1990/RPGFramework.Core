@@ -1,6 +1,5 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using RPGFramework.Core.Dialogue.UI;
 
 namespace RPGFramework.Core.Dialogue.Flows
 {
@@ -13,7 +12,7 @@ namespace RPGFramework.Core.Dialogue.Flows
     /// </summary>
     public sealed class UnansweredDialogueFlow : IDialogueFlow
     {
-        async Task IDialogueFlow.RunAsync(IDialogueWindowUI uiInstance, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
+        async Task IDialogueFlow.RunAsync(IDialogueWindow window, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
             for (int i = 0; i < dialogues.Length; i++)
             {
@@ -21,7 +20,7 @@ namespace RPGFramework.Core.Dialogue.Flows
 
                 DialoguePage page = DialogueUtils.ParseIntoPages(DialogueUtils.JoinPages(dialogue)).Pages[0];
 
-                await DialogueUtils.RunUnansweredPageAsync(uiInstance, page, close);
+                await DialogueUtils.RunUnansweredPageAsync(window, page, close);
             }
         }
     }

@@ -164,8 +164,9 @@ first launch. A game can add sections of its own.
   fades, so a press during a change of module does nothing.
 - **`SelectionScope`** is for UI Toolkit screens you build yourself, such as a battle's commands. Over a root element,
   it moves the cursor only between **`RPGUIButton`s' neighbours** (link them with `RPGUIButton.LinkColumn` and
-  `LinkRow`), by key, pad or pointer alike, plays the cursor sound as focus moves, and while its input is off lets
-  nothing in it react at all. A button's `Chosen` is a click or a submit.
+  `LinkRow`), by key, pad or pointer alike, and while its input is off lets nothing in it react at all. It plays no
+  sound: it raises `Moved` when the player moves the cursor, for your logic to play the cursor sound — focus your code
+  sets is not a move. A button's `Chosen` is a click or a submit.
 
 ## Dialogue
 
@@ -224,7 +225,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   starting until the screen is clear.
 - **A module's own transitions**: a **`TransitionLayer`** plays the same transitions into an element of the module's
   own, beneath its UI — Field fades the screen under its message windows with one — each from wherever the last left
-  it, with `Cut` to cover or clear at once. A **`ScreenColour`** takes a colour from everything beneath an element, or
+  it, with `Cut` to cover or clear at once. It plays no sound: play the transition's `Sound`, found with `FindCover` or
+  `FindReveal`, as you start one. A **`ScreenColour`** takes a colour from everything beneath an element, or
   adds one, live, drawn with the config's `ScreenColourShader`; it is what the Subtractive kind draws with, and needs
   URP.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
