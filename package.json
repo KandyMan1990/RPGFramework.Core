@@ -13,9 +13,9 @@
     "url": "https://github.com/KandyMan1990/RPGFramework.Core"
   },
   "dependencies": {
-    "com.rpgframework.audio": "4.1.1",
+    "com.rpgframework.audio": "5.0.0",
     "com.rpgframework.core.sharedtypes": "0.3.0",
-    "com.rpgframework.di": "4.0.3",
+    "com.rpgframework.di": "5.0.0",
     "com.rpgframework.hashing": "2.0.2",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.mathematics": "1.4.0"
