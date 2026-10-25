@@ -56,9 +56,9 @@ namespace RPGFramework.Core
         {
             CoreModule core = new CoreModule(initialModuleId);
 
-            InstallCoreBindings(core, core.m_GlobalContainer);
-
             globalInstaller.InstallBindings(core.m_GlobalContainer);
+
+            InstallCoreBindings(core, core.m_GlobalContainer);
 
             await globalInstaller.Bootstrap(core.m_CurrentResolver);
 
@@ -119,6 +119,7 @@ namespace RPGFramework.Core
 
             sceneContainer.BindSingletonFromInstance<IModuleScene>(new ModuleScene(scene));
             FindSceneInstaller(scene).InstallBindings(sceneContainer);
+            FindModuleBindings(scene).Bind(sceneContainer);
             sceneContainer.SetFallback(m_GlobalContainer);
 
             SetCurrentResolver(diContainer);
@@ -167,13 +168,28 @@ namespace RPGFramework.Core
 
                 if (installer != null)
                 {
-                    SceneInstallerBase sceneInstaller = installer.SceneInstaller;
-
-                    return sceneInstaller;
+                    return installer.SceneInstaller;
                 }
             }
 
             throw new InvalidOperationException($"{nameof(CoreModule)}::{nameof(FindSceneInstaller)} Scene [{scene.name}] has no {nameof(SceneInstallerMonoBehaviour)}");
+        }
+
+        private static IModuleBindings FindModuleBindings(Scene scene)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+
+            for (int i = 0; i < roots.Length; i++)
+            {
+                IModuleBindings bindings = roots[i].GetComponentInChildren<IModuleBindings>();
+
+                if (bindings != null)
+                {
+                    return bindings;
+                }
+            }
+
+            throw new InvalidOperationException($"{nameof(CoreModule)}::{nameof(FindModuleBindings)} Scene [{scene.name}] has no component implementing {nameof(IModuleBindings)}");
         }
 
         // Global bindings resolve IDIResolver as the module on top's container, so whatever resolves later finds that
@@ -202,24 +218,24 @@ namespace RPGFramework.Core
         {
             container.BindSingletonFromInstance<ICoreModule>(core);
 
-            container.BindInterfacesToSelfSingleton<InputRouter>();
-            container.BindSingleton<ITransitionService, TransitionService>();
+            container.BindInterfacesToSelfSingletonIfNotRegistered<InputRouter>();
+            container.BindSingletonIfNotRegistered<ITransitionService, TransitionService>();
 
-            container.BindSingletonFromInstance<ISaveStorage>(new FileSaveStorage(Application.persistentDataPath));
-            container.BindInterfacesToSelfSingleton<SaveDataService>();
-            container.BindSingleton<ISettingsService, SettingsService>();
-            container.BindInterfacesToSelfSingleton<MemoryService>();
+            container.BindSingletonFromInstanceIfNotRegistered<ISaveStorage>(new FileSaveStorage(Application.persistentDataPath));
+            container.BindInterfacesToSelfSingletonIfNotRegistered<SaveDataService>();
+            container.BindSingletonIfNotRegistered<ISettingsService, SettingsService>();
+            container.BindInterfacesToSelfSingletonIfNotRegistered<MemoryService>();
 
-            container.BindTransient<IDialogueWindow, DialogueWindow>();
+            container.BindTransientIfNotRegistered<IDialogueWindow, DialogueWindow>();
 
-            container.BindSingleton<ICurrentModuleStore, CurrentModuleStore>();
-            container.BindSingleton<ISaveEnabledStore, SaveEnabledStore>();
-            container.BindSingleton<ILocationNameStore, LocationNameStore>();
-            container.BindSingleton<IBattleMusicStore, BattleMusicStore>();
-            container.BindSingleton<IMusicVolumeStore, MusicVolumeStore>();
-            container.BindSingleton<IPausedMusicStore, PausedMusicStore>();
-            container.BindSingleton<IFrameClock, UnityFrameClock>();
-            container.BindSingleton<IPlayTimeStore, PlayTimeCounter>();
+            container.BindSingletonIfNotRegistered<ICurrentModuleStore, CurrentModuleStore>();
+            container.BindSingletonIfNotRegistered<ISaveEnabledStore, SaveEnabledStore>();
+            container.BindSingletonIfNotRegistered<ILocationNameStore, LocationNameStore>();
+            container.BindSingletonIfNotRegistered<IBattleMusicStore, BattleMusicStore>();
+            container.BindSingletonIfNotRegistered<IMusicVolumeStore, MusicVolumeStore>();
+            container.BindSingletonIfNotRegistered<IPausedMusicStore, PausedMusicStore>();
+            container.BindSingletonIfNotRegistered<IFrameClock, UnityFrameClock>();
+            container.BindSingletonIfNotRegistered<IPlayTimeStore, PlayTimeCounter>();
         }
     }
 }

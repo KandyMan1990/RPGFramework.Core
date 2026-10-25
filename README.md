@@ -16,7 +16,7 @@ pipeline: its transitions are drawn with UI Toolkit, though the Subtractive Tran
 
 ## Modules
 
-A module is a scene and the `IModule` its scene installer binds. Each has a byte id. Your game supplies two databases:
+A module is a scene and its `IModule`, which a component in that scene binds. Each has a byte id. Your game supplies two databases:
 
 - an **`IModuleDatabase`**, mapping each id to its module's interface;
 - an **`ISceneDatabase`**, mapping each module to its scene.
@@ -61,8 +61,13 @@ change out, and reveals the module on top, then tells it so with **`OnRevealed`*
 input, or starts anything the player should see from its beginning. A module does not fade itself for a change. Changes
 run one at a time: one asked for during another waits for it, and is routed from whichever module is then on top.
 
-**Bind each module in its own scene installer.** It is then built fresh on every entry and goes with its scene. A
-module missing from its scene installer fails with *No binding exists*, which is how you find out.
+**A module binds its own types**, from a component in its scene that implements **`IModuleBindings`**, so it is built
+fresh on every entry and goes with its scene. Core runs your scene installer first, then the module's bindings, each
+only where nothing is bound yet: your scene installer binds what is your game's — a generated database, a config — and
+binding one of a module's interfaces there replaces the module's own. **Every module scene needs both**, the
+`SceneInstallerMonoBehaviour` with your installer, even one that binds nothing, and the module's component; a scene
+missing either throws as the module loads. A module of your own implements `IModuleBindings` on a component in its
+scene, as the framework's do.
 
 **Bind an `IModuleRouter` in your global installer.** RPGFramework.ModuleRouter's `DefaultModuleRouter` has the
 framework's routes; derive from it for your own modules' (see its README).
@@ -80,7 +85,8 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
 
 **Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
-above. **Your global installer binds**:
+above, after your global installer and each only where it bound nothing, so you can replace one, such as the
+`ISaveStorage` saves are written through. **Your global installer binds**:
 
 - the two databases, and a module router;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
@@ -261,4 +267,3 @@ then open **Window › General › Test Runner** and run the **EditMode** tests.
 - **Saves use the file system directly**, so consoles, which save through their own platform services, aren't
   supported yet.
 - **The Universal Render Pipeline is required.**
-- **A module's own types must be public** to be bound in its scene installer.
