@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 
 namespace RPGFramework.Core.Input
 {
     /// <summary>
     /// A stack of <see cref="IInputContext" />s, each press offered to the top one first and on down until one takes
-    /// it, so whatever opened last — a dialogue window over the field, a menu over a menu — gets input first.
+    /// it, so whatever opened last — a dialogue window over the field, a menu over a menu — gets input first. Movement
+    /// is not routed: what moves reads it each tick, when <see cref="MovementReaches" /> says it may.
     /// </summary>
     public interface IInputRouter
     {
@@ -23,8 +23,11 @@ namespace RPGFramework.Core.Input
         /// <summary>Offers a button press to each context from the top down, until one takes it.</summary>
         void Route(ControlSlot slot);
 
-        /// <summary>Offers the move input to each context from the top down, until one takes it.</summary>
-        void RouteMovement(Vector2 move);
+        /// <summary>
+        /// True if movement reaches <paramref name="context" />: input is not locked, and no context above it takes
+        /// movement. False for a context not on the stack.
+        /// </summary>
+        bool MovementReaches(IInputContext context);
     }
 
     /// <summary>
@@ -33,7 +36,7 @@ namespace RPGFramework.Core.Input
     /// </summary>
     internal interface IInputLock
     {
-        /// <summary>Holds input back; the first lock also stops whatever was moving.</summary>
+        /// <summary>Holds input back: no press is routed, and movement reaches no context.</summary>
         void Lock();
 
         /// <summary>Releases one lock.</summary>
@@ -92,25 +95,32 @@ namespace RPGFramework.Core.Input
             }
         }
 
-        void IInputRouter.RouteMovement(Vector2 move)
+        bool IInputRouter.MovementReaches(IInputContext context)
         {
             if (m_Locks > 0)
             {
-                return;
+                return false;
             }
 
-            RouteMove(move);
+            for (int i = m_Stack.Count - 1; i >= 0; i--)
+            {
+                if (m_Stack[i] == context)
+                {
+                    return true;
+                }
+
+                if (m_Stack[i].TakesMovement)
+                {
+                    return false;
+                }
+            }
+
+            return false;
         }
 
-        // A move held as the lock begins would otherwise carry on unseen, as its release is held back too.
         void IInputLock.Lock()
         {
             m_Locks++;
-
-            if (m_Locks == 1)
-            {
-                RouteMove(Vector2.zero);
-            }
         }
 
         void IInputLock.Unlock()
@@ -118,17 +128,6 @@ namespace RPGFramework.Core.Input
             if (m_Locks > 0)
             {
                 m_Locks--;
-            }
-        }
-
-        private void RouteMove(Vector2 move)
-        {
-            for (int i = m_Stack.Count - 1; i >= 0; i--)
-            {
-                if (m_Stack[i].HandleMove(move))
-                {
-                    break;
-                }
             }
         }
     }

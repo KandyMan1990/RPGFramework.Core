@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using RPGFramework.Core.Input;
-using UnityEngine;
 
 namespace RPGFramework.Core.Tests.Input
 {
@@ -15,7 +14,7 @@ namespace RPGFramework.Core.Tests.Input
             InputRouter router = new InputRouter();
 
             m_Router  = router;
-            m_Context = new RecordingInputContext();
+            m_Context = new RecordingInputContext(true);
 
             m_Router.Push(m_Context);
             ((IInputLock)router).Lock();
@@ -33,12 +32,9 @@ namespace RPGFramework.Core.Tests.Input
         }
 
         [Test]
-        public void ThenMovesReachTheContext()
+        public void ThenMovementReachesIt()
         {
-            m_Router.RouteMovement(Vector2.up);
-
-            Assert.AreEqual(2, m_Context.Moves);
-            Assert.AreEqual(Vector2.up, m_Context.LastMove);
+            Assert.IsTrue(m_Router.MovementReaches(m_Context));
         }
     }
 }

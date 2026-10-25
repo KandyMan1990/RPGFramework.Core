@@ -6,7 +6,9 @@
         "RPGFramework.Core.Editor",
         "RPGFramework.Core.SharedTypes",
         "RPGFramework.DI",
-        "RPGFramework.Hashing"
+        "RPGFramework.Hashing",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework"
     ],
     "includePlatforms": [
         "Editor"

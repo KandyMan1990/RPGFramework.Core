@@ -9,7 +9,7 @@ namespace RPGFramework.Core.Tests.Input
         public void ThenInputIsStillHeldBack()
         {
             InputRouter           router  = new InputRouter();
-            RecordingInputContext context = new RecordingInputContext();
+            RecordingInputContext context = new RecordingInputContext(true);
 
             ((IInputRouter)router).Push(context);
             ((IInputLock)router).Lock();

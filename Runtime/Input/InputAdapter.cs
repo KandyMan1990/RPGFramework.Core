@@ -33,6 +33,12 @@ namespace RPGFramework.Core.Input
         private InputAction[]                         m_Actions;
         private Action<InputAction.CallbackContext>[] m_Handlers;
 
+        /// <summary>
+        /// The direction held, read each tick by what moves; zero while input is off. Only where the router says movement
+        /// reaches it does anything act on it.
+        /// </summary>
+        public Vector2 Movement => m_Subscribed && m_MovementAction != null ? m_MovementAction.ReadValue<Vector2>() : Vector2.zero;
+
         [Inject]
         private void Inject(IInputRouter inputRouter)
         {
@@ -55,12 +61,9 @@ namespace RPGFramework.Core.Input
 
             ReadActions();
 
-            if (m_MovementAction != null)
-            {
-                m_MovementAction.performed += RouteMovement;
-                m_MovementAction.canceled  += RouteMovement;
-                m_MovementAction.Enable();
-            }
+            // Never turned off again: an action turned back on reads nothing held until it changes, so a direction held
+            // through a transition would go unseen. Buttons are, so one held through a change does not act.
+            m_MovementAction?.Enable();
 
             for (int i = 0; i < m_Actions.Length; i++)
             {
@@ -82,13 +85,6 @@ namespace RPGFramework.Core.Input
             }
 
             m_Subscribed = false;
-
-            if (m_MovementAction != null)
-            {
-                m_MovementAction.Disable();
-                m_MovementAction.canceled  -= RouteMovement;
-                m_MovementAction.performed -= RouteMovement;
-            }
 
             for (int i = 0; i < m_Actions.Length; i++)
             {
@@ -146,11 +142,6 @@ namespace RPGFramework.Core.Input
             InputAction action = reference != null ? reference.action : null;
 
             return action;
-        }
-
-        private void RouteMovement(InputAction.CallbackContext context)
-        {
-            m_InputRouter.RouteMovement(context.ReadValue<Vector2>());
         }
     }
 }

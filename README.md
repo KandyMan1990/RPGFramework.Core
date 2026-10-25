@@ -158,10 +158,13 @@ first launch. A game can add sections of its own.
 ## Input
 
 - **`InputAdapter`**, one per module scene, turns Input System actions into Core's controls (Primary, Secondary,
-  Tertiary, Quaternary, the shoulders, triggers, Start and Select) and movement.
-- **`IInputRouter`** passes them down a stack of **input contexts** until one uses them. A conversation the player can
-  walk away from takes only confirm, and movement goes on to the field beneath. Nothing is passed on while the screen
-  fades, so a press during a change of module does nothing.
+  Tertiary, Quaternary, the shoulders, triggers, Start and Select), and holds the direction held, its `Movement`, for
+  what moves to read each tick. A direction held through a transition or a conversation moves the player as soon as
+  movement reaches it again; a button held through one does not act again.
+- **`IInputRouter`** passes presses down a stack of **input contexts** until one uses them, and says whether movement
+  reaches a context (`MovementReaches`): only when no context above it takes movement (`TakesMovement`). A conversation
+  the player can walk away from takes only confirm, and movement reaches the field beneath. Nothing is passed on while
+  the screen fades, so a press during a change of module does nothing and nothing moves.
 - **`SelectionScope`** is for UI Toolkit screens you build yourself, such as a battle's commands. Over a root element,
   it moves the cursor only between **`RPGUIButton`s' neighbours** (link them with `RPGUIButton.LinkColumn` and
   `LinkRow`), by key, pad or pointer alike, and while its input is off lets nothing in it react at all. It plays no

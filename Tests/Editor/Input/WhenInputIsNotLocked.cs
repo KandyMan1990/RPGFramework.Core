@@ -1,23 +1,34 @@
 using NUnit.Framework;
 using RPGFramework.Core.Input;
-using UnityEngine;
 
 namespace RPGFramework.Core.Tests.Input
 {
     internal sealed class WhenInputIsNotLocked
     {
-        [Test]
-        public void ThenItReachesTheTopContext()
+        private IInputRouter          m_Router;
+        private RecordingInputContext m_Context;
+
+        [SetUp]
+        public void SetUp()
         {
-            IInputRouter          router  = new InputRouter();
-            RecordingInputContext context = new RecordingInputContext();
+            m_Router  = new InputRouter();
+            m_Context = new RecordingInputContext(true);
 
-            router.Push(context);
-            router.Route(ControlSlot.Primary);
-            router.RouteMovement(Vector2.up);
+            m_Router.Push(m_Context);
+        }
 
-            Assert.AreEqual(1, context.Presses);
-            Assert.AreEqual(1, context.Moves);
+        [Test]
+        public void ThenAPressReachesTheTopContext()
+        {
+            m_Router.Route(ControlSlot.Primary);
+
+            Assert.AreEqual(1, m_Context.Presses);
+        }
+
+        [Test]
+        public void ThenMovementReachesIt()
+        {
+            Assert.IsTrue(m_Router.MovementReaches(m_Context));
         }
     }
 }

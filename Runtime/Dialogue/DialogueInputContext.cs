@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using RPGFramework.Core.Input;
-using UnityEngine;
 
 namespace RPGFramework.Core.Dialogue
 {
@@ -31,10 +30,7 @@ namespace RPGFramework.Core.Dialogue
             return IsBlocking;
         }
 
-        bool IInputContext.HandleMove(Vector2 move)
-        {
-            return IsBlocking;
-        }
+        bool IInputContext.TakesMovement => IsBlocking;
 
         internal Task WaitForConfirmAsync()
         {
