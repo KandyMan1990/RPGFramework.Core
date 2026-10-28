@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Tests.Dialogue
         {
             m_Audio = new FakeAudioIntentPlayer();
 
-            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field);
+            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field, 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
             FakeDialogueWindow window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
 
             // Left waiting on an answer that never comes, as the question stays open.

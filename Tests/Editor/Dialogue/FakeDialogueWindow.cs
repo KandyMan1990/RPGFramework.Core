@@ -7,7 +7,10 @@ using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.Tests.Dialogue
 {
-    /// <summary>A window that shows everything at once, answered when the choice it is given completes.</summary>
+    /// <summary>
+    /// A window that shows everything at once, answered when the choice it is given completes, noting where its cursor
+    /// starts and where it is moved.
+    /// </summary>
     internal sealed class FakeDialogueWindow : IDialogueWindow
     {
         event Action IDialogueWindow.OnCursorMoved
@@ -16,14 +19,26 @@ namespace RPGFramework.Core.Tests.Dialogue
             remove => m_OnCursorMoved -= value;
         }
 
+        internal const int NOT_MOVED = -1;
+
         private readonly Task m_Choice;
+
+        private byte m_StartingChoice;
+        private int  m_MovedTo;
 
         private event Action m_OnCursorMoved;
 
         internal FakeDialogueWindow(Task choice)
         {
-            m_Choice = choice;
+            m_Choice         = choice;
+            m_StartingChoice = 0;
+            m_MovedTo        = NOT_MOVED;
         }
+
+        internal byte StartingChoice => m_StartingChoice;
+
+        /// <summary>The choice the cursor was last moved to, or <see cref="NOT_MOVED" />.</summary>
+        internal int MovedTo => m_MovedTo;
 
         /// <summary>The player moving the cursor to another answer.</summary>
         internal void MoveCursor()
@@ -47,7 +62,9 @@ namespace RPGFramework.Core.Tests.Dialogue
 
         Task IDialogueWindow.RunAsync() => Task.CompletedTask;
 
-        void IDialogueWindow.SetChoices(ReadOnlySpan<string> choices) { }
+        void IDialogueWindow.SetChoices(ReadOnlySpan<string> choices, byte startingChoice) => m_StartingChoice = startingChoice;
+
+        void IDialogueWindow.FocusChoice(byte index) => m_MovedTo = index;
 
         void IDialogueWindow.SetMessageVariables(IReadOnlyList<int> variables) { }
 

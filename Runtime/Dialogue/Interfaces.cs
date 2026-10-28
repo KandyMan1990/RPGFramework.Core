@@ -60,13 +60,19 @@ namespace RPGFramework.Core.Dialogue
         void Init(VisualElement container);
 
         /// <summary>
-        /// Types the page's text, then each choice in turn; done when everything is shown, the first choice focused and
-        /// the choices taking the cursor.
+        /// Types the page's text, then each choice in turn; done when everything is shown, the starting choice focused
+        /// and the choices taking the cursor.
         /// </summary>
         Task RunAsync();
 
-        /// <summary>The answers the page offers, typed after its text; none for a page without a question.</summary>
-        void SetChoices(ReadOnlySpan<string> choices);
+        /// <summary>
+        /// The answers the page offers, typed after its text, the cursor starting on <paramref name="startingChoice" />;
+        /// none for a page without a question.
+        /// </summary>
+        void SetChoices(ReadOnlySpan<string> choices, byte startingChoice);
+
+        /// <summary>Moves the cursor to a choice, as cancel does to a question's cancel answer: not reported as a move.</summary>
+        void FocusChoice(byte index);
 
         /// <summary>The values the text's variable markup shows, by index.</summary>
         void SetMessageVariables(IReadOnlyList<int> variables);

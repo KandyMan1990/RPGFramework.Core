@@ -8,7 +8,8 @@ namespace RPGFramework.Core.Dialogue
     /// The confirm presses read by the open dialogue windows. The newest window has the focus — the newest question while
     /// one is open, as a question holds it until answered — and only the focused window finishes typing, turns a page or
     /// answers on a press; but one press closes every window that has finished and waits to be closed. A window that
-    /// waits keeps the press; with only background windows open, it carries on to what is under them.
+    /// waits keeps the press; with only background windows open, it carries on to what is under them. Cancel, on the
+    /// focused question, moves its cursor to its cancel answer.
     /// </summary>
     public sealed class DialogueInputContext : IInputContext
     {
@@ -27,6 +28,11 @@ namespace RPGFramework.Core.Dialogue
 
         bool IInputContext.Handle(ControlSlot slot)
         {
+            if (slot == ControlSlot.Secondary)
+            {
+                return HandleCancel();
+            }
+
             if (slot != ControlSlot.Primary)
             {
                 return IsBlocking;
@@ -105,6 +111,12 @@ namespace RPGFramework.Core.Dialogue
             return Find(window).Press.Task;
         }
 
+        /// <summary>The next cancel press while the question has the focus: what moves its cursor to its cancel answer.</summary>
+        internal Task WaitForCancelAsync(IDialogueWindow question)
+        {
+            return Find(question).Cancel.Task;
+        }
+
         /// <summary>
         /// The next press after this call, once a script waits for the window to close: a press that turned an earlier
         /// page does not count.
@@ -128,6 +140,22 @@ namespace RPGFramework.Core.Dialogue
             }
 
             return m_Windows.Count > 0 ? m_Windows[^1] : null;
+        }
+
+        private bool HandleCancel()
+        {
+            OpenWindow focused = Focused();
+
+            if (focused == null || focused.Kind != DialogueWindowKind.Question)
+            {
+                return IsBlocking;
+            }
+
+            TaskCompletionSource<bool> cancel = focused.Cancel;
+            focused.Cancel = NewPress();
+            cancel.TrySetResult(true);
+
+            return true;
         }
 
         private bool KeepsPress()
@@ -168,6 +196,7 @@ namespace RPGFramework.Core.Dialogue
 
             internal TaskCompletionSource<bool> Press;
             internal TaskCompletionSource<bool> PressToClose;
+            internal TaskCompletionSource<bool> Cancel;
             internal bool                       PressCloses;
 
             internal OpenWindow(IDialogueWindow window, DialogueWindowKind kind)
@@ -176,6 +205,7 @@ namespace RPGFramework.Core.Dialogue
                 Kind         = kind;
                 PressToClose = NewPress();
                 Press        = NewPress();
+                Cancel       = NewPress();
                 PressCloses  = false;
             }
         }

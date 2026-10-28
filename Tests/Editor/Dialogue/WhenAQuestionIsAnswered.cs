@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Tests.Dialogue
         {
             m_Audio = new FakeAudioIntentPlayer();
 
-            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field);
+            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field, 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
             FakeDialogueWindow window = new FakeDialogueWindow(Task.CompletedTask);
 
             flow.RunAsync(window, new[] { "Stay or go?", "Stay", "Go" }, Presses.ContextWith(window, DialogueWindowKind.Question), CancellationToken.None).GetAwaiter().GetResult();

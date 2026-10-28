@@ -183,20 +183,25 @@ namespace RPGFramework.Core.Dialogue
                     await TypeAsync(m_ChoiceViews[i]);
                 }
 
-                m_SelectedIndex = 0;
-                m_Choices[0].Focus();
+                m_Choices[m_SelectedIndex].Focus();
                 m_Selection.SetInputEnabled(true);
             }
         }
 
-        void IDialogueWindow.SetChoices(ReadOnlySpan<string> choices)
+        void IDialogueWindow.FocusChoice(byte index)
+        {
+            m_SelectedIndex = index;
+            m_Choices[index].Focus();
+        }
+
+        void IDialogueWindow.SetChoices(ReadOnlySpan<string> choices, byte startingChoice)
         {
             int length = choices.Length;
 
             m_Choices       = new RPGUIButton[length];
             m_ChoiceViews   = new DialogueTextView[length];
             m_ChoiceTexts   = choices.ToArray();
-            m_SelectedIndex = 0;
+            m_SelectedIndex = startingChoice;
             m_Chosen        = NewChosen();
 
             for (byte i = 0; i < length; i++)

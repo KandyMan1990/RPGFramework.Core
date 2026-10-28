@@ -83,10 +83,10 @@ namespace RPGFramework.Core.Dialogue
 
         /// <summary>
         /// A page asking a question, its choices set: answered by a confirm press, with the focused choice, or by a
-        /// click or a submit on a choice.
+        /// click or a submit on a choice. A cancel press while it waits calls <paramref name="cancelled" />, if given.
         /// </summary>
         /// <returns>True once answered, false if the window was closed first.</returns>
-        internal static async Task<bool> RunQuestionPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
+        internal static async Task<bool> RunQuestionPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close, Action cancelled)
         {
             Task closedTask = WhenClosed(close);
 
@@ -95,15 +95,27 @@ namespace RPGFramework.Core.Dialogue
                 return false;
             }
 
-            Task confirmTask = inputContext.WaitForFocusedPressAsync(window);
-            Task completed   = await Task.WhenAny(confirmTask, window.WaitForChoiceAsync(), closedTask);
+            Task choiceTask = window.WaitForChoiceAsync();
 
-            if (completed == confirmTask)
+            while (true)
             {
-                window.ChooseFocusedChoice();
-            }
+                Task confirmTask = inputContext.WaitForFocusedPressAsync(window);
+                Task cancelTask  = inputContext.WaitForCancelAsync(window);
+                Task completed   = await Task.WhenAny(confirmTask, cancelTask, choiceTask, closedTask);
 
-            return completed != closedTask;
+                if (completed == cancelTask)
+                {
+                    cancelled?.Invoke();
+                    continue;
+                }
+
+                if (completed == confirmTask)
+                {
+                    window.ChooseFocusedChoice();
+                }
+
+                return completed != closedTask;
+            }
         }
 
         // A press while the page types finishes the typing rather than moving on. True if the window was closed.

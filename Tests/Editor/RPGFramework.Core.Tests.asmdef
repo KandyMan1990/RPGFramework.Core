@@ -8,7 +8,8 @@
         "RPGFramework.DI",
         "RPGFramework.Hashing",
         "Unity.InputSystem",
-        "Unity.InputSystem.TestFramework"
+        "Unity.InputSystem.TestFramework",
+        "UnityEngine.TestRunner"
     ],
     "includePlatforms": [
         "Editor"
