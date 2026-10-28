@@ -44,7 +44,11 @@ namespace RPGFramework.Core.Dialogue
             return dialogue.Split(NEW_PAGE_MARKER);
         }
 
-        internal static async Task RunPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close)
+        /// <summary>
+        /// A page the player reads, then turns with a press while the window has the focus — or, the last, closes with
+        /// one wherever the focus is.
+        /// </summary>
+        internal static async Task RunPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close, bool isLast)
         {
             Task closedTask = WhenClosed(close);
 
@@ -53,7 +57,28 @@ namespace RPGFramework.Core.Dialogue
                 return;
             }
 
-            await Task.WhenAny(inputContext.WaitForConfirmAsync(), closedTask);
+            Task press = isLast ? inputContext.WaitForPressAsync() : inputContext.WaitForFocusedPressAsync(window);
+
+            await Task.WhenAny(press, closedTask);
+        }
+
+        /// <summary>
+        /// A page of a background window, turned with a press while the window has the focus. The last stays up until a
+        /// script closes it, or a press does once a script waits for it.
+        /// </summary>
+        /// <returns>False once the window is closed.</returns>
+        internal static async Task<bool> RunBackgroundPageAsync(IDialogueWindow window, DialoguePage dialoguePage, DialogueInputContext inputContext, CancellationToken close, bool isLast)
+        {
+            Task closedTask = WhenClosed(close);
+
+            if (await TypePageAsync(window, dialoguePage, inputContext, closedTask))
+            {
+                return false;
+            }
+
+            Task press = isLast ? inputContext.WaitForPressToCloseAsync(window) : inputContext.WaitForFocusedPressAsync(window);
+
+            return await Task.WhenAny(press, closedTask) != closedTask;
         }
 
         /// <summary>
@@ -70,7 +95,7 @@ namespace RPGFramework.Core.Dialogue
                 return false;
             }
 
-            Task confirmTask = inputContext.WaitForConfirmAsync();
+            Task confirmTask = inputContext.WaitForFocusedPressAsync(window);
             Task completed   = await Task.WhenAny(confirmTask, window.WaitForChoiceAsync(), closedTask);
 
             if (completed == confirmTask)
@@ -87,7 +112,7 @@ namespace RPGFramework.Core.Dialogue
             window.SetText(dialoguePage);
 
             Task animationTask = window.RunAsync();
-            Task confirmTask   = inputContext.WaitForConfirmAsync();
+            Task confirmTask   = inputContext.WaitForFocusedPressAsync(window);
 
             Task completed = await Task.WhenAny(animationTask, confirmTask, closedTask);
 
@@ -100,29 +125,6 @@ namespace RPGFramework.Core.Dialogue
             bool closed = completed == closedTask;
 
             return closed;
-        }
-
-        internal static async Task RunUnansweredPageAsync(IDialogueWindow window, DialoguePage dialoguePage, CancellationToken close)
-        {
-            window.SetText(dialoguePage);
-
-            Task animationTask = window.RunAsync();
-            Task closedTask    = WhenClosed(close);
-
-            if (await Task.WhenAny(animationTask, closedTask) == closedTask)
-            {
-                window.SkipToAnimationEnd();
-            }
-
-            await animationTask;
-            await closedTask;
-        }
-
-        internal static string JoinPages(string dialogue)
-        {
-            string joined = dialogue.Replace(NEW_PAGE_MARKER, "\n");
-
-            return joined;
         }
 
         private static Task WhenClosed(CancellationToken close)

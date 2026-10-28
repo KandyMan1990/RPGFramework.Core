@@ -13,8 +13,11 @@ namespace RPGFramework.Core.Dialogue
     /// </summary>
     public interface IDialogueFlow
     {
+        /// <summary>How the window takes the player's press, as it is opened in the input context.</summary>
+        DialogueWindowKind Kind { get; }
+
         /// <summary>
-        /// Plays the dialogue in the window, reading presses from the input context, until it is done or
+        /// Plays the dialogue in the window, opened in the input context, reading presses from it, until it is done or
         /// <paramref name="close" /> is cancelled.
         /// </summary>
         Task RunAsync(IDialogueWindow window, string[] dialogues, DialogueInputContext inputContext, CancellationToken close);

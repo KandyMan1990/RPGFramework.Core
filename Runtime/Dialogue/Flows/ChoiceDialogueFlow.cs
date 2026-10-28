@@ -20,13 +20,15 @@ namespace RPGFramework.Core.Dialogue.Flows
             m_Context           = context;
         }
 
+        DialogueWindowKind IDialogueFlow.Kind => DialogueWindowKind.Question;
+
         async Task IDialogueFlow.RunAsync(IDialogueWindow window, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
             DialogueBlock dialogueBlock = DialogueUtils.ParseIntoPages(dialogues[0]);
 
             for (int i = 0; i < dialogueBlock.Pages.Length - 1; i++)
             {
-                await DialogueUtils.RunPageAsync(window, dialogueBlock.Pages[i], inputContext, close);
+                await DialogueUtils.RunPageAsync(window, dialogueBlock.Pages[i], inputContext, close, false);
 
                 if (close.IsCancellationRequested)
                 {

@@ -23,7 +23,7 @@ namespace RPGFramework.Core.Tests.Dialogue
 
             close.Cancel();
 
-            flow.RunAsync(window, new[] { "Stay or go?", "Stay", "Go" }, new DialogueInputContext(), close.Token).GetAwaiter().GetResult();
+            flow.RunAsync(window, new[] { "Stay or go?", "Stay", "Go" }, Presses.ContextWith(window, DialogueWindowKind.Question), close.Token).GetAwaiter().GetResult();
 
             close.Dispose();
         }

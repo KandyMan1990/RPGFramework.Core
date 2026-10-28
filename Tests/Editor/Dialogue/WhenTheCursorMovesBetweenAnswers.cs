@@ -20,7 +20,7 @@ namespace RPGFramework.Core.Tests.Dialogue
             FakeDialogueWindow window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
 
             // Left waiting on an answer that never comes, as the question stays open.
-            flow.RunAsync(window, new[] { "Stay or go?", "Stay", "Go" }, new DialogueInputContext(), CancellationToken.None);
+            flow.RunAsync(window, new[] { "Stay or go?", "Stay", "Go" }, Presses.ContextWith(window, DialogueWindowKind.Question), CancellationToken.None);
 
             window.MoveCursor();
             window.MoveCursor();

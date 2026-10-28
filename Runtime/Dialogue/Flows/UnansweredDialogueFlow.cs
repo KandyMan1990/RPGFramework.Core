@@ -4,23 +4,29 @@ using System.Threading.Tasks;
 namespace RPGFramework.Core.Dialogue.Flows
 {
     /// <summary>
-    /// A window the player never answers: it types its line and stays up until it is closed. Nothing the player
-    /// presses reaches it, which is what lets a conversation play out in the background while they walk, talk to
-    /// someone or open the menu; the script decides when it goes, by waiting or by whatever else it watches for.
-    /// <br /><br />
-    /// Nothing can turn a page, so a line with several is shown whole, its page breaks shown as line breaks.
+    /// A window the player never answers, left up while they carry on: they walk, talk to someone or open the menu while
+    /// it plays out, a press reaching what is under it. It turns its pages on a press while it has the focus, and its
+    /// last stays up until a script closes it — or, once the script waits for it, until a press does.
     /// </summary>
     public sealed class UnansweredDialogueFlow : IDialogueFlow
     {
+        DialogueWindowKind IDialogueFlow.Kind => DialogueWindowKind.Background;
+
         async Task IDialogueFlow.RunAsync(IDialogueWindow window, string[] dialogues, DialogueInputContext inputContext, CancellationToken close)
         {
             for (int i = 0; i < dialogues.Length; i++)
             {
-                string dialogue = dialogues[i];
+                DialogueBlock dialogueBlock = DialogueUtils.ParseIntoPages(dialogues[i]);
 
-                DialoguePage page = DialogueUtils.ParseIntoPages(DialogueUtils.JoinPages(dialogue)).Pages[0];
+                for (int j = 0; j < dialogueBlock.Pages.Length; j++)
+                {
+                    bool isLast = i == dialogues.Length - 1 && j == dialogueBlock.Pages.Length - 1;
 
-                await DialogueUtils.RunUnansweredPageAsync(window, page, close);
+                    if (!await DialogueUtils.RunBackgroundPageAsync(window, dialogueBlock.Pages[j], inputContext, close, isLast))
+                    {
+                        return;
+                    }
+                }
             }
         }
     }
