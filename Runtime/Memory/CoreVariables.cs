@@ -57,6 +57,12 @@ namespace RPGFramework.Core.Memory
         public const string SONG_VOLUME = "SongVolume";
 
         /// <summary>
+        /// The party's money, a whole number. Its default is what a new game starts with; what it is called is the
+        /// game's text, so one game's gil is another's dollars.
+        /// </summary>
+        public const string MONEY = "Money";
+
+        /// <summary>
         /// The language the player chose, as its name's hash; zero until they choose one, which a first launch asks for.
         /// </summary>
         public const string LANGUAGE = "Language";
@@ -86,6 +92,7 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(LOCATION_NAME,        MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in"),
             new RequiredVariable(BATTLE_MUSIC,         MemoryBank.Persistent, VariableWidth.ULong, "The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a new game's; zero plays none"),
             new RequiredVariable(SONG_VOLUME,          MemoryBank.Persistent, VariableWidth.Float, "The volume the songs play at, 0 to 1, as the scripts last set it, under the player's music volume. Its default is a new game's", VariableDefaults.FromFloat(1f)),
+            new RequiredVariable(MONEY,                MemoryBank.Persistent, VariableWidth.UInt,  "The party's money. Its default is what a new game starts with"),
             new RequiredVariable(LANGUAGE,             MemoryBank.Settings,   VariableWidth.ULong, "The language the player chose, as its name's hash. Leave its default at zero, which asks the player on a first launch"),
             new RequiredVariable(MUSIC_VOLUME,         MemoryBank.Settings,   VariableWidth.Float, "The player's music volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),
             new RequiredVariable(SFX_VOLUME,           MemoryBank.Settings,   VariableWidth.Float, "The player's sound effects' volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),

@@ -135,6 +135,7 @@ Core requires these:
 | `LocationName` | Persistent | where the player is |
 | `BattleMusic` | Persistent | the track every battle plays until a script sets another; its default is a new game's, zero none |
 | `SongVolume` | Persistent | the volume the scripts last set the songs to, 0 to 1, under the player's; its default is a new game's |
+| `Money` | Persistent | the party's money; its default is what a new game starts with, and what it is called is your game's text |
 | `Language` | Settings | the language the player chose, as its name's hash; leave its default at zero, which asks on a first launch |
 | `MusicVolume` | Settings | the player's music volume, 0 to 1, under which every song plays at its `SongVolume` |
 | `SfxVolume` | Settings | the player's sound effects' volume, 0 to 1 |
@@ -154,8 +155,9 @@ memory belongs to whatever runs a script, so each script has its own.
   writes nothing until the player saves.
 - **Writing and managing saves:** `CommitSave` writes it, `DeleteSave` deletes one, and `GetListOfSaveFiles` and
   `GetUnusedSaveFileName` list the slots, `save000.sav` to `save255.sav`.
-- **Previews:** `ReadPreview` reads a save without loading it, so a save menu can show each slot's location and play
-  time with the game in progress untouched.
+- **Previews:** `ReadPreview` reads a save without loading it, so a save menu can show each slot's location, play time
+  or any other saved value with the game in progress untouched. `SavePreview.Read` and `ReadNumber` take a value's
+  name as scripts write it: `Money`, `Items[3]`, `Party[0].Level`.
 - **Files are checksummed and written safely**: a write that is cut short leaves the previous file whole.
 - **A save records its layout**, so it still loads after the variable map has changed: a variable added since takes its
   default, a renamed or moved one keeps its value, and a deleted one is dropped.
