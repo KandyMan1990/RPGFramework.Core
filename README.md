@@ -57,8 +57,11 @@ loaded beside it. A change says how the next module is entered — `ModuleEntrie
 replaced, which carries on from what it kept — and the module gets it in `OnEnterAsync`.
 
 **Every change happens under a covered screen.** Core covers the screen before it touches a module, carries the
-change out, and reveals the module on top, then tells it so with **`OnRevealed`**: that is where a module starts taking
-input, or starts anything the player should see from its beginning. A module does not fade itself for a change. Changes
+change out, and reveals the module on top, then tells it so with **`OnRevealed`**: that is where a module starts anything
+the player should see from its beginning. Routed input reaches modules again as the reveal starts, so a module that
+should take none while it plays — a menu — turns its own input on in `OnRevealed`, and one the player may act in as it
+appears — a field, walked into as it fades in — turns it on as it enters. `OnRevealed` is not called when the module's
+own cover took over the reveal. A module does not fade itself for a change. Changes
 run one at a time: one asked for during another waits for it, and is routed from whichever module is then on top.
 
 **A module binds its own types**, from a component in its scene that implements **`IModuleBindings`**, so it is built
@@ -231,7 +234,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   are named by the hash of their names (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal
   (`WithTransitions`), and `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
   screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover
-  starting until the screen is clear.
+  starting until a reveal starts. `RevealAsync` completes `true` once the screen is clear, or `false` when a cover
+  asked for meanwhile took over.
 - **A module's own transitions**: a **`TransitionLayer`** plays the same transitions into an element of the module's
   own, beneath its UI — Field fades the screen under its message windows with one — each from wherever the last left
   it, with `Cut` to cover or clear at once. It plays no sound: play the transition's `Sound`, found with `FindCover` or

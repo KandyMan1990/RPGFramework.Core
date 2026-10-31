@@ -152,7 +152,7 @@ namespace RPGFramework.Core
             return m_Transitions.CoverAsync(change.Cover);
         }
 
-        Task IModuleHost.RevealAsync(ModuleChange change)
+        Task<bool> IModuleHost.RevealAsync(ModuleChange change)
         {
             return m_Transitions.RevealAsync(change.Reveal);
         }

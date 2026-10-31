@@ -9,12 +9,21 @@ namespace RPGFramework.Core.Tests.Modules
     {
         private readonly List<string> m_Log;
 
+        private bool m_RevealsOvertaken;
+
         internal FakeModuleHost()
         {
-            m_Log = new List<string>();
+            m_Log              = new List<string>();
+            m_RevealsOvertaken = false;
         }
 
         internal IReadOnlyList<string> Log => m_Log;
+
+        /// <summary>Every reveal from now on ends with a module's own cover taking over, as a field jumping does.</summary>
+        internal void OvertakeReveals()
+        {
+            m_RevealsOvertaken = true;
+        }
 
         internal void ClearLog()
         {
@@ -49,11 +58,11 @@ namespace RPGFramework.Core.Tests.Modules
             return Task.CompletedTask;
         }
 
-        Task IModuleHost.RevealAsync(ModuleChange change)
+        Task<bool> IModuleHost.RevealAsync(ModuleChange change)
         {
-            m_Log.Add("reveal");
+            m_Log.Add(m_RevealsOvertaken ? "reveal overtaken" : "reveal");
 
-            return Task.CompletedTask;
+            return Task.FromResult(!m_RevealsOvertaken);
         }
 
         private sealed class FakeModule : IModule

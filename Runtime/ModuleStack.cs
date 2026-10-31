@@ -32,9 +32,9 @@ namespace RPGFramework.Core
 
         /// <summary>
         /// Reveals the screen as the change asks, once it has entered or resumed its module and the cover has played its
-        /// full time.
+        /// full time, completing <c>true</c> once the screen is clear, or <c>false</c> when a module's own cover took over.
         /// </summary>
-        Task RevealAsync(ModuleChange change);
+        Task<bool> RevealAsync(ModuleChange change);
     }
 
     /// <summary>A module on the stack, with the scene and container its host loaded it into.</summary>
@@ -59,7 +59,7 @@ namespace RPGFramework.Core
     /// <summary>
     /// The modules loaded. Carries out a change in a fixed order under a cover: a module suspended is told before
     /// anything over it exists, and resumed only once what was over it has gone; the module on top is told it is on
-    /// screen once it has been revealed.
+    /// screen once it has been revealed, and not when its own cover took over the reveal, as a field jumping does.
     /// </summary>
     internal sealed class ModuleStack
     {
@@ -106,9 +106,10 @@ namespace RPGFramework.Core
 
             await applying;
 
-            await m_Host.RevealAsync(change);
-
-            Top().Module.OnRevealed();
+            if (await m_Host.RevealAsync(change))
+            {
+                Top().Module.OnRevealed();
+            }
         }
 
         private async Task OverAsync(ModuleChange change)

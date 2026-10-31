@@ -11,8 +11,9 @@ namespace RPGFramework.Core.Transitions
     /// Core covers and reveals around every change between modules; a module asks for its own steps, such as a field
     /// jump or a menu change. A cover asked for while the screen is covered, or a reveal while it is clear, does
     /// nothing; one asked for during another takes over from wherever the screen is, each playing its sound as it starts.
-    /// Routed input is held back from a cover starting until the screen is clear again. On unscaled time, so it runs
-    /// while the game is frozen.
+    /// Routed input is held back from a cover starting until a reveal starts, so the player may act as the screen clears;
+    /// a module that should not keeps its own input off until it is revealed. On unscaled time, so it runs while the game
+    /// is frozen.
     /// </summary>
     public interface ITransitionService
     {
@@ -27,8 +28,9 @@ namespace RPGFramework.Core.Transitions
         /// <summary>
         /// Uncovers the screen with the transition whose name hashes to <paramref name="transition" />, or with the
         /// default reveal for <c>0</c>, once a cover still playing has finished: a cover always plays its full time.
+        /// Completes <c>true</c> once the screen is clear, or <c>false</c> when a cover asked for meanwhile took over.
         /// </summary>
-        Task RevealAsync(ulong transition = 0);
+        Task<bool> RevealAsync(ulong transition = 0);
 
         /// <summary>
         /// How long the cover <paramref name="transition" /> names takes, <c>0</c> for the default's, for a music fade
@@ -50,6 +52,7 @@ namespace RPGFramework.Core.Transitions
 
         private Task          m_Covering;
         private RenderTexture m_Frame;
+        private bool          m_Locked;
 
         public TransitionService(ITransitionConfig config, ITransitionDatabase database, IInputLock inputLock, ISfxPlayer sfxPlayer)
         {
@@ -60,18 +63,19 @@ namespace RPGFramework.Core.Transitions
             m_SfxPlayer = sfxPlayer;
             m_Covering  = Task.CompletedTask;
             m_Frame     = null;
+            m_Locked    = false;
 
             m_Layer.Cut(0, true);
-            m_InputLock.Lock();
+            LockInput();
         }
 
-        async Task ITransitionService.RevealAsync(ulong transition)
+        async Task<bool> ITransitionService.RevealAsync(ulong transition)
         {
             await m_Covering;
 
             if (m_Layer.Covered <= 0f)
             {
-                return;
+                return true;
             }
 
             TransitionAsset reveal = m_Layer.FindReveal(transition);
@@ -81,16 +85,16 @@ namespace RPGFramework.Core.Transitions
             Task<bool> revealing = m_Layer.PlayAsync(reveal, 0f, null);
 
             ClearBackdrop();
+            UnlockInput();
 
             bool finished = await revealing;
 
-            if (!finished)
+            if (finished)
             {
-                return;
+                m_Host.pickingMode = PickingMode.Ignore;
             }
 
-            m_Host.pickingMode = PickingMode.Ignore;
-            m_InputLock.Unlock();
+            return finished;
         }
 
         float ITransitionService.CoverSeconds(ulong transition)
@@ -107,11 +111,8 @@ namespace RPGFramework.Core.Transitions
                 return;
             }
 
-            if (m_Layer.Covered <= 0f)
-            {
-                m_InputLock.Lock();
-                m_Host.pickingMode = PickingMode.Position;
-            }
+            LockInput();
+            m_Host.pickingMode = PickingMode.Position;
 
             TransitionAsset cover = m_Layer.FindCover(transition);
 
@@ -160,6 +161,28 @@ namespace RPGFramework.Core.Transitions
             Object.Destroy(m_Frame);
 
             m_Frame = null;
+        }
+
+        private void LockInput()
+        {
+            if (m_Locked)
+            {
+                return;
+            }
+
+            m_Locked = true;
+            m_InputLock.Lock();
+        }
+
+        private void UnlockInput()
+        {
+            if (!m_Locked)
+            {
+                return;
+            }
+
+            m_Locked = false;
+            m_InputLock.Unlock();
         }
 
         // Taken once the frame has drawn, UI included. Where a texture's rows start at the top the capture comes out
