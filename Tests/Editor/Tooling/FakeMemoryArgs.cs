@@ -6,6 +6,7 @@ namespace RPGFramework.Core.Tests.Tooling
 
         int IMemoryServiceArgs.PersistentBytes => m_PersistentBytes;
         int IMemoryServiceArgs.SessionBytes    => m_PersistentBytes;
+        int IMemoryServiceArgs.SettingsBytes   => m_PersistentBytes;
 
         internal FakeMemoryArgs(int persistentBytes)
         {

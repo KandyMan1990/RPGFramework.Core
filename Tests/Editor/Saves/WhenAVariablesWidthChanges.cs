@@ -70,7 +70,7 @@ namespace RPGFramework.Core.Tests.Saves
 
             value.CopyTo(old, 0);
 
-            byte[] image = PersistentMigration.Migrate(old, SaveLayouts.Of(was), now, 8);
+            byte[] image = BankMigration.Migrate(old, SaveLayouts.Of(was), now, MemoryBank.Persistent, 8);
 
             return image;
         }

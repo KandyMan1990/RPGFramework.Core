@@ -19,16 +19,19 @@ namespace RPGFramework.Core.Tests.Saves
             return field;
         }
 
-        internal static PersistentLayout Of(IVariableMap map)
+        internal static BankLayout Of(IVariableMap map)
         {
-            PersistentLayout layout = Read(PersistentLayout.Write(map));
+            BankLayout layout = Read(Write(map));
 
             return layout;
         }
 
-        internal static PersistentLayout Read(byte[] bytes)
+        /// <summary>The layout of <paramref name="map" />'s persistent variables, as a save records it.</summary>
+        internal static byte[] Write(IVariableMap map) => BankLayout.Write(map, P);
+
+        internal static BankLayout Read(byte[] bytes)
         {
-            PersistentLayout.TryRead(bytes, out PersistentLayout layout);
+            BankLayout.TryRead(bytes, out BankLayout layout);
 
             return layout;
         }

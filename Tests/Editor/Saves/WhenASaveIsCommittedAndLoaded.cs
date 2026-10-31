@@ -23,6 +23,7 @@ namespace RPGFramework.Core.Tests.Saves
 
             ISaveDataService loading = SaveFiles.Service(map, storage, out m_Loaded);
 
+            m_Loaded.WriteByte(MemoryBank.Settings, 0, 5);
             loading.BeginSave(SaveFiles.FILE_NAME);
         }
 
@@ -37,6 +38,12 @@ namespace RPGFramework.Core.Tests.Saves
         public void ThenItIsLoadedFromASave()
         {
             Assert.IsTrue(m_Loaded.ReadBool(MemoryBank.Session, 0));
+        }
+
+        [Test]
+        public void ThenTheSettingsAreKept()
+        {
+            Assert.AreEqual(5, m_Loaded.ReadByte(MemoryBank.Settings, 0));
         }
     }
 }

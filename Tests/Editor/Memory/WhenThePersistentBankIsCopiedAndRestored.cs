@@ -22,11 +22,11 @@ namespace RPGFramework.Core.Tests.Memory
             memory.WriteUlong(MemoryBank.Persistent, 16, 0xDEADBEEFCAFEF00DUL);
             memory.WriteBool(MemoryBank.Persistent, 24, true);
 
-            m_Copy = ((IMemoryBankAccess)saved).CopyPersistent();
+            m_Copy = ((IMemoryBankAccess)saved).Copy(MemoryBank.Persistent);
 
             MemoryService restored = TestMemory.Make(64);
 
-            ((IMemoryBankAccess)restored).RestorePersistent(m_Copy);
+            ((IMemoryBankAccess)restored).Restore(MemoryBank.Persistent, m_Copy);
 
             m_Restored = restored;
         }

@@ -22,6 +22,7 @@ namespace RPGFramework.Core.Tests.Saves
 
             m_Memory.WriteInt(MemoryBank.Persistent, 0, 7);
             m_Memory.WriteBool(MemoryBank.Session, 0, true);
+            m_Memory.WriteByte(MemoryBank.Settings, 0, 5);
 
             saves.BeginSave(SaveFiles.FILE_NAME);
         }
@@ -36,6 +37,12 @@ namespace RPGFramework.Core.Tests.Saves
         public void ThenItIsNotLoadedFromASave()
         {
             Assert.IsFalse(m_Memory.ReadBool(MemoryBank.Session, 0));
+        }
+
+        [Test]
+        public void ThenTheSettingsAreKept()
+        {
+            Assert.AreEqual(5, m_Memory.ReadByte(MemoryBank.Settings, 0));
         }
 
         [Test]

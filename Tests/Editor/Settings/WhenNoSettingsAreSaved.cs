@@ -1,32 +1,45 @@
 using NUnit.Framework;
-using RPGFramework.Core.SaveData;
-using RPGFramework.Core.Settings;
+using RPGFramework.Core.Store;
 using RPGFramework.Core.Tests.Saves;
 
 namespace RPGFramework.Core.Tests.Settings
 {
     internal sealed class WhenNoSettingsAreSaved
     {
-        private ISettingsService m_Settings;
+        private FakeSaveStorage m_Storage;
+        private ISettingsStore  m_Store;
 
         [SetUp]
         public void SetUp()
         {
-            m_Settings = new SettingsService(new FakeDefaultSettings(), new FakeSaveStorage());
+            TestVariableMap map = TestSettings.Map();
+
+            m_Storage = new FakeSaveStorage();
+
+            TestSettings.Launch(map, m_Storage, out IMemoryService memory);
+
+            m_Store = new SettingsStore(memory, map);
         }
 
         [Test]
-        public void ThenItIsAFirstLaunch()
+        public void ThenNoLanguageIsChosen()
         {
-            Assert.IsFalse(m_Settings.IsSaved);
+            Assert.IsFalse(m_Store.IsLanguageChosen);
         }
 
         [Test]
-        public void ThenTheGamesDefaultsStand()
+        public void ThenEachSettingIsAtItsDefault()
         {
-            m_Settings.TryGetSection(FakeDefaultSettings.D, out SaveSection<byte> section);
+            Assert.AreEqual(1f,   m_Store.MusicVolume);
+            Assert.AreEqual(1f,   m_Store.SfxVolume);
+            Assert.AreEqual(0.5f, m_Store.BattleMessageSpeed);
+            Assert.AreEqual(0.5f, m_Store.FieldMessageSpeed);
+        }
 
-            Assert.AreEqual(5, section.Data);
+        [Test]
+        public void ThenNothingIsWrittenUntilTheyAreCommitted()
+        {
+            Assert.AreEqual(0, m_Storage.Count);
         }
     }
 }

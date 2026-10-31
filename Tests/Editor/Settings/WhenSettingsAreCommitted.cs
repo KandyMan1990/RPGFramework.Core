@@ -1,39 +1,50 @@
 using NUnit.Framework;
-using RPGFramework.Core.SaveData;
 using RPGFramework.Core.Settings;
+using RPGFramework.Core.Store;
 using RPGFramework.Core.Tests.Saves;
 
 namespace RPGFramework.Core.Tests.Settings
 {
     internal sealed class WhenSettingsAreCommitted
     {
-        private FakeSaveStorage  m_Storage;
-        private ISettingsService m_Settings;
+        private ISettingsStore m_NextLaunch;
 
         [SetUp]
         public void SetUp()
         {
-            m_Storage  = new FakeSaveStorage();
-            m_Settings = new SettingsService(new FakeDefaultSettings(), m_Storage);
+            TestVariableMap map     = TestSettings.Map();
+            FakeSaveStorage storage = new FakeSaveStorage();
 
-            m_Settings.SetSection(FakeDefaultSettings.A, new SaveSection<int>(1, 4));
-            m_Settings.Commit();
+            ISettingsService settings = TestSettings.Launch(map, storage, out IMemoryService memory);
+            ISettingsStore   store    = new SettingsStore(memory, map);
+
+            store.SetLanguage("fr");
+            store.SetMusicVolume(0.25f);
+            store.SetFieldMessageSpeed(0.75f);
+            settings.Commit();
+
+            TestSettings.Launch(map, storage, out IMemoryService next);
+
+            m_NextLaunch = new SettingsStore(next, map);
         }
 
         [Test]
-        public void ThenTheyAreSaved()
+        public void ThenTheNextLaunchHasTheLanguage()
         {
-            Assert.IsTrue(m_Settings.IsSaved);
+            Assert.IsTrue(m_NextLaunch.IsLanguage("fr"));
         }
 
         [Test]
-        public void ThenTheNextLaunchReadsThem()
+        public void ThenTheNextLaunchHasTheVolumesAndSpeeds()
         {
-            ISettingsService next = new SettingsService(new FakeDefaultSettings(), m_Storage);
+            Assert.AreEqual(0.25f, m_NextLaunch.MusicVolume);
+            Assert.AreEqual(0.75f, m_NextLaunch.FieldMessageSpeed);
+        }
 
-            next.TryGetSection(FakeDefaultSettings.A, out SaveSection<int> section);
-
-            Assert.AreEqual(4, section.Data);
+        [Test]
+        public void ThenWhatWasNotChangedKeepsItsDefault()
+        {
+            Assert.AreEqual(1f, m_NextLaunch.SfxVolume);
         }
     }
 }

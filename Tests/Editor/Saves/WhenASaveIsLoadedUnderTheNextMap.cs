@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Core.SharedTypes;
 
 namespace RPGFramework.Core.Tests.Saves
 {
@@ -11,7 +12,7 @@ namespace RPGFramework.Core.Tests.Saves
         [SetUp]
         public void SetUp()
         {
-            m_Image = PersistentMigration.Migrate(SaveLayouts.SavedUnderVersion1(), SaveLayouts.Of(SaveLayouts.Version1()), SaveLayouts.Version2(), 36);
+            m_Image = BankMigration.Migrate(SaveLayouts.SavedUnderVersion1(), SaveLayouts.Of(SaveLayouts.Version1()), SaveLayouts.Version2(), MemoryBank.Persistent, 36);
         }
 
         [Test]
@@ -86,7 +87,7 @@ namespace RPGFramework.Core.Tests.Saves
         [Test]
         public void ThenTheSaveIsNotFromANewerBuild()
         {
-            Assert.IsFalse(PersistentMigration.IsFromNewerBuild(SaveLayouts.Of(SaveLayouts.Version1()), SaveLayouts.Version2()));
+            Assert.IsFalse(BankMigration.IsFromNewerBuild(SaveLayouts.Of(SaveLayouts.Version1()), SaveLayouts.Version2()));
         }
     }
 }

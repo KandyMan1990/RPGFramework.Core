@@ -21,6 +21,7 @@ namespace RPGFramework.Core.Editor
 
         private Label        m_PersistentSizeLabel;
         private Label        m_SessionSizeLabel;
+        private Label        m_SettingsSizeLabel;
         private Label        m_NextOffsetLabel;
         private TextField    m_NameField;
         private EnumField    m_BankField;
@@ -93,9 +94,11 @@ namespace RPGFramework.Core.Editor
 
             m_PersistentSizeLabel = new Label();
             m_SessionSizeLabel    = new Label();
+            m_SettingsSizeLabel   = new Label();
 
             section.Add(m_PersistentSizeLabel);
             section.Add(m_SessionSizeLabel);
+            section.Add(m_SettingsSizeLabel);
 
             return section;
         }
@@ -320,6 +323,7 @@ namespace RPGFramework.Core.Editor
 
             m_PersistentSizeLabel.text = $"Persistent (saved):  {m_Map.GetRequiredBytes(MemoryBank.Persistent)} bytes";
             m_SessionSizeLabel.text    = $"Session (not saved):  {m_Map.GetRequiredBytes(MemoryBank.Session)} bytes";
+            m_SettingsSizeLabel.text   = $"Settings (the settings file):  {m_Map.GetRequiredBytes(MemoryBank.Settings)} bytes";
 
             MemoryBank    bank   = (MemoryBank)m_BankField.value;
             VariableWidth width  = (VariableWidth)m_WidthField.value;
@@ -371,6 +375,10 @@ namespace RPGFramework.Core.Editor
             else if (bank == MemoryBank.Temp)
             {
                 problem = "Temp is script scratch: each running script has its own, zeroed when it starts. Declare a variable here only if scripts need a named scratch slot; anything that must outlast the script belongs in Session or Persistent.";
+            }
+            else if (bank == MemoryBank.Settings)
+            {
+                problem = "Settings are the player's, not a playthrough's: kept in the settings file through every new game and load, and written when the game commits them. Scripts cannot use them.";
             }
 
             SetProblem(problem, blocked ? HelpBoxMessageType.Warning : HelpBoxMessageType.Info);

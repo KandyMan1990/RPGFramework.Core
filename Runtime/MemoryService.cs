@@ -8,48 +8,48 @@ namespace RPGFramework.Core
     {
         private readonly byte[]         m_Persistent;
         private readonly byte[]         m_Session;
+        private readonly byte[]         m_Settings;
         private readonly IMemoryService m_This;
 
         internal MemoryService(IMemoryServiceArgs args)
         {
             m_Persistent = new byte[args.PersistentBytes];
             m_Session    = new byte[args.SessionBytes];
+            m_Settings   = new byte[args.SettingsBytes];
             m_This       = this;
         }
 
-        int IMemoryBankAccess.PersistentByteCount => m_Persistent.Length;
+        int IMemoryBankAccess.GetByteCount(MemoryBank bank) => GetBank(bank).Length;
 
-        byte[] IMemoryBankAccess.CopyPersistent()
+        byte[] IMemoryBankAccess.Copy(MemoryBank bank)
         {
-            byte[] copy = new byte[m_Persistent.Length];
+            byte[] source = GetBank(bank);
+            byte[] copy   = new byte[source.Length];
 
-            Buffer.BlockCopy(m_Persistent, 0, copy, 0, m_Persistent.Length);
+            Buffer.BlockCopy(source, 0, copy, 0, source.Length);
 
             return copy;
         }
 
-        void IMemoryBankAccess.RestorePersistent(byte[] source)
+        void IMemoryBankAccess.Restore(MemoryBank bank, byte[] source)
         {
-            Array.Clear(m_Persistent, 0, m_Persistent.Length);
+            byte[] target = GetBank(bank);
+
+            Array.Clear(target, 0, target.Length);
 
             if (source == null)
             {
                 return;
             }
 
-            int copyLength = Math.Min(source.Length, m_Persistent.Length);
-
-            Buffer.BlockCopy(source, 0, m_Persistent, 0, copyLength);
+            Buffer.BlockCopy(source, 0, target, 0, Math.Min(source.Length, target.Length));
         }
 
-        void IMemoryBankAccess.ClearPersistent()
+        void IMemoryBankAccess.Clear(MemoryBank bank)
         {
-            Array.Clear(m_Persistent, 0, m_Persistent.Length);
-        }
+            byte[] target = GetBank(bank);
 
-        void IMemoryBankAccess.ClearSession()
-        {
-            Array.Clear(m_Session, 0, m_Session.Length);
+            Array.Clear(target, 0, target.Length);
         }
 
         byte IMemoryService.ReadByte(MemoryBank bank, ushort address)
@@ -120,6 +120,7 @@ namespace RPGFramework.Core
                    {
                        MemoryBank.Persistent => m_Persistent,
                        MemoryBank.Session    => m_Session,
+                       MemoryBank.Settings   => m_Settings,
                        _                     => throw new ArgumentOutOfRangeException(nameof(bank), bank, null)
                    };
         }

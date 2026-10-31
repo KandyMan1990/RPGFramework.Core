@@ -60,6 +60,9 @@ namespace RPGFramework.Core
 
             InstallCoreBindings(core, core.m_GlobalContainer);
 
+            // Before the game's own start-up, which may read a setting.
+            core.m_CurrentResolver.Resolve<ISettingsLoader>().Load();
+
             await globalInstaller.Bootstrap(core.m_CurrentResolver);
 
             core.m_SceneDatabase  = core.m_CurrentResolver.Resolve<ISceneDatabase>();
@@ -223,7 +226,7 @@ namespace RPGFramework.Core
 
             container.BindSingletonFromInstanceIfNotRegistered<ISaveStorage>(new FileSaveStorage(Application.persistentDataPath));
             container.BindInterfacesToSelfSingletonIfNotRegistered<SaveDataService>();
-            container.BindSingletonIfNotRegistered<ISettingsService, SettingsService>();
+            container.BindInterfacesToSelfSingletonIfNotRegistered<SettingsService>();
             container.BindInterfacesToSelfSingletonIfNotRegistered<MemoryService>();
 
             container.BindTransientIfNotRegistered<IDialogueWindow, DialogueWindow>();
@@ -232,10 +235,11 @@ namespace RPGFramework.Core
             container.BindSingletonIfNotRegistered<ISaveEnabledStore, SaveEnabledStore>();
             container.BindSingletonIfNotRegistered<ILocationNameStore, LocationNameStore>();
             container.BindSingletonIfNotRegistered<IBattleMusicStore, BattleMusicStore>();
-            container.BindSingletonIfNotRegistered<IMusicVolumeStore, MusicVolumeStore>();
+            container.BindSingletonIfNotRegistered<ISongVolumeStore, SongVolumeStore>();
             container.BindSingletonIfNotRegistered<IPausedMusicStore, PausedMusicStore>();
             container.BindSingletonIfNotRegistered<IFrameClock, UnityFrameClock>();
             container.BindSingletonIfNotRegistered<IPlayTimeStore, PlayTimeCounter>();
+            container.BindSingletonIfNotRegistered<ISettingsStore, SettingsStore>();
         }
     }
 }

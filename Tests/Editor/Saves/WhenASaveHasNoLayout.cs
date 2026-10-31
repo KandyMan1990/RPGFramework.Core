@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Core.SharedTypes;
 
 namespace RPGFramework.Core.Tests.Saves
 {
@@ -14,7 +15,7 @@ namespace RPGFramework.Core.Tests.Saves
         {
             TestVariableMap map = SaveLayouts.Version2();
 
-            m_Image = PersistentMigration.Migrate(new byte[] { 1, 0, 44, 1 }, PersistentLayout.Within(map, 4), map, 36);
+            m_Image = BankMigration.Migrate(new byte[] { 1, 0, 44, 1 }, BankLayout.Within(map, MemoryBank.Persistent, 4), map, MemoryBank.Persistent, 36);
         }
 
         [Test]

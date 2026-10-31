@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using RPGFramework.Core.Data;
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.SharedTypes;
 
@@ -74,7 +75,7 @@ namespace RPGFramework.Core.SaveData
         private readonly IMemoryService                 m_MemoryService;
         private readonly IVariableMap                   m_VariableMap;
         private readonly ISaveStorage                   m_SaveStorage;
-        private readonly SaveFileFormat                 m_Format;
+        private readonly BankFileFormat                 m_Format;
 
         private string m_CurrentFileName;
 
@@ -88,7 +89,8 @@ namespace RPGFramework.Core.SaveData
             m_MemoryService    = memoryService;
             m_VariableMap      = variableMap;
             m_SaveStorage      = saveStorage;
-            m_Format           = new SaveFileFormat(variableMap, memoryBankAccess.PersistentByteCount);
+            m_Format           = new BankFileFormat(variableMap, MemoryBank.Persistent, memoryBankAccess.GetByteCount(MemoryBank.Persistent),
+                                                    FrameworkSaveSections.PERSISTENT_MEMORY, FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT);
         }
 
         void ISaveDataService.BeginSave(string filename)
@@ -100,8 +102,8 @@ namespace RPGFramework.Core.SaveData
             {
                 // A new save. The banks still hold the previous playthrough's state, so clear them
                 // rather than letting it leak into this one, then start every variable at its default.
-                m_MemoryBankAccess.ClearPersistent();
-                m_MemoryBankAccess.ClearSession();
+                m_MemoryBankAccess.Clear(MemoryBank.Persistent);
+                m_MemoryBankAccess.Clear(MemoryBank.Session);
 
                 VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Persistent);
                 VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session);
@@ -130,7 +132,7 @@ namespace RPGFramework.Core.SaveData
         {
             m_CurrentFileName = filename;
 
-            m_SaveStorage.Write(filename, m_Format.Write(m_Sections, m_MemoryBankAccess.CopyPersistent()));
+            m_SaveStorage.Write(filename, m_Format.Write(m_Sections, m_MemoryBankAccess.Copy(MemoryBank.Persistent)));
         }
 
         void ISaveDataService.DeleteSave(string filename)
@@ -177,7 +179,7 @@ namespace RPGFramework.Core.SaveData
 #if ENABLE_RPG_FRAMEWORK_DEBUG
         byte[] IDebugSaveDataService.CaptureSave()
         {
-            return m_Format.Write(m_Sections, m_MemoryBankAccess.CopyPersistent());
+            return m_Format.Write(m_Sections, m_MemoryBankAccess.Copy(MemoryBank.Persistent));
         }
 
         // Arriving as a new game does, so a module enters by its own way in rather than where a save was made.
@@ -289,11 +291,11 @@ namespace RPGFramework.Core.SaveData
         // NPC positions and "have I already heard this line" belong to the playthrough being left, not the one entered.
         private void Restore(byte[] bank, bool loadedFromSave)
         {
-            m_MemoryBankAccess.ClearSession();
+            m_MemoryBankAccess.Clear(MemoryBank.Session);
             VariableDefaults.Write(m_MemoryService, m_VariableMap, MemoryBank.Session);
             SetLoadedFromSave(loadedFromSave);
 
-            m_MemoryBankAccess.RestorePersistent(bank);
+            m_MemoryBankAccess.Restore(MemoryBank.Persistent, bank);
         }
     }
 }

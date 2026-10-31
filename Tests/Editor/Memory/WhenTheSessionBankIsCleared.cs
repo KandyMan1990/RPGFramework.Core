@@ -17,7 +17,7 @@ namespace RPGFramework.Core.Tests.Memory
             m_Memory.WriteByte(MemoryBank.Persistent, 0, 0x11);
             m_Memory.WriteByte(MemoryBank.Session, 0, 0x22);
 
-            ((IMemoryBankAccess)memory).ClearSession();
+            ((IMemoryBankAccess)memory).Clear(MemoryBank.Session);
         }
 
         [Test]

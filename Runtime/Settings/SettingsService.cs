@@ -1,150 +1,70 @@
 using System.Collections.Generic;
+using RPGFramework.Core.Data;
+using RPGFramework.Core.Memory;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Core.SharedTypes;
 
 namespace RPGFramework.Core.Settings
 {
     /// <summary>
-    /// The player's settings — language, volumes, message speeds — in a file of their own beside the saves, because
-    /// they belong to whoever is at the machine rather than to a playthrough. Sectioned the way a save is, so a game
-    /// can keep its own settings beside the framework's.
+    /// The player's settings file, beside the saves, because the settings belong to whoever is at the machine rather
+    /// than to a playthrough. It holds <see cref="MemoryBank.Settings" /> — Core's settings, read through
+    /// <see cref="Store.ISettingsStore" />, and any the game declares in its variable map — read into the bank as the
+    /// game starts, laid out as the map lays it out now.
     /// </summary>
     public interface ISettingsService
     {
         /// <summary>
-        /// Whether settings have been written on this machine, in a file that is intact. Until they are, every section
-        /// holds the game's defaults from <see cref="IDefaultSettings" />.
-        /// </summary>
-        bool IsSaved { get; }
-
-        /// <summary>
-        /// The section with this id, read as <typeparamref name="T" />; false when the settings hold none. Check its
-        /// version before trusting the data's shape.
-        /// </summary>
-        bool TryGetSection<T>(string sectionId, out SaveSection<T> section) where T : unmanaged;
-
-        /// <summary>
-        /// Puts the section in the settings, replacing one with the same id; <see cref="Commit" /> writes it.
-        /// </summary>
-        void SetSection<T>(string sectionId, SaveSection<T> section) where T : unmanaged;
-
-        /// <summary>
-        /// Write every section to the settings file.
+        /// Write the settings bank to the settings file.
         /// </summary>
         void Commit();
     }
 
     /// <summary>
-    /// The game's default settings: what a first launch starts with, and what a section the settings file lacks, or
-    /// holds in a shape an older build wrote, falls back to. Called on every launch, before the file is read.
+    /// Reads the settings file into the settings bank, once, as Core starts and before anything reads a setting.
     /// </summary>
-    public interface IDefaultSettings
+    internal interface ISettingsLoader
     {
-        /// <summary>
-        /// Populate the settings with every section the game expects, at its starting values.
-        /// </summary>
-        void Populate(ISettingsService settingsService);
+        void Load();
     }
 
-    internal sealed class SettingsService : ISettingsService
+    internal sealed class SettingsService : ISettingsService, ISettingsLoader
     {
         internal const string SETTINGS_FILE_NAME = "settings.dat";
 
         private readonly Dictionary<ulong, SectionBlob> m_Sections;
-        private readonly IDefaultSettings               m_DefaultSettings;
+        private readonly IMemoryBankAccess              m_MemoryBankAccess;
         private readonly ISaveStorage                   m_SaveStorage;
+        private readonly BankFileFormat                 m_Format;
 
-        private bool m_Loaded;
-        private bool m_IsSaved;
-
-        public SettingsService(IDefaultSettings defaultSettings, ISaveStorage saveStorage)
+        public SettingsService(IMemoryBankAccess memoryBankAccess, IVariableMap variableMap, ISaveStorage saveStorage)
         {
-            m_Sections        = new Dictionary<ulong, SectionBlob>();
-            m_DefaultSettings = defaultSettings;
-            m_SaveStorage     = saveStorage;
-        }
-
-        bool ISettingsService.IsSaved
-        {
-            get
-            {
-                EnsureLoaded();
-
-                return m_IsSaved;
-            }
-        }
-
-        bool ISettingsService.TryGetSection<T>(string sectionId, out SaveSection<T> section)
-        {
-            EnsureLoaded();
-
-            bool found = SectionFile.TryGetSection(m_Sections, sectionId, out section);
-
-            return found;
-        }
-
-        void ISettingsService.SetSection<T>(string sectionId, SaveSection<T> section)
-        {
-            EnsureLoaded();
-
-            SectionFile.SetSection(m_Sections, sectionId, section);
+            m_Sections         = new Dictionary<ulong, SectionBlob>();
+            m_MemoryBankAccess = memoryBankAccess;
+            m_SaveStorage      = saveStorage;
+            m_Format           = new BankFileFormat(variableMap, MemoryBank.Settings, memoryBankAccess.GetByteCount(MemoryBank.Settings),
+                                                    FrameworkSettingsSections.SETTINGS_MEMORY, FrameworkSettingsSections.SETTINGS_MEMORY_LAYOUT);
         }
 
         void ISettingsService.Commit()
         {
-            EnsureLoaded();
-
-            m_SaveStorage.Write(SETTINGS_FILE_NAME, SectionFile.Write(m_Sections));
-
-            m_IsSaved = true;
+            m_SaveStorage.Write(SETTINGS_FILE_NAME, m_Format.Write(m_Sections, m_MemoryBankAccess.Copy(MemoryBank.Settings)));
         }
 
-        private void EnsureLoaded()
+        // Whatever could be read is taken: a damaged file gives the defaults, and one from a newer build what this build
+        // knows of it. Unlike a save, there is no playthrough to protect by refusing it.
+        void ISettingsLoader.Load()
         {
-            if (m_Loaded)
+            m_Sections.Clear();
+
+            byte[] bank = m_Format.DefaultBank();
+
+            if (m_SaveStorage.Exists(SETTINGS_FILE_NAME))
             {
-                return;
+                m_Format.Read(m_SaveStorage.Read(SETTINGS_FILE_NAME), m_Sections, out bank);
             }
 
-            // Set first: the game's defaults are populated through this service.
-            m_Loaded = true;
-
-            m_DefaultSettings.Populate(this);
-
-            if (!m_SaveStorage.Exists(SETTINGS_FILE_NAME))
-            {
-                return;
-            }
-
-            Dictionary<ulong, SectionBlob> saved = new Dictionary<ulong, SectionBlob>();
-
-            // A damaged file, or one in a newer format, is a first launch: the defaults stand until the player commits.
-            if (SectionFile.Read(m_SaveStorage.Read(SETTINGS_FILE_NAME), saved) != SectionFileStatus.Intact)
-            {
-                return;
-            }
-
-            TakeSaved(m_Sections, saved);
-
-            m_IsSaved = true;
-        }
-
-        /// <summary>
-        /// The saved sections over the game's defaults. A section the game writes is taken from the file only in the
-        /// shape the game writes it now — the same version and size — so one a later build changed, or added, starts at
-        /// its default rather than being read as something it is not. One the game no longer writes is carried through.
-        /// </summary>
-        private static void TakeSaved(Dictionary<ulong, SectionBlob> sections, Dictionary<ulong, SectionBlob> saved)
-        {
-            foreach (KeyValuePair<ulong, SectionBlob> section in saved)
-            {
-                bool reshaped = sections.TryGetValue(section.Key, out SectionBlob current) &&
-                                (current.Version != section.Value.Version || current.Data.Length != section.Value.Data.Length);
-
-                if (!reshaped)
-                {
-                    sections[section.Key] = section.Value;
-                }
-            }
+            m_MemoryBankAccess.Restore(MemoryBank.Settings, bank);
         }
     }
 }

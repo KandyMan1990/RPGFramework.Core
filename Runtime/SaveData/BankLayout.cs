@@ -6,11 +6,11 @@ using RPGFramework.Core.SharedTypes;
 namespace RPGFramework.Core.SaveData
 {
     /// <summary>
-    /// Where each persistent variable sat in a save's bank — its id, offset, width and count, and a record's fields —
-    /// written beside the bank so that a build whose map has changed since can still find every value. Fixed-size fields,
-    /// little endian, as the rest of a save is.
+    /// Where each variable of a bank sat in a file holding it — a save's persistent bank, the settings file's settings
+    /// bank — its id, offset, width and count, and a record's fields, written beside the bank so that a build whose map
+    /// has changed since can still find every value. Fixed-size fields, little endian, as the rest of the file is.
     /// </summary>
-    internal sealed class PersistentLayout
+    internal sealed class BankLayout
     {
         /// <summary>
         /// How a layout's bytes are arranged, which its section is written under.
@@ -18,7 +18,7 @@ namespace RPGFramework.Core.SaveData
         internal const uint FORMAT_VERSION = 1;
 
         /// <summary>
-        /// What a save's values mean, for steps that change meaning rather than layout. 1 until the first step exists.
+        /// What a file's values mean, for steps that change meaning rather than layout. 1 until the first step exists.
         /// </summary>
         internal const uint DATA_VERSION = 1;
 
@@ -99,13 +99,13 @@ namespace RPGFramework.Core.SaveData
         internal uint DataVersion { get; }
 
         /// <summary>
-        /// How many bytes of bank the layout describes: what a save's bank section must hold.
+        /// How many bytes of bank the layout describes: what a file's bank section must hold.
         /// </summary>
         internal int RequiredBytes { get; }
 
         internal IEnumerable<Entry> Entries => m_Entries.Values;
 
-        private PersistentLayout(uint dataVersion, Dictionary<uint, Entry> entries)
+        private BankLayout(uint dataVersion, Dictionary<uint, Entry> entries)
         {
             DataVersion = dataVersion;
             m_Entries   = entries;
@@ -129,19 +129,19 @@ namespace RPGFramework.Core.SaveData
         }
 
         /// <summary>
-        /// The layout of <paramref name="map" />'s persistent variables, as a save written now records it.
+        /// The layout of <paramref name="map" />'s variables in <paramref name="bank" />, as a file written now records it.
         /// </summary>
-        internal static byte[] Write(IVariableMap map)
+        internal static byte[] Write(IVariableMap map, MemoryBank bank)
         {
-            List<VariableDefinition> persistent = new List<VariableDefinition>();
+            List<VariableDefinition> variables = new List<VariableDefinition>();
 
             for (int i = 0; i < map.Variables.Count; i++)
             {
                 VariableDefinition variable = map.Variables[i];
 
-                if (variable.Bank == MemoryBank.Persistent)
+                if (variable.Bank == bank)
                 {
-                    persistent.Add(variable);
+                    variables.Add(variable);
                 }
             }
 
@@ -149,11 +149,11 @@ namespace RPGFramework.Core.SaveData
             using BinaryWriter writer = new BinaryWriter(stream);
 
             writer.Write(DATA_VERSION);
-            writer.Write((ushort)persistent.Count);
+            writer.Write((ushort)variables.Count);
 
-            for (int i = 0; i < persistent.Count; i++)
+            for (int i = 0; i < variables.Count; i++)
             {
-                VariableDefinition variable = persistent[i];
+                VariableDefinition variable = variables[i];
 
                 writer.Write(variable.Id);
                 writer.Write((ushort)variable.Offset);
@@ -181,7 +181,7 @@ namespace RPGFramework.Core.SaveData
         /// <summary>
         /// False for bytes too short for what they declare — a layout that is not one.
         /// </summary>
-        internal static bool TryRead(byte[] bytes, out PersistentLayout layout)
+        internal static bool TryRead(byte[] bytes, out BankLayout layout)
         {
             layout = null;
 
@@ -226,16 +226,17 @@ namespace RPGFramework.Core.SaveData
                 entries[id] = new Entry(id, offset, count, width, fields);
             }
 
-            layout = new PersistentLayout(dataVersion, entries);
+            layout = new BankLayout(dataVersion, entries);
 
             return true;
         }
 
         /// <summary>
-        /// For a save written before saves recorded their layout: <paramref name="map" />'s own, as far as the
-        /// <paramref name="savedLength" /> bytes the save holds reach — what loading assumed of every save until then.
+        /// For a file written before files recorded their layout: <paramref name="map" />'s own for
+        /// <paramref name="bank" />, as far as the <paramref name="savedLength" /> bytes the file holds reach — what
+        /// loading assumed of every save until then.
         /// </summary>
-        internal static PersistentLayout Within(IVariableMap map, int savedLength)
+        internal static BankLayout Within(IVariableMap map, MemoryBank bank, int savedLength)
         {
             Dictionary<uint, Entry> entries = new Dictionary<uint, Entry>();
 
@@ -243,7 +244,7 @@ namespace RPGFramework.Core.SaveData
             {
                 VariableDefinition variable = map.Variables[i];
 
-                if (variable.Bank != MemoryBank.Persistent || variable.EndOffset > savedLength)
+                if (variable.Bank != bank || variable.EndOffset > savedLength)
                 {
                     continue;
                 }
@@ -260,7 +261,7 @@ namespace RPGFramework.Core.SaveData
                 entries[variable.Id] = new Entry(variable.Id, variable.Offset, variable.Count, variable.Width, fields);
             }
 
-            PersistentLayout layout = new PersistentLayout(DATA_VERSION, entries);
+            BankLayout layout = new BankLayout(DATA_VERSION, entries);
 
             return layout;
         }

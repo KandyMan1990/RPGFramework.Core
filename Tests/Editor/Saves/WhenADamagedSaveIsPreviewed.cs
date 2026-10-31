@@ -9,7 +9,7 @@ namespace RPGFramework.Core.Tests.Saves
         [Test]
         public void ThenABankShorterThanItsLayoutIsDamage()
         {
-            SavePreview preview = Preview(new byte[10], PersistentLayout.Write(SaveLayouts.Version2()));
+            SavePreview preview = Preview(new byte[10], SaveLayouts.Write(SaveLayouts.Version2()));
 
             Assert.IsTrue(preview.IsDamaged);
         }
@@ -43,7 +43,7 @@ namespace RPGFramework.Core.Tests.Saves
 
         private static byte[] LayoutCutShort()
         {
-            byte[] layout = PersistentLayout.Write(SaveLayouts.Version2());
+            byte[] layout = SaveLayouts.Write(SaveLayouts.Version2());
 
             Array.Resize(ref layout, layout.Length - 3);
 

@@ -10,7 +10,7 @@ namespace RPGFramework.Core.Tests.Saves
         [Test]
         public void ThenAVariableIdTheMapNeverGaveSaysSo()
         {
-            Assert.IsTrue(PersistentMigration.IsFromNewerBuild(SaveLayouts.Of(SaveLayouts.WithAVariableFromLater()), SaveLayouts.Version2()));
+            Assert.IsTrue(BankMigration.IsFromNewerBuild(SaveLayouts.Of(SaveLayouts.WithAVariableFromLater()), SaveLayouts.Version2()));
         }
 
         [Test]
@@ -24,17 +24,17 @@ namespace RPGFramework.Core.Tests.Saves
 
             TestVariableMap moreFields = new TestVariableMap().AddRecord("party", MemoryBank.Persistent, 0, 1, fields, 6);
 
-            Assert.IsTrue(PersistentMigration.IsFromNewerBuild(SaveLayouts.Of(moreFields), SaveLayouts.Version2()));
+            Assert.IsTrue(BankMigration.IsFromNewerBuild(SaveLayouts.Of(moreFields), SaveLayouts.Version2()));
         }
 
         [Test]
         public void ThenANewerDataVersionSaysSo()
         {
-            byte[] layout = PersistentLayout.Write(SaveLayouts.Version2());
+            byte[] layout = SaveLayouts.Write(SaveLayouts.Version2());
 
             layout[0] = 2;
 
-            Assert.IsTrue(PersistentMigration.IsFromNewerBuild(SaveLayouts.Read(layout), SaveLayouts.Version2()));
+            Assert.IsTrue(BankMigration.IsFromNewerBuild(SaveLayouts.Read(layout), SaveLayouts.Version2()));
         }
     }
 }

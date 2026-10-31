@@ -83,9 +83,10 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `ISaveEnabledStore` | whether the game may be saved here |
 | `ILocationNameStore` | where the player is, as a localisation key's hash |
 | `IBattleMusicStore` | the track every battle plays, as its music asset's name hash; saved |
-| `IMusicVolumeStore` | the volume the music plays at, as the scripts last set it; saved |
+| `ISongVolumeStore` | the volume the songs play at, as the scripts last set it, under the player's music volume; saved |
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
+| `ISettingsStore` | the player's language, music and sound effect volumes and message speeds; in the settings file |
 
 **Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
 above, after your global installer and each only where it bound nothing, so you can replace one, such as the
@@ -93,7 +94,6 @@ above, after your global installer and each only where it bound nothing, so you 
 
 - the two databases, and a module router;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
-- an **`IDefaultSettings`**;
 - a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
   draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
   named, such as Core's **`SubtractiveFade`**, and the two shaders Core's transitions draw with, set to Core's when the
@@ -111,15 +111,16 @@ above, after your global installer and each only where it bound nothing, so you 
 Everything a game remembers lives in **variables**, declared in a **Variable Map** asset (Create > RPG Framework > Core >
 Variable Map) rather than in code:
 
-- **Each variable has a bank** (Persistent, Session or Temp) **and a width**: `Bool`, `SByte`, `Byte`, `Short`,
-  `UShort`, `Int`, `UInt`, `Long`, `ULong` or `Float`.
+- **Each variable has a bank** — Persistent, saved; Session, kept until the game closes; Temp, a script's scratch; or
+  Settings, the player's own — **and a width**: `Bool`, `SByte`, `Byte`, `Short`, `UShort`, `Int`, `UInt`, `Long`,
+  `ULong` or `Float`.
 - **A variable can be an array** of a width, or a **record** of named fields, each with its own width and count. Records
   can be arrays too.
 - **Every variable is a fixed size at a fixed place**, so a save is one block of memory, and a value can be read from a
   save without loading it. There are no strings: text the game shows is stored as a localisation key's hash.
 - **The map places each variable itself**, filling gaps left by deleted ones, and never lets two overlap.
 - **Every variable keeps a permanent id**, so renaming or moving one keeps its saved value.
-- **Each variable has a default**, and a new game starts from them.
+- **Each variable has a default**, and a new game starts from them, as a first launch does for the settings.
 - **Packages declare the variables their own code reads**, and the map adds any that are missing and refuses to build
   without them.
 
@@ -133,10 +134,15 @@ Core requires these:
 | `PlayTime` | Persistent | seconds played |
 | `LocationName` | Persistent | where the player is |
 | `BattleMusic` | Persistent | the track every battle plays until a script sets another; its default is a new game's, zero none |
-| `MusicVolume` | Persistent | the volume the music plays at, 0 to 1; its default is a new game's |
+| `SongVolume` | Persistent | the volume the scripts last set the songs to, 0 to 1, under the player's; its default is a new game's |
+| `Language` | Settings | the language the player chose, as its name's hash; leave its default at zero, which asks on a first launch |
+| `MusicVolume` | Settings | the player's music volume, 0 to 1, under which every song plays at its `SongVolume` |
+| `SfxVolume` | Settings | the player's sound effects' volume, 0 to 1 |
+| `BattleMessageSpeed` | Settings | how fast battle messages appear, 0 to 1; 0.5 is as authored |
+| `FieldMessageSpeed` | Settings | how fast the field's dialogue appears, 0 to 1; 0.5 is as authored |
 
-Read and write Persistent and Session variables through **`IMemoryService`**, by bank and address. Temp memory belongs
-to whatever runs a script, so each script has its own.
+Read and write Persistent, Session and Settings variables through **`IMemoryService`**, by bank and address. Temp
+memory belongs to whatever runs a script, so each script has its own.
 
 ---
 
@@ -157,10 +163,17 @@ to whatever runs a script, so each script has its own.
 
 ## Settings
 
-**`ISettingsService`** keeps the player's settings, such as language, volumes and message speeds, in `settings.dat`
-beside the saves rather than in them, since they belong to whoever is playing, not to a playthrough. Your
-**`IDefaultSettings`** fills in the defaults every launch, and the file's values are laid over them. With no file, it is a
-first launch. A game can add sections of its own.
+The player's settings are the **Settings** bank's variables, kept in `settings.dat` beside the saves rather than in
+them, since they belong to whoever is playing, not to a playthrough:
+
+- **Core reads the file as the game starts**, before your global installer's `Bootstrap`. With no file, every setting
+  starts at its default, which is a first launch; a new game or a load leaves them alone.
+- **`ISettingsStore`** reads and writes Core's own, and **`ISettingsService.Commit`** writes the file.
+- **Your own settings are variables too**: declare them in the Settings bank, read and write them through
+  `IMemoryService`, and commit. Scripts cannot use settings.
+- **The file records its layout**, as a save does, so settings survive a changed map: one moved or renamed keeps its
+  value, and one added starts at its default. A damaged file starts every setting at its default, and one from a newer
+  build keeps what this build knows.
 
 ---
 

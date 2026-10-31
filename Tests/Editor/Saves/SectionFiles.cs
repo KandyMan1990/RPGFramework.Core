@@ -1,25 +1,25 @@
 using System.Collections.Generic;
-using RPGFramework.Core.Data;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Hashing;
 
 namespace RPGFramework.Core.Tests.Saves
 {
     internal static class SectionFiles
     {
-        internal const string CONFIG = "RPGFramework.ConfigData";
-        internal const string OTHER  = "Game.Other";
+        internal const string FIRST = "Game.First";
+        internal const string OTHER = "Game.Other";
 
-        /// <summary>A file of the framework's config section beside a game's own of another type.</summary>
+        internal static readonly byte[] FIRST_DATA = { 1, 2, 3, 4, 5 };
+        internal static readonly byte[] OTHER_DATA = { 8, 7, 6, 5, 4, 3, 2, 1 };
+
+        /// <summary>A file of two sections of different versions and sizes.</summary>
         internal static byte[] TwoSections()
         {
-            ConfigData_V1 config = new ConfigData_V1 { MusicVolume = 0.25f, FieldMessageSpeed = 0.75f };
-
-            config.SetLanguage("fr-FR");
-
-            Dictionary<ulong, SectionBlob> sections = new Dictionary<ulong, SectionBlob>();
-
-            SectionFile.SetSection(sections, CONFIG, new SaveSection<ConfigData_V1>(3, config));
-            SectionFile.SetSection(sections, OTHER, new SaveSection<long>(7, 0x0102030405060708L));
+            Dictionary<ulong, SectionBlob> sections = new Dictionary<ulong, SectionBlob>
+                                                      {
+                                                          [Fnv1a64.Hash(FIRST)] = new SectionBlob(3, FIRST_DATA),
+                                                          [Fnv1a64.Hash(OTHER)] = new SectionBlob(7, OTHER_DATA)
+                                                      };
 
             byte[] file = SectionFile.Write(sections);
 

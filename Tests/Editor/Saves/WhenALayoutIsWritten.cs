@@ -9,7 +9,7 @@ namespace RPGFramework.Core.Tests.Saves
         [Test]
         public void ThenItIsSixBytesThenTenAVariableAndFiveAField()
         {
-            byte[] layout = PersistentLayout.Write(SaveLayouts.Version2());
+            byte[] layout = SaveLayouts.Write(SaveLayouts.Version2());
 
             Assert.AreEqual(6 + 9 * 10 + 4 * 5, layout.Length);
         }

@@ -1,7 +1,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using RPGFramework.Hashing;
 
 namespace RPGFramework.Core.SaveData
@@ -148,30 +147,6 @@ namespace RPGFramework.Core.SaveData
             }
 
             return SectionFileStatus.Intact;
-        }
-
-        internal static bool TryGetSection<T>(Dictionary<ulong, SectionBlob> sections, string sectionId, out SaveSection<T> section) where T : unmanaged
-        {
-            ulong hash = Fnv1a64.Hash(sectionId);
-            if (!sections.TryGetValue(hash, out SectionBlob sectionBlob))
-            {
-                section = default;
-                return false;
-            }
-
-            T data = MemoryMarshal.Read<T>(sectionBlob.Data);
-            section = new SaveSection<T>(sectionBlob.Version, data);
-            return true;
-        }
-
-        internal static unsafe void SetSection<T>(Dictionary<ulong, SectionBlob> sections, string sectionId, SaveSection<T> section) where T : unmanaged
-        {
-            ulong hash = Fnv1a64.Hash(sectionId);
-
-            byte[] bytes = new byte[sizeof(T)];
-            MemoryMarshal.Write(bytes, ref section.Data);
-
-            sections[hash] = new SectionBlob(section.Version, bytes);
         }
     }
 }

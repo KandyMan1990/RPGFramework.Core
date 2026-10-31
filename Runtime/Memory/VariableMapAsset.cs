@@ -54,6 +54,8 @@ namespace RPGFramework.Core.Memory
             }
         }
 
+        int IMemoryServiceArgs.SettingsBytes => GetRequiredBytes(MemoryBank.Settings);
+
         int ITempMemoryArgs.TempBytes
         {
             get

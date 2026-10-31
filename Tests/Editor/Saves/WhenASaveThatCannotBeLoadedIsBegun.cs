@@ -11,7 +11,7 @@ namespace RPGFramework.Core.Tests.Saves
         {
             ISaveStorage storage = new FakeSaveStorage();
 
-            storage.Write(SaveFiles.FILE_NAME, SaveFiles.Holding(new byte[2], PersistentLayout.Write(SaveLayouts.WithAVariableFromLater())));
+            storage.Write(SaveFiles.FILE_NAME, SaveFiles.Holding(new byte[2], SaveLayouts.Write(SaveLayouts.WithAVariableFromLater())));
 
             ISaveDataService saves = SaveFiles.Service(SaveFiles.Version2WithLoadedFromSave(), storage, out _);
 

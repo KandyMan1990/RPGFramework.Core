@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RPGFramework.Core.Data;
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.SaveData;
 using RPGFramework.Core.SharedTypes;
@@ -12,14 +13,15 @@ namespace RPGFramework.Core.Editor
     public sealed class PersistentValues : IPersistentValues
     {
         private readonly PersistentValue[] m_Values;
-        private readonly SaveFileFormat    m_Format;
+        private readonly BankFileFormat    m_Format;
 
         IReadOnlyList<PersistentValue> IPersistentValues.Values => m_Values;
 
         public PersistentValues(IVariableMap map, IMemoryServiceArgs memory)
         {
             m_Values = LayOut(map);
-            m_Format = new SaveFileFormat(map, memory.PersistentBytes);
+            m_Format = new BankFileFormat(map, MemoryBank.Persistent, memory.PersistentBytes,
+                                          FrameworkSaveSections.PERSISTENT_MEMORY, FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT);
         }
 
         byte[] IPersistentValues.CreateDefaultBank()

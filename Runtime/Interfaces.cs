@@ -52,8 +52,9 @@ namespace RPGFramework.Core
 
     /// <summary>
     /// The game's variables, read and written by address in a bank: <see cref="MemoryBank.Persistent" />, which a save
-    /// holds, and <see cref="MemoryBank.Session" />, which lasts until the game closes. Each value is held lowest byte
-    /// first, at the offset the variable map gives it.
+    /// holds, <see cref="MemoryBank.Session" />, which lasts until the game closes, and
+    /// <see cref="MemoryBank.Settings" />, which the settings file holds. Each value is held lowest byte first, at the
+    /// offset the variable map gives it.
     /// </summary>
     public interface IMemoryService
     {
@@ -94,7 +95,7 @@ namespace RPGFramework.Core
         void WriteUlong(MemoryBank bank, ushort address, ulong value);
     }
 
-    /// <summary>How big the persistent and session banks are, in bytes: as much as the variable map lays out.</summary>
+    /// <summary>How big the persistent, session and settings banks are, in bytes: as much as the variable map lays out.</summary>
     public interface IMemoryServiceArgs
     {
         /// <summary>The persistent bank's size, which every save holds whole.</summary>
@@ -102,6 +103,9 @@ namespace RPGFramework.Core
 
         /// <summary>The session bank's size.</summary>
         int SessionBytes { get; }
+
+        /// <summary>The settings bank's size, which the settings file holds whole.</summary>
+        int SettingsBytes { get; }
     }
 
     /// <summary>

@@ -18,7 +18,7 @@ namespace RPGFramework.Core.Tests.Saves
             TestVariableMap after = new TestVariableMap().Add("a", MemoryBank.Persistent, VariableWidth.Int, 0, 0, id: 1)
                                                          .Add("c", MemoryBank.Persistent, VariableWidth.Int, 4, 7, id: 3);
 
-            m_Image = PersistentMigration.Migrate(new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, SaveLayouts.Of(before), after, 8);
+            m_Image = BankMigration.Migrate(new byte[] { 1, 0, 0, 0, 2, 0, 0, 0 }, SaveLayouts.Of(before), after, MemoryBank.Persistent, 8);
         }
 
         [Test]

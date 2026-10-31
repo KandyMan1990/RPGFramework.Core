@@ -20,7 +20,7 @@ namespace RPGFramework.Core.Tests.Memory
             m_Memory = grown;
             m_Memory.WriteInt(MemoryBank.Persistent, 100, 0x7FFFFFFF);
 
-            ((IMemoryBankAccess)grown).RestorePersistent(((IMemoryBankAccess)saved).CopyPersistent());
+            ((IMemoryBankAccess)grown).Restore(MemoryBank.Persistent, ((IMemoryBankAccess)saved).Copy(MemoryBank.Persistent));
         }
 
         [Test]

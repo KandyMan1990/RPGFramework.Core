@@ -1,13 +1,18 @@
 namespace RPGFramework.Core.Data
 {
-    /// <summary>
-    /// The framework's sections of the settings file — see <see cref="RPGFramework.Core.Settings.ISettingsService" />.
-    /// </summary>
-    public static class FrameworkSettingsSections
+    internal static class FrameworkSettingsSections
     {
         /// <summary>
-        /// <see cref="ConfigData_V1" />: the language, volumes and message speeds the Config menu edits.
+        /// The whole of <see cref="RPGFramework.Core.SharedTypes.MemoryBank.Settings" />, written as a raw byte blob.
+        /// Managed entirely by the settings service — a game neither reads nor writes this section itself, it just reads
+        /// and writes variables.
         /// </summary>
-        public const string CONFIG_DATA = "RPGFramework.ConfigData";
+        internal const string SETTINGS_MEMORY = "RPGFramework.SettingsMemory";
+
+        /// <summary>
+        /// Where each settings variable sat in <see cref="SETTINGS_MEMORY" /> when the file was written, so a build whose
+        /// map has changed since can still find every value.
+        /// </summary>
+        internal const string SETTINGS_MEMORY_LAYOUT = "RPGFramework.SettingsMemoryLayout";
     }
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using RPGFramework.Core.Data;
 using RPGFramework.Core.SaveData;
+using RPGFramework.Hashing;
 
 namespace RPGFramework.Core.Tests.Saves
 {
@@ -18,29 +18,27 @@ namespace RPGFramework.Core.Tests.Saves
         [Test]
         public void ThenASectionKeepsItsVersionAndData()
         {
-            bool found = SectionFile.TryGetSection(m_ReadBack, SectionFiles.CONFIG, out SaveSection<ConfigData_V1> config);
+            bool found = m_ReadBack.TryGetValue(Fnv1a64.Hash(SectionFiles.FIRST), out SectionBlob first);
 
             Assert.IsTrue(found);
-            Assert.AreEqual(3u, config.Version);
-            Assert.AreEqual("fr-FR", config.Data.GetLanguage());
-            Assert.AreEqual(0.25f, config.Data.MusicVolume);
-            Assert.AreEqual(0.75f, config.Data.FieldMessageSpeed);
+            Assert.AreEqual(3u, first.Version);
+            CollectionAssert.AreEqual(SectionFiles.FIRST_DATA, first.Data);
         }
 
         [Test]
-        public void ThenASectionOfAnotherTypeReadsBackBesideIt()
+        public void ThenASectionOfAnotherSizeReadsBackBesideIt()
         {
-            bool found = SectionFile.TryGetSection(m_ReadBack, SectionFiles.OTHER, out SaveSection<long> other);
+            bool found = m_ReadBack.TryGetValue(Fnv1a64.Hash(SectionFiles.OTHER), out SectionBlob other);
 
             Assert.IsTrue(found);
             Assert.AreEqual(7u, other.Version);
-            Assert.AreEqual(0x0102030405060708L, other.Data);
+            CollectionAssert.AreEqual(SectionFiles.OTHER_DATA, other.Data);
         }
 
         [Test]
         public void ThenASectionNeverWrittenIsMissing()
         {
-            Assert.IsFalse(SectionFile.TryGetSection(m_ReadBack, "Never.Written", out SaveSection<int> _));
+            Assert.IsFalse(m_ReadBack.ContainsKey(Fnv1a64.Hash("Never.Written")));
         }
     }
 }

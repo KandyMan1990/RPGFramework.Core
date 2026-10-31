@@ -28,12 +28,12 @@ namespace RPGFramework.Core.Tests.Saves
         {
             Dictionary<ulong, SectionBlob> sections = new Dictionary<ulong, SectionBlob>
                                                       {
-                                                          [Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY)] = new SectionBlob(Versions.PERSISTENT_MEMORY, persistent)
+                                                          [Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY)] = new SectionBlob(BankFileFormat.MEMORY_VERSION, persistent)
                                                       };
 
             if (layout != null)
             {
-                sections[Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT)] = new SectionBlob(PersistentLayout.FORMAT_VERSION, layout);
+                sections[Fnv1a64.Hash(FrameworkSaveSections.PERSISTENT_MEMORY_LAYOUT)] = new SectionBlob(BankLayout.FORMAT_VERSION, layout);
             }
 
             byte[] file = SectionFile.Write(sections);

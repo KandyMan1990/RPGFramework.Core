@@ -7,23 +7,23 @@ using RPGFramework.Core.SharedTypes;
 namespace RPGFramework.Core.SaveData
 {
     /// <summary>
-    /// Moves a save's persistent values from where its layout had them to where the current map puts them, matched on
-    /// ids, so the map can change after saves exist. A rename or a move keeps a value; a variable, element or field added
-    /// since takes its default; one deleted is dropped; a width that changed is converted.
+    /// Moves a file's values of a bank from where its layout had them to where the current map puts them, matched on
+    /// ids, so the map can change after saves and settings exist. A rename or a move keeps a value; a variable, element
+    /// or field added since takes its default; one deleted is dropped; a width that changed is converted.
     /// </summary>
-    internal static class PersistentMigration
+    internal static class BankMigration
     {
-        internal static byte[] Migrate(byte[] saved, PersistentLayout layout, IVariableMap map, int bankSize)
+        internal static byte[] Migrate(byte[] saved, BankLayout layout, IVariableMap map, MemoryBank bank, int bankSize)
         {
             byte[] image = new byte[bankSize];
 
-            VariableDefaults.Write(image, map, MemoryBank.Persistent);
+            VariableDefaults.Write(image, map, bank);
 
             for (int i = 0; i < map.Variables.Count; i++)
             {
                 VariableDefinition variable = map.Variables[i];
 
-                if (variable.Bank != MemoryBank.Persistent || !layout.TryGetEntry(variable.Id, out PersistentLayout.Entry entry) || entry.IsRecord != variable.IsRecord)
+                if (variable.Bank != bank || !layout.TryGetEntry(variable.Id, out BankLayout.Entry entry) || entry.IsRecord != variable.IsRecord)
                 {
                     continue;
                 }
@@ -50,13 +50,13 @@ namespace RPGFramework.Core.SaveData
         }
 
         /// <summary>
-        /// A save holding a variable or record field id above any this map has given out, or a data version above this
+        /// A file holding a variable or record field id above any this map has given out, or a data version above this
         /// build's, was written by a newer build: loading it would drop what this build does not know, and saving over
         /// it would lose that for good.
         /// </summary>
-        internal static bool IsFromNewerBuild(PersistentLayout layout, IVariableMap map)
+        internal static bool IsFromNewerBuild(BankLayout layout, IVariableMap map)
         {
-            if (layout.DataVersion > PersistentLayout.DATA_VERSION)
+            if (layout.DataVersion > BankLayout.DATA_VERSION)
             {
                 return true;
             }
@@ -70,7 +70,7 @@ namespace RPGFramework.Core.SaveData
                 byId[variable.Id] = variable;
             }
 
-            foreach (PersistentLayout.Entry entry in layout.Entries)
+            foreach (BankLayout.Entry entry in layout.Entries)
             {
                 if (entry.Id > map.LastVariableId)
                 {
@@ -84,7 +84,7 @@ namespace RPGFramework.Core.SaveData
 
                 for (int i = 0; i < entry.Fields.Length; i++)
                 {
-                    PersistentLayout.Field field = entry.Fields[i];
+                    BankLayout.Field field = entry.Fields[i];
 
                     if (field.Id > variable.LastFieldId)
                     {
@@ -96,13 +96,13 @@ namespace RPGFramework.Core.SaveData
             return false;
         }
 
-        private static void CopyRecord(byte[] saved, int from, PersistentLayout.Entry entry, byte[] image, int to, VariableDefinition variable)
+        private static void CopyRecord(byte[] saved, int from, BankLayout.Entry entry, byte[] image, int to, VariableDefinition variable)
         {
             for (int j = 0; j < variable.Fields.Count; j++)
             {
                 VariableRecordField field = variable.Fields[j];
 
-                if (entry.TryGetField(field.Id, out PersistentLayout.Field savedField, out int savedFieldOffset))
+                if (entry.TryGetField(field.Id, out BankLayout.Field savedField, out int savedFieldOffset))
                 {
                     int count = Math.Min(savedField.Count, field.Count);
 

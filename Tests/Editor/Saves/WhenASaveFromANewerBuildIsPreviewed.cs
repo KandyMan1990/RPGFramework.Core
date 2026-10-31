@@ -12,7 +12,7 @@ namespace RPGFramework.Core.Tests.Saves
         {
             ISaveStorage storage = new FakeSaveStorage();
 
-            storage.Write(SaveFiles.FILE_NAME, SaveFiles.Holding(new byte[2], PersistentLayout.Write(SaveLayouts.WithAVariableFromLater())));
+            storage.Write(SaveFiles.FILE_NAME, SaveFiles.Holding(new byte[2], SaveLayouts.Write(SaveLayouts.WithAVariableFromLater())));
 
             m_Preview = SaveFiles.Service(SaveLayouts.Version2(), storage, out _).ReadPreview(SaveFiles.FILE_NAME);
         }

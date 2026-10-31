@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Tests.Memory
             m_Memory = memory;
             m_Memory.WriteByte(MemoryBank.Persistent, 0, 0xFF);
 
-            ((IMemoryBankAccess)memory).RestorePersistent(null);
+            ((IMemoryBankAccess)memory).Restore(MemoryBank.Persistent, null);
         }
 
         [Test]
