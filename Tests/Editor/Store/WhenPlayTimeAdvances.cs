@@ -13,10 +13,11 @@ namespace RPGFramework.Core.Tests.Store
         [SetUp]
         public void SetUp()
         {
-            TestVariableMap map = new TestVariableMap().Add(CoreVariables.PLAY_TIME, MemoryBank.Persistent, VariableWidth.UInt, 0, 0);
+            TestVariableMap map    = Clocks.Map();
+            MemoryService   memory = TestMemory.Make(32);
 
             m_Clock   = new FakeFrameClock();
-            m_Counter = new PlayTimeCounter(TestMemory.Make(32), map, m_Clock);
+            m_Counter = new PlayTimeCounter(memory, map, m_Clock, new CountdownStore(memory, map));
         }
 
         [Test]

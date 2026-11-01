@@ -20,6 +20,10 @@
     -unity-text-align: middle-left;
 }
 
+.rpg-countdown {
+    font-size: 60px;
+}
+
 .dialogue-window {
     background-color: rgb(68, 68, 68);
 }

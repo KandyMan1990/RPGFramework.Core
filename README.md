@@ -86,6 +86,7 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `ISongVolumeStore` | the volume the songs play at, as the scripts last set it, under the player's music volume; saved |
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
+| `ICountdownStore` | the countdown's seconds left, counted down beside the play time whenever above zero, and whether it is shown; saved |
 | `ISettingsStore` | the player's language, music and sound effect volumes and message speeds; in the settings file |
 
 **Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
@@ -132,6 +133,9 @@ Core requires these:
 | `LoadedFromSave` | Session | whether the playthrough was loaded from a save |
 | `SaveEnabled` | Session | whether saving is allowed; its default is your game's policy, saving anywhere or at save points |
 | `PlayTime` | Persistent | seconds played |
+| `Countdown` | Persistent | the countdown's seconds left |
+| `CountdownShown` | Persistent | whether the countdown is on screen |
+| `CountdownX`, `CountdownY` | Persistent | where the countdown is shown, in the field and in battle alike |
 | `LocationName` | Persistent | where the player is |
 | `BattleMusic` | Persistent | the track every battle plays until a script sets another; its default is a new game's, zero none |
 | `SongVolume` | Persistent | the volume the scripts last set the songs to, 0 to 1, under the player's; its default is a new game's |
@@ -189,6 +193,9 @@ them, since they belong to whoever is playing, not to a playthrough:
   reaches a context (`MovementReaches`): only when no context above it takes movement (`TakesMovement`). A conversation
   the player can walk away from takes only confirm, and movement reaches the field beneath. Nothing is passed on while
   the screen fades, so a press during a change of module does nothing and nothing moves.
+- **`ClockText`** writes the play time as hours and minutes, uncapped, and the countdown as minutes and seconds, two
+  digits each, and **`ClockBlink`** blinks a clock's colon once a second. **`CountdownLabel`** is the countdown on
+  screen, shown while it is shown, which the field and a battle place; restyle it through `rpg-countdown`.
 - **`SelectionScope`** is for UI Toolkit screens you build yourself, such as a battle's commands. Over a root element,
   it moves the cursor only between **`RPGUIButton`s' neighbours** (link them with `RPGUIButton.LinkColumn` and
   `LinkRow`), by key, pad or pointer alike, and while its input is off lets nothing in it react at all. It plays no

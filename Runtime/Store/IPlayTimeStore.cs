@@ -24,24 +24,26 @@ namespace RPGFramework.Core.Store
 
     /// <summary>
     /// Counts <see cref="CoreVariables.PLAY_TIME" /> up once the game has started, in every module, in real time rather
-    /// than scaled time. Whole seconds are what is saved; the fraction is carried from frame to frame, since
-    /// adding each frame's time to a float would drift within hours of play.
+    /// than scaled time, and the countdown down beside it. Whole seconds are what is saved; the fraction is carried from
+    /// frame to frame, since adding each frame's time to a float would drift within hours of play.
     /// </summary>
     internal sealed class PlayTimeCounter : IPlayTimeStore, IUpdatable
     {
-        private readonly IMemoryService m_MemoryService;
-        private readonly IFrameClock    m_FrameClock;
-        private readonly ushort         m_Address;
+        private readonly IMemoryService  m_MemoryService;
+        private readonly IFrameClock     m_FrameClock;
+        private readonly ICountdownStore m_Countdown;
+        private readonly ushort          m_Address;
 
         private float m_Fraction;
         private bool  m_Counting;
 
-        public PlayTimeCounter(IMemoryService memoryService, IVariableMap variableMap, IFrameClock frameClock)
+        public PlayTimeCounter(IMemoryService memoryService, IVariableMap variableMap, IFrameClock frameClock, ICountdownStore countdown)
         {
             variableMap.TryGetVariable(CoreVariables.PLAY_TIME, out VariableDefinition playTime);
 
             m_MemoryService = memoryService;
             m_FrameClock    = frameClock;
+            m_Countdown     = countdown;
             m_Address       = (ushort)playTime.Offset;
             m_Fraction      = 0f;
             m_Counting      = false;
@@ -102,6 +104,13 @@ namespace RPGFramework.Core.Store
             uint playTime = (uint)m_MemoryService.ReadInt(MemoryBank.Persistent, m_Address);
 
             m_MemoryService.WriteInt(MemoryBank.Persistent, m_Address, (int)(playTime + seconds));
+
+            uint left = m_Countdown.Seconds;
+
+            if (left > 0)
+            {
+                m_Countdown.SetSeconds(left > seconds ? left - seconds : 0);
+            }
         }
     }
 }

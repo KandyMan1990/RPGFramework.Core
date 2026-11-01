@@ -38,6 +38,23 @@ namespace RPGFramework.Core.Memory
         public const string PLAY_TIME = "PlayTime";
 
         /// <summary>
+        /// The countdown's seconds left, counted down beside the play time whenever it is above zero, shown or not.
+        /// </summary>
+        public const string COUNTDOWN = "Countdown";
+
+        /// <summary>
+        /// Whether the countdown is on screen: the field shows it, the menu's clock shows it in place of the play time,
+        /// and at zero it ends the game unless the battle mode lets it run out.
+        /// </summary>
+        public const string COUNTDOWN_SHOWN = "CountdownShown";
+
+        /// <summary>Where the countdown is shown, across, in every module that shows it, in UI units.</summary>
+        public const string COUNTDOWN_X = "CountdownX";
+
+        /// <summary>Where the countdown is shown, down, in every module that shows it, in UI units.</summary>
+        public const string COUNTDOWN_Y = "CountdownY";
+
+        /// <summary>
         /// The place the player is in, as the hash of its localisation key, shown in the party menu and in each save's
         /// slot. Written by the module the player is in.
         /// </summary>
@@ -89,6 +106,10 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(LOADED_FROM_SAVE,     MemoryBank.Session,    VariableWidth.Bool,  "Set when a save is loaded, and cleared once the player is back where it was made. Its default is not used"),
             new RequiredVariable(SAVE_ENABLED,         MemoryBank.Session,    VariableWidth.Bool,  "Whether the player can save from the party menu. Its default is the game's policy: false to save only where a script allows it, true to save anywhere"),
             new RequiredVariable(PLAY_TIME,            MemoryBank.Persistent, VariableWidth.UInt,  "How long the playthrough has been played, in whole seconds. Counted by the framework"),
+            new RequiredVariable(COUNTDOWN,            MemoryBank.Persistent, VariableWidth.UInt,  "The countdown's seconds left, counted down whenever it is above zero. Set by scripts; its default is a new game's"),
+            new RequiredVariable(COUNTDOWN_SHOWN,      MemoryBank.Persistent, VariableWidth.Bool,  "Whether the countdown is on screen. Set by scripts; its default is a new game's"),
+            new RequiredVariable(COUNTDOWN_X,          MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, across, as a script last put it. Its default is not used"),
+            new RequiredVariable(COUNTDOWN_Y,          MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, down, as a script last put it. Its default is not used"),
             new RequiredVariable(LOCATION_NAME,        MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in"),
             new RequiredVariable(BATTLE_MUSIC,         MemoryBank.Persistent, VariableWidth.ULong, "The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a new game's; zero plays none"),
             new RequiredVariable(SONG_VOLUME,          MemoryBank.Persistent, VariableWidth.Float, "The volume the songs play at, 0 to 1, as the scripts last set it, under the player's music volume. Its default is a new game's", VariableDefaults.FromFloat(1f)),
