@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.Properties;
 using UnityEngine.UIElements;
 
 namespace RPGFramework.Core.UI
@@ -13,7 +14,7 @@ namespace RPGFramework.Core.UI
         /// <summary>A click on the button, or a submit while it has focus.</summary>
         public event Action Chosen;
 
-        [UxmlAttribute]
+        [UxmlAttribute, CreateProperty]
         public string text
         {
             get => m_Label.text;
