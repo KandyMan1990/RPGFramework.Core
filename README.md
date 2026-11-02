@@ -16,7 +16,8 @@ pipeline: its transitions are drawn with UI Toolkit, though the Subtractive Tran
 
 ## Modules
 
-A module is a scene and its `IModule`, which a component in that scene binds. Each has a byte id. Your game supplies two databases:
+A module is a scene and its `IModule`, which a component in that scene binds. Each has a byte id. Your game supplies
+two databases:
 
 - an **`IModuleDatabase`**, mapping each id to its module's interface;
 - an **`ISceneDatabase`**, mapping each module to its scene.
@@ -56,13 +57,13 @@ objects through **`IModuleScene`**, bound in its container, rather than searchin
 loaded beside it. A change says how the next module is entered — `ModuleEntries.NEW`, or `RETURN` to one a battle
 replaced, which carries on from what it kept — and the module gets it in `OnEnterAsync`.
 
-**Every change happens under a covered screen.** Core covers the screen before it touches a module, carries the
-change out, and reveals the module on top, then tells it so with **`OnRevealed`**: that is where a module starts anything
-the player should see from its beginning. Routed input reaches modules again as the reveal starts, so a module that
-should take none while it plays — a menu — turns its own input on in `OnRevealed`, and one the player may act in as it
-appears — a field, walked into as it fades in — turns it on as it enters. `OnRevealed` is not called when the module's
-own cover took over the reveal. A module does not fade itself for a change. Changes
-run one at a time: one asked for during another waits for it, and is routed from whichever module is then on top.
+**Every change happens under a covered screen.** Core covers the screen before it touches a module, carries the change
+out, and reveals the module on top, then tells it so with **`OnRevealed`**: that is where a module starts anything the
+player should see from its beginning. Routed input reaches modules again as the reveal starts, so a module that should
+take none while it plays — a menu — turns its own input on in `OnRevealed`, and one the player may act in as it appears
+— a field, walked into as it fades in — turns it on as it enters. `OnRevealed` is not called when the module's own cover
+took over the reveal. A module does not fade itself for a change. Changes run one at a time: one asked for during
+another waits for it, and is routed from whichever module is then on top.
 
 **A module binds its own types**, from a component in its scene that implements **`IModuleBindings`**, so it is built
 fresh on every entry and goes with its scene. Core runs your scene installer first, then the module's bindings, each
@@ -73,7 +74,8 @@ missing either throws as the module loads. A module of your own implements `IMod
 scene, as the framework's do.
 
 **Bind an `IModuleRouter` in your global installer.** RPGFramework.ModuleRouter's `DefaultModuleRouter` has the
-framework's routes; derive from it for your own modules' (see its README).
+framework's routes; a router of your own routes your own modules and hands the rest to it, through
+`IDefaultModuleRouter` (see its README).
 
 Modules talk through **stores**, small services that hold one thing for another module to read:
 
@@ -90,8 +92,8 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `ISettingsStore` | the player's language, music and sound effect volumes and message speeds; in the settings file |
 
 **Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
-above, after your global installer and each only where it bound nothing, so you can replace one, such as the
-`ISaveStorage` saves are written through. **Your global installer binds**:
+above, after your global installer and each only where it bound nothing, so binding one of their interfaces yourself
+replaces Core's. **Your global installer binds**:
 
 - the two databases, and a module router;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
@@ -109,8 +111,8 @@ above, after your global installer and each only where it bound nothing, so you 
 
 ## Variables
 
-Everything a game remembers lives in **variables**, declared in a **Variable Map** asset (Create > RPG Framework > Core >
-Variable Map) rather than in code:
+Everything a game remembers lives in **variables**, declared in a **Variable Map** asset (Create > RPG Framework >
+Core > Variable Map) rather than in code:
 
 - **Each variable has a bank** — Persistent, saved; Session, kept until the game closes; Temp, a script's scratch; or
   Settings, the player's own — **and a width**: `Bool`, `SByte`, `Byte`, `Short`, `UShort`, `Int`, `UInt`, `Long`,
@@ -166,6 +168,8 @@ memory belongs to whatever runs a script, so each script has its own.
 - **A save records its layout**, so it still loads after the variable map has changed: a variable added since takes its
   default, a renamed or moved one keeps its value, and a deleted one is dropped.
 - **A save that can't be loaded says why**: it is damaged, or was made by a newer version of the game.
+- **Saves and settings are files** in the player's data folder, written through `System.IO`, so consoles, which save
+  through their own platform services, aren't supported yet.
 
 ## Settings
 
@@ -188,7 +192,8 @@ them, since they belong to whoever is playing, not to a playthrough:
 - **`InputAdapter`**, one per module scene, turns Input System actions into Core's controls (Primary, Secondary,
   Tertiary, Quaternary, the shoulders, triggers, Start and Select), and holds the direction held, its `Movement`, for
   what moves to read each tick. A direction held through a transition or a conversation moves the player as soon as
-  movement reaches it again; a button held through one does not act again.
+  movement reaches it again; a button held through one does not act again. The controls are a fixed enum,
+  `ControlSlot`, which a game can't extend yet, and they can't be rebound: there are no named actions above them.
 - **`IInputRouter`** passes presses down a stack of **input contexts** until one uses them, and says whether movement
   reaches a context (`MovementReaches`): only when no context above it takes movement (`TakesMovement`). A conversation
   the player can walk away from takes only confirm, and movement reaches the field beneath. Nothing is passed on while
@@ -249,15 +254,15 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
     its own sound, not its stages'.
 
   Your own derives from `TransitionAsset`: it builds what it draws in `Begin`, in the context's `Host`, and shows it as
-  covered as the screen in its playback's `Show`; `Seconds` tells it how long it lasts, for motion it times itself. One that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and
-  owns the whole screen, so the change it covers is carried out beneath it at once. Black lies beneath a transition
-  once the screen is fully covered, and beneath a captured frame, so a frame in which no camera renders never shows,
-  as between one module's scene going and the next's loading. Transitions
-  are named by the hash of their names (`NameHash`), `0` for the defaults; a `ModuleChange` names its cover and reveal
-  (`WithTransitions`), and `CoverSeconds` says how long a cover takes, for a music fade timed to it. A cover while the
-  screen is covered, or a reveal while it is clear, does nothing, and nothing routed reaches a module from a cover
-  starting until a reveal starts. `RevealAsync` completes `true` once the screen is clear, or `false` when a cover
-  asked for meanwhile took over.
+  covered as the screen in its playback's `Show`; `Seconds` tells it how long it lasts, for motion it times itself. One
+  that returns true from `CapturesFrame` is handed a picture of the screen as it starts, and owns the whole screen, so
+  the change it covers is carried out beneath it at once. Black lies beneath a transition once the screen is fully
+  covered, and beneath a captured frame, so a frame in which no camera renders never shows, as between one module's
+  scene going and the next's loading. Transitions are named by the hash of their names (`NameHash`), `0` for the
+  defaults; a `ModuleChange` names its cover and reveal (`WithTransitions`), and `CoverSeconds` says how long a cover
+  takes, for a music fade timed to it. A cover while the screen is covered, or a reveal while it is clear, does
+  nothing, and nothing routed reaches a module from a cover starting until a reveal starts. `RevealAsync` completes
+  `true` once the screen is clear, or `false` when a cover asked for meanwhile took over.
 - **A module's own transitions**: a **`TransitionLayer`** plays the same transitions into an element of the module's
   own, beneath its UI — Field fades the screen under its message windows with one — each from wherever the last left
   it, with `Cut` to cover or clear at once. It plays no sound: play the transition's `Sound`, found with `FindCover` or
@@ -266,7 +271,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   URP.
 - **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
   your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
-  for an intent with no sound or a sound that loops, so a caller can wait for it; most don't.
+  for an intent with no sound or a sound that loops, so a caller can wait for it; most don't. `AudioIntent` and
+  `AudioContext` are fixed enums, which a game can't extend yet.
 - **`UpdateManager`** ticks `IUpdatable` every frame and `IFixedUpdatable` every physics step, so a module owns its own
   update and stops it by unregistering. A change asked for during a tick takes effect before the next, the last asked
   for each standing, and registering twice ticks once.
@@ -285,11 +291,3 @@ testable, so a game that doesn't builds none of them. To run them, add Core to `
 ```
 
 then open **Window › General › Test Runner** and run the **EditMode** tests.
-
-## Not in this version
-
-- **Controls can't be rebound**, and there are no named actions above the fixed controls.
-- **Some vocabularies are fixed enums a game can't extend**: the audio intents and contexts, and the controls.
-- **Saves use the file system directly**, so consoles, which save through their own platform services, aren't
-  supported yet.
-- **The Universal Render Pipeline is required.**
