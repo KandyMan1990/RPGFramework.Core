@@ -198,7 +198,13 @@ them, since they belong to whoever is playing, not to a playthrough:
   menu's confirm, cancel and the rest come from the one map UI Toolkit reads.
 - **Actions are named for what they do**, each read as the hash of its name, so `Cancel` is `Cancel` in any map:
   `CoreActions.Confirm` and `CoreActions.Cancel` are Core's — dialogue reads them — and each module names the rest it
-  reads in its README. Rebinding is not built yet.
+  reads in its README.
+- **The player can rebind their controls**, through **`IInputRebindingService`**, which Menu's Controls page uses: the
+  Input System's own interactive rebinding on the project-wide actions — any key or button, Escape included, waiting a
+  few seconds cancelling — a control in several maps rebound as one, a clash swapped through every map it reaches (or
+  refused where two would still meet on one key), and Reset to defaults. The
+  player's bindings are kept with the other settings, in the `InputBindings` variable, and put back as the game
+  starts.
 - **A map missing an action a module reads is found before the game runs.** Each module declares what it reads, and
   every module scene's adapter is checked against its scene's module: in the adapter's inspector — which also picks
   its map and movement action from your actions, and has **Add Missing Actions**, adding them unbound for you to bind —

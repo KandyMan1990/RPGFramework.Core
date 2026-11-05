@@ -99,7 +99,24 @@ namespace RPGFramework.Core.Memory
         /// <summary>How fast the field's dialogue appears, 0 to 1, as the player set it: 0.5 is as authored.</summary>
         public const string FIELD_MESSAGE_SPEED = "FieldMessageSpeed";
 
+        /// <summary>
+        /// The player's own bindings, as the Input System's overrides: each record a binding's id and the control it is
+        /// bound to instead, an empty id an unused record. Written by <c>IInputRebindingService</c>.
+        /// </summary>
+        public const string INPUT_BINDINGS = "InputBindings";
+
+        /// <summary>An <see cref="INPUT_BINDINGS" /> record's binding id, the Input System's 16-byte GUID.</summary>
+        public const string INPUT_BINDING = "Binding";
+
+        /// <summary>An <see cref="INPUT_BINDINGS" /> record's control path, as UTF-8 text, zero after it.</summary>
+        public const string INPUT_BINDING_PATH = "Path";
+
+        internal const int INPUT_BINDING_BYTES = 16;
+        internal const int INPUT_BINDING_PATH_BYTES = 64;
+
 #if UNITY_EDITOR
+        private const int INPUT_BINDING_COUNT = 32;
+
         private static readonly RequiredVariable[] m_Variables =
         {
             new RequiredVariable(CURRENT_MODULE,       MemoryBank.Persistent, VariableWidth.Byte,  "The module the playthrough is in. Its default is the module a new game begins in"),
@@ -118,7 +135,14 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(MUSIC_VOLUME,         MemoryBank.Settings,   VariableWidth.Float, "The player's music volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),
             new RequiredVariable(SFX_VOLUME,           MemoryBank.Settings,   VariableWidth.Float, "The player's sound effects' volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),
             new RequiredVariable(BATTLE_MESSAGE_SPEED, MemoryBank.Settings,   VariableWidth.Float, "How fast battle messages appear, 0 to 1, 0.5 as authored. Its default is a first launch's", VariableDefaults.FromFloat(0.5f)),
-            new RequiredVariable(FIELD_MESSAGE_SPEED,  MemoryBank.Settings,   VariableWidth.Float, "How fast the field's dialogue appears, 0 to 1, 0.5 as authored. Its default is a first launch's", VariableDefaults.FromFloat(0.5f))
+            new RequiredVariable(FIELD_MESSAGE_SPEED,  MemoryBank.Settings,   VariableWidth.Float, "How fast the field's dialogue appears, 0 to 1, 0.5 as authored. Its default is a first launch's", VariableDefaults.FromFloat(0.5f)),
+            new RequiredVariable(INPUT_BINDINGS,       MemoryBank.Settings,   new[]
+                                 {
+                                     new VariableRecordField(INPUT_BINDING,      VariableWidth.Byte, INPUT_BINDING_BYTES,      0),
+                                     new VariableRecordField(INPUT_BINDING_PATH, VariableWidth.Byte, INPUT_BINDING_PATH_BYTES, 0)
+                                 },
+                                 INPUT_BINDING_COUNT,
+                                 "The player's own bindings, set on the Controls page: a binding's id and the control it is bound to instead. Its defaults are none")
         };
 
         IReadOnlyList<RequiredVariable> IRequiredVariables.Variables => m_Variables;

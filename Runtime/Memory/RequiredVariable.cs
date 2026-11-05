@@ -11,11 +11,13 @@ namespace RPGFramework.Core.Memory
     /// </summary>
     public readonly struct RequiredVariable
     {
-        internal readonly string        Name;
-        internal readonly MemoryBank    Bank;
-        internal readonly VariableWidth Width;
-        internal readonly string        Description;
-        internal readonly ulong         DefaultValue;
+        internal readonly string                Name;
+        internal readonly MemoryBank            Bank;
+        internal readonly VariableWidth         Width;
+        internal readonly string                Description;
+        internal readonly ulong                 DefaultValue;
+        internal readonly int                   Count;
+        internal readonly VariableRecordField[] Fields;
 
         public RequiredVariable(string        name,
                                 MemoryBank    bank,
@@ -28,6 +30,22 @@ namespace RPGFramework.Core.Memory
             Width        = width;
             Description  = description;
             DefaultValue = defaultValue;
+            Count        = 1;
+            Fields       = null;
+        }
+
+        /// <summary>
+        /// <paramref name="count" /> records of <paramref name="fields" />, each field's default zero, read by field name.
+        /// </summary>
+        internal RequiredVariable(string name, MemoryBank bank, VariableRecordField[] fields, int count, string description)
+        {
+            Name         = name;
+            Bank         = bank;
+            Width        = default;
+            Description  = description;
+            DefaultValue = 0;
+            Count        = count;
+            Fields       = fields;
         }
     }
 

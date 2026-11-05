@@ -168,6 +168,38 @@ namespace RPGFramework.Core.Memory
             }
         }
 
+        private static void ValidateRequiredRecord(VariableDefinition variable, RequiredVariable required, List<string> problems)
+        {
+            if (variable.Bank != required.Bank || !variable.IsRecord || variable.Count != required.Count)
+            {
+                problems.Add($"'{required.Name}' is declared as {variable.Bank} {(variable.IsRecord ? $"{variable.Count} record(s)" : "values")}, but the framework reads it as {required.Bank} {required.Count} record(s)");
+                return;
+            }
+
+            for (int i = 0; i < required.Fields.Length; i++)
+            {
+                VariableRecordField wanted = required.Fields[i];
+                VariableRecordField field  = null;
+
+                for (int j = 0; j < variable.Fields.Count && field == null; j++)
+                {
+                    if (variable.Fields[j].Name == wanted.Name)
+                    {
+                        field = variable.Fields[j];
+                    }
+                }
+
+                if (field == null)
+                {
+                    problems.Add($"'{required.Name}' has no field '{wanted.Name}', which the framework reads");
+                }
+                else if (field.Width != wanted.Width || field.Count != wanted.Count)
+                {
+                    problems.Add($"'{required.Name}.{wanted.Name}' is declared as {field.Count} {field.Width}, but the framework reads it as {wanted.Count} {wanted.Width}");
+                }
+            }
+        }
+
         private static void ValidateRequiredVariables(IReadOnlyList<VariableDefinition> variables, RequiredVariable[] requiredVariables, IStartModule[] startModules, List<string> problems)
         {
             for (int i = 0; i < requiredVariables.Length; i++)
@@ -177,6 +209,12 @@ namespace RPGFramework.Core.Memory
                 if (!TryFind(variables, required.Name, out VariableDefinition variable))
                 {
                     problems.Add($"'{required.Name}' is required by the framework and is not declared — use Add Missing Required Variables. {required.Description}");
+                    continue;
+                }
+
+                if (required.Fields != null)
+                {
+                    ValidateRequiredRecord(variable, required, problems);
                     continue;
                 }
 

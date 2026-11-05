@@ -14,6 +14,19 @@ namespace RPGFramework.Core.Editor
     /// </summary>
     internal static class InputActionsCheck
     {
+        private const string PROJECT_WIDE_ACTIONS = "com.unity.input.settings.actions";
+
+        /// <summary>
+        /// The project-wide actions as the project's setting names them, which is where the Input System finds them in
+        /// the editor; <c>InputSystem.actions</c> was seen empty as a module scene loaded in play mode.
+        /// </summary>
+        internal static InputActionAsset ProjectWideActions()
+        {
+            EditorBuildSettings.TryGetConfigObject(PROJECT_WIDE_ACTIONS, out InputActionAsset actions);
+
+            return actions;
+        }
+
         /// <summary>The problems with every adapter in the scene, against the modules the scene holds.</summary>
         internal static void CheckScene(Scene scene, List<string> problems)
         {
@@ -39,7 +52,7 @@ namespace RPGFramework.Core.Editor
             Check((InputActionAsset)serialized.FindProperty("m_Actions").objectReferenceValue,
                   serialized.FindProperty("m_Map").stringValue,
                   serialized.FindProperty("m_Movement").stringValue,
-                  InputSystem.actions,
+                  ProjectWideActions(),
                   modules,
                   $"{adapter.gameObject.scene.name} / '{adapter.name}'",
                   problems);

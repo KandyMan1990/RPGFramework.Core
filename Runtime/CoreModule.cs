@@ -62,6 +62,7 @@ namespace RPGFramework.Core
 
             // Before the game's own start-up, which may read a setting.
             core.m_CurrentResolver.Resolve<ISettingsLoader>().Load();
+            core.m_CurrentResolver.Resolve<IInputBindingsLoader>().Load();
 
             await globalInstaller.Bootstrap(core.m_CurrentResolver);
 
@@ -228,6 +229,8 @@ namespace RPGFramework.Core
             container.BindInterfacesToSelfSingletonIfNotRegistered<SaveDataService>();
             container.BindInterfacesToSelfSingletonIfNotRegistered<SettingsService>();
             container.BindInterfacesToSelfSingletonIfNotRegistered<MemoryService>();
+            container.BindSingletonIfNotRegistered<IInputActionsProvider, ProjectInputActionsProvider>();
+            container.BindInterfacesToSelfSingletonIfNotRegistered<InputRebindingService>();
 
             container.BindTransientIfNotRegistered<IDialogueWindow, DialogueWindow>();
 

@@ -13,6 +13,14 @@ namespace RPGFramework.Core.Tests
             return service;
         }
 
+        /// <summary>A memory service with a settings bank of <paramref name="settingsBytes" />.</summary>
+        internal static MemoryService WithSettings(int settingsBytes)
+        {
+            MemoryService service = new MemoryService(new Args(16, 16, settingsBytes));
+
+            return service;
+        }
+
         private sealed class Args : IMemoryServiceArgs
         {
             private readonly int m_PersistentBytes;

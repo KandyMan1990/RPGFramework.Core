@@ -163,11 +163,32 @@ namespace RPGFramework.Core.Memory
                     continue;
                 }
 
-                Allocate(required.Name, required.Bank, required.Width, 1, required.Description, required.DefaultValue);
+                if (required.Fields != null)
+                {
+                    AllocateRecord(required.Name, required.Bank, CopyFields(required.Fields), required.Count, required.Description);
+                }
+                else
+                {
+                    Allocate(required.Name, required.Bank, required.Width, 1, required.Description, required.DefaultValue);
+                }
+
                 added++;
             }
 
             return added;
+        }
+
+        // A declaration's fields are shared by every map it is added to; each map takes its own, which it gives ids.
+        private static VariableRecordField[] CopyFields(VariableRecordField[] fields)
+        {
+            VariableRecordField[] copies = new VariableRecordField[fields.Length];
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                copies[i] = new VariableRecordField(fields[i].Name, fields[i].Width, fields[i].Count, fields[i].DefaultValue);
+            }
+
+            return copies;
         }
 
         /// <summary>
