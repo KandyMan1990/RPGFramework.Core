@@ -21,7 +21,7 @@ namespace RPGFramework.Core.Tests.Input
         [Test]
         public void ThenNoPressReachesTheContext()
         {
-            ((IInputRouter)m_Router).Route(ControlSlot.Primary);
+            ((IInputRouter)m_Router).Route(CoreActions.Confirm);
 
             Assert.AreEqual(0, m_Context.Presses);
         }

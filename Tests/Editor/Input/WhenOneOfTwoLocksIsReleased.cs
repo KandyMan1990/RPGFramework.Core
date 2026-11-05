@@ -15,7 +15,7 @@ namespace RPGFramework.Core.Tests.Input
             ((IInputLock)router).Lock();
             ((IInputLock)router).Lock();
             ((IInputLock)router).Unlock();
-            ((IInputRouter)router).Route(ControlSlot.Primary);
+            ((IInputRouter)router).Route(CoreActions.Confirm);
 
             Assert.AreEqual(0, context.Presses);
         }

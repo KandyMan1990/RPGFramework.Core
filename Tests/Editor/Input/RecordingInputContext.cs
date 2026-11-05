@@ -16,7 +16,7 @@ namespace RPGFramework.Core.Tests.Input
 
         bool IInputContext.TakesMovement => m_TakesMovement;
 
-        bool IInputContext.Handle(ControlSlot slot)
+        bool IInputContext.Handle(ulong action)
         {
             Presses++;
 

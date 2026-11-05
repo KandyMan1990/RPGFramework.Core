@@ -66,7 +66,7 @@ namespace RPGFramework.Core.Tests.Dialogue
 
             m_Asked = flow.RunAsync(m_Window, new[] { "Stay, go or wait?", "Stay", "Go", "Wait" }, context, CancellationToken.None);
 
-            ((IInputContext)context).Handle(ControlSlot.Secondary);
+            ((IInputContext)context).Handle(CoreActions.Cancel);
 
             // The flow carries on from the press on a later frame, as the editor's main thread runs its continuations.
             for (int i = 0; i < FRAMES && m_Window.MovedTo == FakeDialogueWindow.NOT_MOVED; i++)

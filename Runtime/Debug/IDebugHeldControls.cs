@@ -1,11 +1,14 @@
 #if ENABLE_RPG_FRAMEWORK_DEBUG
 namespace RPGFramework.Core.Input
 {
-    /// <summary>Which control slots are held down now, for the debug room's way back from a field.</summary>
+    /// <summary>Which actions are held down now, for the debug room's way back from a field.</summary>
     public interface IDebugHeldControls
     {
-        /// <summary>True while the slot's control is held; false for a slot with no action, or while input is off.</summary>
-        bool IsHeld(ControlSlot slot);
+        /// <summary>
+        /// True while the action, named by the hash of its name, is held; false for one the module's map lacks, or while
+        /// input is off.
+        /// </summary>
+        bool IsHeld(ulong action);
     }
 }
 #endif

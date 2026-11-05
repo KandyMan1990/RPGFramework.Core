@@ -98,7 +98,8 @@ namespace RPGFramework.Core.Memory
             return startModules;
         }
 
-        private static T[] CreateAll<T>()
+        /// <summary>One of every creatable type implementing <typeparamref name="T" />, as declarations are found.</summary>
+        internal static T[] CreateAll<T>()
         {
             UnityEditor.TypeCache.TypeCollection types = UnityEditor.TypeCache.GetTypesDerivedFrom<T>();
 
@@ -128,9 +129,10 @@ namespace RPGFramework.Core.Memory
             return instances;
         }
 
+        // A test's fake, made with arguments, is not a declaration.
         private static bool IsCreatable(System.Type type)
         {
-            bool isCreatable = !type.IsAbstract && !type.IsInterface;
+            bool isCreatable = !type.IsAbstract && !type.IsInterface && type.GetConstructor(System.Type.EmptyTypes) != null;
 
             return isCreatable;
         }

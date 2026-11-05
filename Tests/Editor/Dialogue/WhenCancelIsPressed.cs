@@ -38,7 +38,7 @@ namespace RPGFramework.Core.Tests.Dialogue
 
         private static bool Cancel(DialogueInputContext context)
         {
-            return ((IInputContext)context).Handle(ControlSlot.Secondary);
+            return ((IInputContext)context).Handle(CoreActions.Cancel);
         }
     }
 }

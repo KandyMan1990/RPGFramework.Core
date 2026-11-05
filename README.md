@@ -189,11 +189,23 @@ them, since they belong to whoever is playing, not to a playthrough:
 
 ## Input
 
-- **`InputAdapter`**, one per module scene, turns Input System actions into Core's controls (Primary, Secondary,
-  Tertiary, Quaternary, the shoulders, triggers, Start and Select), and holds the direction held, its `Movement`, for
-  what moves to read each tick. A direction held through a transition or a conversation moves the player as soon as
-  movement reaches it again; a button held through one does not act again. The controls are a fixed enum,
-  `ControlSlot`, which a game can't extend yet, and they can't be rebound: there are no named actions above them.
+- **`InputAdapter`**, one per module scene, takes one map of your input actions — give it the project-wide actions,
+  which UI Toolkit reads too, and the map's name, as Unity's `PlayerInput` takes an asset and a map — and passes every
+  button action in that map on by name, so an action you add is passed on with nothing to wire. It holds the direction
+  held, its `Movement`, the map's action you name, for what moves to read each tick. A direction held through a
+  transition or a conversation moves the player as soon as movement reaches it again; a button held through one does not
+  act again. Give the gameplay modules a map of their own, `Player` in the Starter's, and the menus the `UI` map, so a
+  menu's confirm, cancel and the rest come from the one map UI Toolkit reads.
+- **Actions are named for what they do**, each read as the hash of its name, so `Cancel` is `Cancel` in any map:
+  `CoreActions.Confirm` and `CoreActions.Cancel` are Core's — dialogue reads them — and each module names the rest it
+  reads in its README. Rebinding is not built yet.
+- **A map missing an action a module reads is found before the game runs.** Each module declares what it reads, and
+  every module scene's adapter is checked against its scene's module: in the adapter's inspector — which also picks
+  its map and movement action from your actions, and has **Add Missing Actions**, adding them unbound for you to bind —
+  as the scene loads in play mode, where a problem is logged, and in a player build, which fails naming each. It checks
+  each action is there, is a button or a direction as it is read, and is bound to something; that the adapter is given
+  the project-wide actions; and, for the menus, that they route the `UI` map. Your own modules can declare theirs the
+  same way, with an `IRequiredActions`.
 - **`IInputRouter`** passes presses down a stack of **input contexts** until one uses them, and says whether movement
   reaches a context (`MovementReaches`): only when no context above it takes movement (`TakesMovement`). A conversation
   the player can walk away from takes only confirm, and movement reaches the field beneath. Nothing is passed on while

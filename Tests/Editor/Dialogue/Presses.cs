@@ -23,7 +23,7 @@ namespace RPGFramework.Core.Tests.Dialogue
         /// <returns>Whether the windows kept the press from what is under them.</returns>
         internal static bool Press(DialogueInputContext context)
         {
-            return ((IInputContext)context).Handle(ControlSlot.Primary);
+            return ((IInputContext)context).Handle(CoreActions.Confirm);
         }
     }
 }

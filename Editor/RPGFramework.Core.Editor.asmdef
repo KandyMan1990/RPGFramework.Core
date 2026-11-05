@@ -5,7 +5,8 @@
         "RPGFramework.Audio",
         "RPGFramework.Core",
         "RPGFramework.Core.SharedTypes",
-        "RPGFramework.Hashing"
+        "RPGFramework.Hashing",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

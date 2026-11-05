@@ -26,14 +26,14 @@ namespace RPGFramework.Core.Dialogue
 
         private bool IsBlocking => m_Blockers > 0;
 
-        bool IInputContext.Handle(ControlSlot slot)
+        bool IInputContext.Handle(ulong action)
         {
-            if (slot == ControlSlot.Secondary)
+            if (action == CoreActions.Cancel)
             {
                 return HandleCancel();
             }
 
-            if (slot != ControlSlot.Primary)
+            if (action != CoreActions.Confirm)
             {
                 return IsBlocking;
             }

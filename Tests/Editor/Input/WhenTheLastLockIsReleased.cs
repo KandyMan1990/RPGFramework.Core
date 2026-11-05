@@ -26,7 +26,7 @@ namespace RPGFramework.Core.Tests.Input
         [Test]
         public void ThenPressesReachTheContext()
         {
-            m_Router.Route(ControlSlot.Primary);
+            m_Router.Route(CoreActions.Confirm);
 
             Assert.AreEqual(1, m_Context.Presses);
         }

@@ -16,8 +16,6 @@ namespace RPGFramework.Core.Tests.Input
     {
         private InputTestFixture      m_InputSystem;
         private InputActionAsset      m_Actions;
-        private InputActionReference  m_Movement;
-        private InputActionReference  m_Primary;
         private GameObject            m_Holder;
         private InputAdapter          m_Adapter;
         private RecordingInputContext m_Context;
@@ -34,20 +32,19 @@ namespace RPGFramework.Core.Tests.Input
 
             InputActionMap map     = m_Actions.AddActionMap("Field");
             InputAction    move    = map.AddAction("Navigate", InputActionType.PassThrough);
-            InputAction    confirm = map.AddAction("Confirm", InputActionType.Button, "<Keyboard>/enter");
+            map.AddAction("Confirm", InputActionType.Button, "<Keyboard>/e");
 
             move.AddCompositeBinding("2DVector").With("Up", "<Keyboard>/w").With("Down", "<Keyboard>/s").With("Left", "<Keyboard>/a").With("Right", "<Keyboard>/d");
 
             m_Actions.Enable();
 
-            m_Movement = InputActionReference.Create(move);
-            m_Primary  = InputActionReference.Create(confirm);
-            m_Holder   = new GameObject("Input");
-            m_Adapter  = m_Holder.AddComponent<InputAdapter>();
+            m_Holder  = new GameObject("Input");
+            m_Adapter = m_Holder.AddComponent<InputAdapter>();
 
             SerializedObject adapter = new SerializedObject(m_Adapter);
-            adapter.FindProperty("m_Movement").objectReferenceValue = m_Movement;
-            adapter.FindProperty("m_Primary").objectReferenceValue  = m_Primary;
+            adapter.FindProperty("m_Actions").objectReferenceValue = m_Actions;
+            adapter.FindProperty("m_Map").stringValue              = "Field";
+            adapter.FindProperty("m_Movement").stringValue         = "Navigate";
             adapter.ApplyModifiedPropertiesWithoutUndo();
 
             IInputRouter router    = new InputRouter();
@@ -62,7 +59,7 @@ namespace RPGFramework.Core.Tests.Input
             m_Adapter.Disable();
 
             m_InputSystem.Press(keyboard.wKey);
-            m_InputSystem.Press(keyboard.enterKey);
+            m_InputSystem.Press(keyboard.eKey);
 
             m_Adapter.Enable();
             InputSystem.Update();
@@ -74,8 +71,6 @@ namespace RPGFramework.Core.Tests.Input
             m_Adapter.Disable();
 
             Object.DestroyImmediate(m_Holder);
-            Object.DestroyImmediate(m_Movement);
-            Object.DestroyImmediate(m_Primary);
             Object.DestroyImmediate(m_Actions);
 
             m_InputSystem.TearDown();

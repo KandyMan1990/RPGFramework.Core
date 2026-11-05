@@ -1,36 +1,38 @@
 ﻿using System;
 using RPGFramework.DI;
+using RPGFramework.Hashing;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Utilities;
 
 namespace RPGFramework.Core.Input
 {
+    /// <summary>
+    /// A module's input: every button action in one map of the game's input actions, routed through the
+    /// <see cref="IInputRouter" /> by the hash of its name, and the action the player moves with, read each tick. A
+    /// game adds an action to its map and it is routed, with nothing to wire here.
+    /// </summary>
     public sealed class InputAdapter : MonoBehaviour
 #if ENABLE_RPG_FRAMEWORK_DEBUG
         , IDebugHeldControls
 #endif
     {
-        private static readonly int m_SlotCount = Enum.GetValues(typeof(ControlSlot)).Length;
+        [Tooltip("The game's input actions; the project-wide actions, so UI Toolkit reads the same ones")]
+        [SerializeField] private InputActionAsset m_Actions;
 
-        [SerializeField] private InputActionReference m_Movement;
-        [SerializeField] private InputActionReference m_Primary;
-        [SerializeField] private InputActionReference m_Secondary;
-        [SerializeField] private InputActionReference m_Tertiary;
-        [SerializeField] private InputActionReference m_Quaternary;
-        [SerializeField] private InputActionReference m_ShoulderLeft;
-        [SerializeField] private InputActionReference m_ShoulderRight;
-        [SerializeField] private InputActionReference m_TriggerLeft;
-        [SerializeField] private InputActionReference m_TriggerRight;
-        [SerializeField] private InputActionReference m_Start;
-        [SerializeField] private InputActionReference m_Select;
+        [Tooltip("The map this module's input comes from: every button action in it is routed by name")]
+        [SerializeField] private string m_Map;
+
+        [Tooltip("The action in that map the player moves with; empty in a module where nothing moves")]
+        [SerializeField] private string m_Movement;
 
         private IInputRouter m_InputRouter;
         private bool         m_Subscribed;
 
-        // Read from the references when input starts and kept, so stopping it never reads a reference: one that no longer
-        // resolves as play mode ends would throw.
+        // Found when input first starts and kept, so stopping it never looks an action up.
         private InputAction                           m_MovementAction;
-        private InputAction[]                         m_Actions;
+        private InputAction[]                         m_Buttons;
+        private ulong[]                               m_ButtonNames;
         private Action<InputAction.CallbackContext>[] m_Handlers;
 
         /// <summary>
@@ -59,21 +61,19 @@ namespace RPGFramework.Core.Input
 
             m_Subscribed = true;
 
-            ReadActions();
+            if (m_Buttons == null)
+            {
+                FindActions();
+            }
 
             // Never turned off again: an action turned back on reads nothing held until it changes, so a direction held
             // through a transition would go unseen. Buttons are, so one held through a change does not act.
             m_MovementAction?.Enable();
 
-            for (int i = 0; i < m_Actions.Length; i++)
+            for (int i = 0; i < m_Buttons.Length; i++)
             {
-                if (m_Actions[i] == null)
-                {
-                    continue;
-                }
-
-                m_Actions[i].performed += m_Handlers[i];
-                m_Actions[i].Enable();
+                m_Buttons[i].performed += m_Handlers[i];
+                m_Buttons[i].Enable();
             }
         }
 
@@ -86,62 +86,73 @@ namespace RPGFramework.Core.Input
 
             m_Subscribed = false;
 
-            for (int i = 0; i < m_Actions.Length; i++)
+            for (int i = 0; i < m_Buttons.Length; i++)
             {
-                if (m_Actions[i] == null)
+                m_Buttons[i].Disable();
+                m_Buttons[i].performed -= m_Handlers[i];
+            }
+        }
+
+        private void FindActions()
+        {
+            InputActionMap             map     = m_Actions.FindActionMap(m_Map);
+            ReadOnlyArray<InputAction> actions = map.actions;
+
+            m_MovementAction = string.IsNullOrEmpty(m_Movement) ? null : map.FindAction(m_Movement);
+
+            int count = 0;
+
+            for (int i = 0; i < actions.Count; i++)
+            {
+                if (IsButton(actions[i]))
+                {
+                    count++;
+                }
+            }
+
+            m_Buttons     = new InputAction[count];
+            m_ButtonNames = new ulong[count];
+            m_Handlers    = new Action<InputAction.CallbackContext>[count];
+
+            int button = 0;
+
+            for (int i = 0; i < actions.Count; i++)
+            {
+                InputAction action = actions[i];
+
+                if (!IsButton(action))
                 {
                     continue;
                 }
 
-                m_Actions[i].Disable();
-                m_Actions[i].performed -= m_Handlers[i];
+                ulong name = Fnv1a64.Hash(action.name);
+
+                m_Buttons[button]     = action;
+                m_ButtonNames[button] = name;
+                m_Handlers[button]    = _ => m_InputRouter.Route(name);
+
+                button++;
             }
         }
 
-        private void ReadActions()
+        private bool IsButton(InputAction action)
         {
-            if (m_Actions == null)
-            {
-                m_Actions  = new InputAction[m_SlotCount];
-                m_Handlers = new Action<InputAction.CallbackContext>[m_SlotCount];
-
-                for (int i = 0; i < m_SlotCount; i++)
-                {
-                    ControlSlot slot = (ControlSlot)i;
-
-                    m_Handlers[i] = _ => m_InputRouter.Route(slot);
-                }
-            }
-
-            m_MovementAction = ReadAction(m_Movement);
-
-            m_Actions[(int)ControlSlot.Primary]       = ReadAction(m_Primary);
-            m_Actions[(int)ControlSlot.Secondary]     = ReadAction(m_Secondary);
-            m_Actions[(int)ControlSlot.Tertiary]      = ReadAction(m_Tertiary);
-            m_Actions[(int)ControlSlot.Quaternary]    = ReadAction(m_Quaternary);
-            m_Actions[(int)ControlSlot.ShoulderLeft]  = ReadAction(m_ShoulderLeft);
-            m_Actions[(int)ControlSlot.ShoulderRight] = ReadAction(m_ShoulderRight);
-            m_Actions[(int)ControlSlot.TriggerLeft]   = ReadAction(m_TriggerLeft);
-            m_Actions[(int)ControlSlot.TriggerRight]  = ReadAction(m_TriggerRight);
-            m_Actions[(int)ControlSlot.Start]         = ReadAction(m_Start);
-            m_Actions[(int)ControlSlot.Select]        = ReadAction(m_Select);
+            return action.type == InputActionType.Button && action != m_MovementAction;
         }
 
 #if ENABLE_RPG_FRAMEWORK_DEBUG
         // The actions are enabled only while input is on.
-        bool IDebugHeldControls.IsHeld(ControlSlot slot)
+        bool IDebugHeldControls.IsHeld(ulong action)
         {
-            InputAction action = m_Subscribed ? m_Actions[(int)slot] : null;
+            if (!m_Subscribed)
+            {
+                return false;
+            }
 
-            return action != null && action.IsPressed();
+            int index = Array.IndexOf(m_ButtonNames, action);
+
+            return index >= 0 && m_Buttons[index].IsPressed();
         }
 #endif
-
-        private static InputAction ReadAction(InputActionReference reference)
-        {
-            InputAction action = reference != null ? reference.action : null;
-
-            return action;
-        }
     }
 }

@@ -20,8 +20,11 @@ namespace RPGFramework.Core.Input
         /// <summary>Empties the stack.</summary>
         void Clear();
 
-        /// <summary>Offers a button press to each context from the top down, until one takes it.</summary>
-        void Route(ControlSlot slot);
+        /// <summary>
+        /// Offers a button press to each context from the top down, until one takes it: the hash of the pressed action's
+        /// name, as <see cref="CoreActions" /> holds Core's.
+        /// </summary>
+        void Route(ulong action);
 
         /// <summary>
         /// True if movement reaches <paramref name="context" />: input is not locked, and no context above it takes
@@ -79,7 +82,7 @@ namespace RPGFramework.Core.Input
             m_Stack.Clear();
         }
 
-        void IInputRouter.Route(ControlSlot slot)
+        void IInputRouter.Route(ulong action)
         {
             if (m_Locks > 0)
             {
@@ -88,7 +91,7 @@ namespace RPGFramework.Core.Input
 
             for (int i = m_Stack.Count - 1; i >= 0; i--)
             {
-                if (m_Stack[i].Handle(slot))
+                if (m_Stack[i].Handle(action))
                 {
                     break;
                 }
