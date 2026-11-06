@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using RPGFramework.Core.Audio;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.Flows;
 
@@ -9,14 +8,14 @@ namespace RPGFramework.Core.Tests.Dialogue
 {
     internal sealed class WhenTheCursorMovesBetweenAnswers
     {
-        private FakeAudioIntentPlayer m_Audio;
+        private FakeSfxPlayer m_Sfx;
 
         [SetUp]
         public void SetUp()
         {
-            m_Audio = new FakeAudioIntentPlayer();
+            m_Sfx = new FakeSfxPlayer();
 
-            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field, 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
+            IDialogueFlow      flow   = new ChoiceDialogueFlow(m_Sfx, new FakeSystemSoundConfig(), 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
             FakeDialogueWindow window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
 
             // Left waiting on an answer that never comes, as the question stays open.
@@ -27,11 +26,11 @@ namespace RPGFramework.Core.Tests.Dialogue
         }
 
         [Test]
-        public void ThenNavigatePlaysForEachMove()
+        public void ThenTheCursorSoundPlaysForEachMove()
         {
-            Assert.AreEqual(2, m_Audio.Played.Count);
-            Assert.AreEqual(AudioIntent.Navigate, m_Audio.Played[0].Intent);
-            Assert.AreEqual(AudioIntent.Navigate, m_Audio.Played[1].Intent);
+            Assert.AreEqual(2, m_Sfx.Played.Count);
+            Assert.AreEqual(FakeSystemSoundConfig.CURSOR, m_Sfx.Played[0]);
+            Assert.AreEqual(FakeSystemSoundConfig.CURSOR, m_Sfx.Played[1]);
         }
     }
 }

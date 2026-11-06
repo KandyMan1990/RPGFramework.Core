@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using RPGFramework.Core.Audio;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.Flows;
 
@@ -10,14 +9,14 @@ namespace RPGFramework.Core.Tests.Dialogue
     /// <summary>A script closing the window while its question waits.</summary>
     internal sealed class WhenAQuestionIsClosedUnanswered
     {
-        private FakeAudioIntentPlayer m_Audio;
+        private FakeSfxPlayer m_Sfx;
 
         [SetUp]
         public void SetUp()
         {
-            m_Audio = new FakeAudioIntentPlayer();
+            m_Sfx = new FakeSfxPlayer();
 
-            IDialogueFlow           flow   = new ChoiceDialogueFlow(m_Audio, AudioContext.Field, 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
+            IDialogueFlow           flow   = new ChoiceDialogueFlow(m_Sfx, new FakeSystemSoundConfig(), 0, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
             FakeDialogueWindow      window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
             CancellationTokenSource close  = new CancellationTokenSource();
 
@@ -31,7 +30,7 @@ namespace RPGFramework.Core.Tests.Dialogue
         [Test]
         public void ThenNothingPlays()
         {
-            Assert.AreEqual(0, m_Audio.Played.Count);
+            Assert.AreEqual(0, m_Sfx.Played.Count);
         }
     }
 }

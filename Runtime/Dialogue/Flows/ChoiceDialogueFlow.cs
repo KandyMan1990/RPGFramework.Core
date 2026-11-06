@@ -1,31 +1,32 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RPGFramework.Audio;
 using RPGFramework.Core.Audio;
 
 namespace RPGFramework.Core.Dialogue.Flows
 {
     /// <summary>
     /// Pages ending on a question, its cursor starting on one answer, and cancel moving it to another — the player still
-    /// confirms it. It sounds the cursor moving between the answers, cancel moving it and the one chosen; a question a
-    /// script closes is not answered, and makes no sound.
+    /// confirms it. It plays the game's system sounds as the cursor moves between the answers, as cancel moves it and
+    /// as one is chosen; a question a script closes is not answered, and makes no sound.
     /// </summary>
     public sealed class ChoiceDialogueFlow : IDialogueFlow
     {
         /// <summary>A cancel answer that is none: cancel leaves the cursor where it is.</summary>
         public const byte NO_CANCEL_ANSWER = byte.MaxValue;
 
-        private readonly IAudioIntentPlayer m_AudioIntentPlayer;
-        private readonly AudioContext       m_Context;
+        private readonly ISfxPlayer         m_SfxPlayer;
+        private readonly ISystemSoundConfig m_SystemSounds;
         private readonly byte               m_StartingAnswer;
         private readonly byte               m_CancelAnswer;
 
-        public ChoiceDialogueFlow(IAudioIntentPlayer audioIntentPlayer, AudioContext context, byte startingAnswer, byte cancelAnswer)
+        public ChoiceDialogueFlow(ISfxPlayer sfxPlayer, ISystemSoundConfig systemSounds, byte startingAnswer, byte cancelAnswer)
         {
-            m_AudioIntentPlayer = audioIntentPlayer;
-            m_Context           = context;
-            m_StartingAnswer    = startingAnswer;
-            m_CancelAnswer      = cancelAnswer;
+            m_SfxPlayer      = sfxPlayer;
+            m_SystemSounds   = systemSounds;
+            m_StartingAnswer = startingAnswer;
+            m_CancelAnswer   = cancelAnswer;
         }
 
         DialogueWindowKind IDialogueFlow.Kind => DialogueWindowKind.Question;
@@ -56,7 +57,7 @@ namespace RPGFramework.Core.Dialogue.Flows
 
             if (answered)
             {
-                m_AudioIntentPlayer.PlayAsync(AudioIntent.Confirm, m_Context).FireAndForget();
+                PlaySound(m_SystemSounds.Confirm);
             }
         }
 
@@ -64,12 +65,20 @@ namespace RPGFramework.Core.Dialogue.Flows
         {
             window.FocusChoice(m_CancelAnswer);
 
-            m_AudioIntentPlayer.PlayAsync(AudioIntent.Cancel, m_Context).FireAndForget();
+            PlaySound(m_SystemSounds.Cancel);
         }
 
         private void OnCursorMoved()
         {
-            m_AudioIntentPlayer.PlayAsync(AudioIntent.Navigate, m_Context).FireAndForget();
+            PlaySound(m_SystemSounds.Cursor);
+        }
+
+        private void PlaySound(ulong sound)
+        {
+            if (sound != 0)
+            {
+                m_SfxPlayer.PlayAsync(sound).FireAndForget();
+            }
         }
     }
 }

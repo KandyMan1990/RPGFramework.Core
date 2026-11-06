@@ -2,6 +2,7 @@
     "name": "RPGFramework.Core.Tests",
     "rootNamespace": "RPGFramework.Core.Tests",
     "references": [
+        "RPGFramework.Audio",
         "RPGFramework.Core",
         "RPGFramework.Core.Editor",
         "RPGFramework.Core.SharedTypes",

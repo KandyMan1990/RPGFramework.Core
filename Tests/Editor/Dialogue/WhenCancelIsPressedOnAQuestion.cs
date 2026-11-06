@@ -2,7 +2,6 @@ using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using RPGFramework.Core.Audio;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.Flows;
 using RPGFramework.Core.Input;
@@ -18,9 +17,9 @@ namespace RPGFramework.Core.Tests.Dialogue
     {
         private const int FRAMES = 30;
 
-        private FakeAudioIntentPlayer m_Audio;
-        private FakeDialogueWindow    m_Window;
-        private Task                  m_Asked;
+        private FakeSfxPlayer      m_Sfx;
+        private FakeDialogueWindow m_Window;
+        private Task               m_Asked;
 
         [UnityTest]
         public IEnumerator ThenTheCursorMovesToTheCancelAnswer()
@@ -35,8 +34,8 @@ namespace RPGFramework.Core.Tests.Dialogue
         {
             yield return Cancel(2);
 
-            Assert.AreEqual(1, m_Audio.Played.Count);
-            Assert.AreEqual(AudioIntent.Cancel, m_Audio.Played[0].Intent);
+            Assert.AreEqual(1, m_Sfx.Played.Count);
+            Assert.AreEqual(FakeSystemSoundConfig.CANCEL, m_Sfx.Played[0]);
         }
 
         [UnityTest]
@@ -53,15 +52,15 @@ namespace RPGFramework.Core.Tests.Dialogue
             yield return Cancel(ChoiceDialogueFlow.NO_CANCEL_ANSWER);
 
             Assert.AreEqual(FakeDialogueWindow.NOT_MOVED, m_Window.MovedTo);
-            Assert.AreEqual(0, m_Audio.Played.Count);
+            Assert.AreEqual(0, m_Sfx.Played.Count);
         }
 
         private IEnumerator Cancel(byte cancelAnswer)
         {
-            m_Audio  = new FakeAudioIntentPlayer();
+            m_Sfx    = new FakeSfxPlayer();
             m_Window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
 
-            IDialogueFlow        flow    = new ChoiceDialogueFlow(m_Audio, AudioContext.Field, 0, cancelAnswer);
+            IDialogueFlow        flow    = new ChoiceDialogueFlow(m_Sfx, new FakeSystemSoundConfig(), 0, cancelAnswer);
             DialogueInputContext context = Presses.ContextWith(m_Window, DialogueWindowKind.Question);
 
             m_Asked = flow.RunAsync(m_Window, new[] { "Stay, go or wait?", "Stay", "Go", "Wait" }, context, CancellationToken.None);

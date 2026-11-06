@@ -6,7 +6,7 @@ battle, each in a scene of its own. It also owns what every module shares:
 - the game's variables and the memory they live in;
 - saves and settings;
 - input routing and dialogue windows;
-- transitions, audio intents and the update loop.
+- transitions, system sounds and the update loop.
 
 Requires Unity 6000.6 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
 Audio snapshot), RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes. It works with any render
@@ -103,8 +103,9 @@ replaces Core's. **Your global installer binds**:
   config is made; and a **Transition Database**, as `ITransitionDatabase`, holding every
   transition a router, a script or a module names;
 - a **Dialogue Window UI Provider** (Create > RPG Framework > Dialogue);
-- an **`IAudioIntentPlayer`**;
-- an **`ISfxPlayer`** (RPGFramework.Audio), which transitions play their sounds through;
+- a **System Sound Config** (Create > RPG Framework > Audio), as `ISystemSoundConfig`: the sound for the cursor, a
+  confirm, a cancel and an error, and for a new game, a load and a save, each picked by name or none;
+- an **`ISfxPlayer`** (RPGFramework.Audio), which transitions and the system sounds play through;
 - whatever your modules need globally.
 
 ---
@@ -250,7 +251,7 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   press or a click answers. They take input only once the last answer has typed.
 - **RPG Framework > Dialogue > Dialogue Preview** types a line as the game will and lists any mistakes in its markup.
 
-## Transitions, audio intents and the update loop
+## Transitions, system sounds and the update loop
 
 - **`ITransitionService`** covers and reveals the screen, drawing on a panel above every module's UI, so menus and
   dialogue are covered too. Core uses it around every change; a module uses it for its own steps, such as a field jump
@@ -287,10 +288,11 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   `FindReveal`, as you start one. A **`ScreenColour`** takes a colour from everything beneath an element, or
   adds one, live, drawn with the config's `ScreenColourShader`; it is what the Subtractive kind draws with, and needs
   URP.
-- **`IAudioIntentPlayer`**: modules say what happened, such as `PlayAsync(AudioIntent.Confirm, AudioContext.Menu)`, and
-  your game's implementation decides which sound that is. Its task completes once the sound has played out, at once
-  for an intent with no sound or a sound that loops, so a caller can wait for it; most don't. `AudioIntent` and
-  `AudioContext` are fixed enums, which a game can't extend yet.
+- **`ISystemSoundConfig`**: the sounds every module shares — `Cursor`, `Confirm`, `Cancel`, `Error` — and `NewGame`,
+  `LoadGame` and `SaveGame`, each a sound's name hash, `0` for none. Your game picks them in a **System Sound Config**
+  asset and binds it; the menus, the dialogue's questions and the debug room play them through the `ISfxPlayer`, so
+  your game writes no audio code for them. A sound of your own — your menu's, an item's — is yours to pick and play the
+  same way: a `ulong` field your inspector offers by name, played with `ISfxPlayer.PlayAsync` when it is not `0`.
 - **`UpdateManager`** ticks `IUpdatable` every frame and `IFixedUpdatable` every physics step, so a module owns its own
   update and stops it by unregistering. A change asked for during a tick takes effect before the next, the last asked
   for each standing, and registering twice ticks once.

@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using RPGFramework.Core.Audio;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.Flows;
 
@@ -12,7 +11,7 @@ namespace RPGFramework.Core.Tests.Dialogue
         [Test]
         public void ThenItsCursorStartsThere()
         {
-            IDialogueFlow      flow   = new ChoiceDialogueFlow(new FakeAudioIntentPlayer(), AudioContext.Field, 2, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
+            IDialogueFlow      flow   = new ChoiceDialogueFlow(new FakeSfxPlayer(), new FakeSystemSoundConfig(), 2, ChoiceDialogueFlow.NO_CANCEL_ANSWER);
             FakeDialogueWindow window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
 
             // Left waiting on an answer that never comes, as the question stays open.
