@@ -21,6 +21,10 @@ namespace RPGFramework.Core.Dialogue
 
         private const string STYLE_CLASS_PREFIX = "dialogue-window--";
 
+        private const string FITTED_CLASS = "dialogue-window--fitted";
+
+        private const string SAMPLE_ANSWER = "X";
+
         private readonly IDialogueWindowUIProvider m_DialogueWindowUIProvider;
         private readonly float                     m_TextSpeed;
         private readonly float                     m_WindowSpeed;
@@ -29,6 +33,9 @@ namespace RPGFramework.Core.Dialogue
         private event Action m_OnCursorMoved;
 
         private RectInt                     m_Rect;
+        private Vector2Int                  m_FitPosition;
+        private string                      m_FitMessage;
+        private string[]                    m_FitAnswers;
         private bool                        m_SkipRequested;
         private Label                       m_Text;
         private DialogueTextView            m_TextView;
@@ -53,6 +60,7 @@ namespace RPGFramework.Core.Dialogue
             m_Choices                  = Array.Empty<RPGUIButton>();
             m_ChoiceViews              = Array.Empty<DialogueTextView>();
             m_ChoiceTexts              = Array.Empty<string>();
+            m_FitAnswers               = Array.Empty<string>();
             m_Chosen                   = NewChosen();
             m_TextSpeedMultiplier      = 1f;
         }
@@ -72,6 +80,7 @@ namespace RPGFramework.Core.Dialogue
             m_ChoiceTexts = Array.Empty<string>();
 
             m_TextView.Clear();
+            m_UIInstance.RemoveFromClassList(FITTED_CLASS);
 
             float targetX  = m_Rect.x + (m_Rect.width  / 2f);
             float targetY  = m_Rect.y + (m_Rect.height / 2f);
@@ -100,6 +109,11 @@ namespace RPGFramework.Core.Dialogue
 
         async Task IDialogueWindow.AnimateWindowOpenAsync()
         {
+            if (m_FitMessage != null)
+            {
+                await FitRectToTextAsync();
+            }
+
             m_UIInstance.style.left   = m_Rect.x;
             m_UIInstance.style.top    = m_Rect.y;
             m_UIInstance.style.width  = 0f;
@@ -124,6 +138,11 @@ namespace RPGFramework.Core.Dialogue
 
             m_UIInstance.style.width  = m_Rect.width;
             m_UIInstance.style.height = m_Rect.height;
+
+            if (m_FitMessage != null)
+            {
+                m_UIInstance.AddToClassList(FITTED_CLASS);
+            }
         }
 
         void IDialogueWindow.Destroy()
@@ -150,18 +169,14 @@ namespace RPGFramework.Core.Dialogue
 
         void IDialogueWindow.Init(VisualElement container)
         {
-            VisualTreeAsset uiAsset = m_DialogueWindowUIProvider.Get<IDialogueWindow>();
-
-            uiAsset.CloneTree(container, out int index, out _);
-
-            m_UIInstance               = container[index];
+            m_UIInstance               = CloneWindow(container);
             m_UIInstance.style.display = DisplayStyle.None;
 
             m_Text      = m_UIInstance.Q<Label>(TEXT);
             m_Text.text = string.Empty;
             m_TextView  = new DialogueTextView(m_Text);
 
-            ApplyStyle();
+            ApplyStyle(m_UIInstance);
 
             m_Selection = new SelectionScope(m_UIInstance);
 
@@ -206,14 +221,7 @@ namespace RPGFramework.Core.Dialogue
 
             for (byte i = 0; i < length; i++)
             {
-                RPGUIButton button = new RPGUIButton
-                                     {
-                                         text = string.Empty,
-                                         style =
-                                         {
-                                             fontSize = m_Text.resolvedStyle.fontSize
-                                         }
-                                     };
+                RPGUIButton button = NewAnswerButton(string.Empty, m_Text);
 
                 byte index = i;
 
@@ -244,21 +252,26 @@ namespace RPGFramework.Core.Dialogue
             m_Rect = rect;
         }
 
+        void IDialogueWindow.FitToText(Vector2Int position, string message, ReadOnlySpan<string> answers)
+        {
+            m_FitPosition = position;
+            m_FitMessage  = message;
+            m_FitAnswers  = answers.ToArray();
+        }
+
         void IDialogueWindow.SetStyle(DialogueWindowStyle style)
         {
             m_Style = style;
 
             if (m_UIInstance != null)
             {
-                ApplyStyle();
+                ApplyStyle(m_UIInstance);
             }
         }
 
         void IDialogueWindow.SetText(DialoguePage dialoguePage)
         {
-            // An explicit '\n' rather than a platform line ending, so the character positions the styling is
-            // keyed to are the same everywhere.
-            string speaker = string.IsNullOrWhiteSpace(dialoguePage.SpeakerId) ? string.Empty : dialoguePage.SpeakerId + "\n";
+            string speaker = SpeakerLine(dialoguePage);
 
             m_TextView.Show(speaker, Parse(dialoguePage.Text));
             m_SkipRequested = false;
@@ -269,6 +282,133 @@ namespace RPGFramework.Core.Dialogue
             m_SkipRequested = true;
         }
 
+        // An explicit '\n' rather than a platform line ending, so the character positions the styling is keyed to are the
+        // same everywhere.
+        private static string SpeakerLine(DialoguePage dialoguePage)
+        {
+            return string.IsNullOrWhiteSpace(dialoguePage.SpeakerId) ? string.Empty : dialoguePage.SpeakerId + "\n";
+        }
+
+        private VisualElement CloneWindow(VisualElement container)
+        {
+            VisualTreeAsset uiAsset = m_DialogueWindowUIProvider.Get<IDialogueWindow>();
+
+            uiAsset.CloneTree(container, out int index, out _);
+
+            return container[index];
+        }
+
+        private static RPGUIButton NewAnswerButton(string text, Label label)
+        {
+            RPGUIButton button = new RPGUIButton
+                                 {
+                                     text = text,
+                                     style =
+                                     {
+                                         fontSize = label.resolvedStyle.fontSize
+                                     }
+                                 };
+
+            return button;
+        }
+
+        // Measures an unseen copy of the window, as measuring a label writes into what it draws from. A label measures
+        // nothing until its styles are worked out, the frame after it joins the panel, and an answer's own layout takes
+        // a frame more.
+        private async Task FitRectToTextAsync()
+        {
+            VisualElement container = m_UIInstance.parent;
+            VisualElement copy      = CloneWindow(container);
+            Label         label     = copy.Q<Label>(TEXT);
+
+            copy.AddToClassList(FITTED_CLASS);
+            ApplyStyle(copy);
+            copy.style.visibility = Visibility.Hidden;
+
+            await Awaitable.NextFrameAsync();
+
+            RPGUIButton sample = null;
+
+            if (m_FitAnswers.Length > 0)
+            {
+                sample = NewAnswerButton(SAMPLE_ANSWER, label);
+
+                copy.Add(sample);
+
+                await Awaitable.NextFrameAsync();
+            }
+
+            Vector2 screen = container.layout.size;
+
+            m_Rect = DialogueWindowFit.Rect(m_FitPosition, MeasureMessage(copy, label, sample, screen), screen);
+
+            copy.RemoveFromHierarchy();
+        }
+
+        private Vector2 MeasureMessage(VisualElement copy, Label label, RPGUIButton sample, Vector2 screen)
+        {
+            IResolvedStyle window = copy.resolvedStyle;
+            IResolvedStyle text   = label.resolvedStyle;
+
+            float frameWidth = window.paddingLeft + window.paddingRight + window.borderLeftWidth + window.borderRightWidth +
+                               text.marginLeft    + text.marginRight    + text.paddingLeft       + text.paddingRight;
+
+            float frameHeight = window.paddingTop + window.paddingBottom + window.borderTopWidth + window.borderBottomWidth +
+                                text.marginTop    + text.marginBottom    + text.paddingTop       + text.paddingBottom;
+
+            float widest = DialogueWindowFit.WidestText(screen.x, frameWidth);
+
+            MeasureAnswers(sample, widest, out float width, out float answersHeight);
+
+            DialogueBlock block  = DialogueUtils.ParseIntoPages(m_FitMessage);
+            float         height = 0f;
+
+            for (int i = 0; i < block.Pages.Length; i++)
+            {
+                DialoguePage page = block.Pages[i];
+                Vector2      size = MeasureText(label, SpeakerLine(page) + Parse(page.Text).Text, widest);
+
+                // The answers show under the last page alone.
+                float pageHeight = i == block.Pages.Length - 1 ? size.y + answersHeight : size.y;
+
+                width  = math.max(width,  size.x);
+                height = math.max(height, pageHeight);
+            }
+
+            return new Vector2(width + frameWidth, height + frameHeight);
+        }
+
+        private void MeasureAnswers(RPGUIButton sample, float widest, out float width, out float height)
+        {
+            width  = 0f;
+            height = 0f;
+
+            if (sample == null)
+            {
+                return;
+            }
+
+            float textStart   = sample.Label.layout.x;
+            float rowHeight   = sample.layout.height + sample.resolvedStyle.marginTop + sample.resolvedStyle.marginBottom;
+            float lineHeight  = MeasureText(sample.Label, SAMPLE_ANSWER, widest).y;
+
+            for (int i = 0; i < m_FitAnswers.Length; i++)
+            {
+                Vector2 size = MeasureText(sample.Label, Parse(m_FitAnswers[i]).Text, widest - textStart);
+
+                width   = math.max(width, textStart + size.x);
+                height += rowHeight + math.max(0f, size.y - lineHeight);
+            }
+        }
+
+        // A point more than the text's own width, as one exactly as wide can wrap its last word from rounding.
+        private static Vector2 MeasureText(Label label, string text, float widest)
+        {
+            Vector2 size = label.MeasureTextSize(text, widest, VisualElement.MeasureMode.AtMost, 0f, VisualElement.MeasureMode.Undefined);
+
+            return new Vector2(math.ceil(size.x) + 1f, math.ceil(size.y));
+        }
+
         private DialogueText Parse(string text)
         {
             DialogueText parsed = DialogueMarkup.Parse(text, m_MessageVariables, m_TextStyles, null);
@@ -276,7 +416,7 @@ namespace RPGFramework.Core.Dialogue
             return parsed;
         }
 
-        private void ApplyStyle()
+        private void ApplyStyle(VisualElement window)
         {
             DialogueWindowStyle[] styles = (DialogueWindowStyle[])Enum.GetValues(typeof(DialogueWindowStyle));
 
@@ -284,7 +424,7 @@ namespace RPGFramework.Core.Dialogue
             {
                 DialogueWindowStyle style = styles[i];
 
-                m_UIInstance.EnableInClassList(StyleClass(style), style == m_Style);
+                window.EnableInClassList(StyleClass(style), style == m_Style);
             }
         }
 

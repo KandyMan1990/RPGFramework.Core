@@ -86,6 +86,12 @@ namespace RPGFramework.Core.Dialogue
         /// <summary>Where the window sits on screen, and how big it is when open.</summary>
         void SetRect(RectInt rect);
 
+        /// <summary>
+        /// Opens the window at a point and sized to this message rather than to a rectangle: its widest line and the page
+        /// with the most lines, a question's answers included, kept on the screen.
+        /// </summary>
+        void FitToText(Vector2Int position, string message, ReadOnlySpan<string> answers);
+
         /// <summary>Which look the window takes — spoken, thought, caption — as a USS class on it.</summary>
         void SetStyle(DialogueWindowStyle style);
 

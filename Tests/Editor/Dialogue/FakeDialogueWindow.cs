@@ -72,6 +72,8 @@ namespace RPGFramework.Core.Tests.Dialogue
 
         void IDialogueWindow.SetRect(RectInt rect) { }
 
+        void IDialogueWindow.FitToText(Vector2Int position, string message, ReadOnlySpan<string> answers) { }
+
         void IDialogueWindow.SetStyle(DialogueWindowStyle style) { }
 
         void IDialogueWindow.SetText(DialoguePage dialoguePage) { }

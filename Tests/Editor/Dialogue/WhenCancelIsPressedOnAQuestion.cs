@@ -5,6 +5,7 @@ using NUnit.Framework;
 using RPGFramework.Core.Dialogue;
 using RPGFramework.Core.Dialogue.Flows;
 using RPGFramework.Core.Input;
+using UnityEditor;
 using UnityEngine.TestTools;
 
 namespace RPGFramework.Core.Tests.Dialogue
@@ -15,7 +16,8 @@ namespace RPGFramework.Core.Tests.Dialogue
     /// </summary>
     internal sealed class WhenCancelIsPressedOnAQuestion
     {
-        private const int FRAMES = 30;
+        private const double MOST_SECONDS  = 5d;
+        private const double WATCH_SECONDS = 0.25d;
 
         private FakeSfxPlayer      m_Sfx;
         private FakeDialogueWindow m_Window;
@@ -49,13 +51,13 @@ namespace RPGFramework.Core.Tests.Dialogue
         [UnityTest]
         public IEnumerator ThenWithNoCancelAnswerNothingHappens()
         {
-            yield return Cancel(ChoiceDialogueFlow.NO_CANCEL_ANSWER);
+            yield return Cancel(ChoiceDialogueFlow.NO_CANCEL_ANSWER, WATCH_SECONDS);
 
             Assert.AreEqual(FakeDialogueWindow.NOT_MOVED, m_Window.MovedTo);
             Assert.AreEqual(0, m_Sfx.Played.Count);
         }
 
-        private IEnumerator Cancel(byte cancelAnswer)
+        private IEnumerator Cancel(byte cancelAnswer, double seconds = MOST_SECONDS)
         {
             m_Sfx    = new FakeSfxPlayer();
             m_Window = new FakeDialogueWindow(new TaskCompletionSource<bool>().Task);
@@ -67,8 +69,11 @@ namespace RPGFramework.Core.Tests.Dialogue
 
             ((IInputContext)context).Handle(CoreActions.Cancel);
 
-            // The flow carries on from the press on a later frame, as the editor's main thread runs its continuations.
-            for (int i = 0; i < FRAMES && m_Window.MovedTo == FakeDialogueWindow.NOT_MOVED; i++)
+            // A press reaches the flow by way of a worker thread, which takes real time: the editor can tick thirty times
+            // in 5 ms.
+            double giveUpAt = EditorApplication.timeSinceStartup + seconds;
+
+            while (m_Window.MovedTo == FakeDialogueWindow.NOT_MOVED && EditorApplication.timeSinceStartup < giveUpAt)
             {
                 yield return null;
             }
