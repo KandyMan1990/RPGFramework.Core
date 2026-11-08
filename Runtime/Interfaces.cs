@@ -82,6 +82,12 @@ namespace RPGFramework.Core
         /// <summary>Writes an int's four bytes from the address, lowest first.</summary>
         void WriteInt(MemoryBank bank, ushort address, int value);
 
+        /// <summary>The four bytes from the address as a uint, lowest first.</summary>
+        uint ReadUint(MemoryBank bank, ushort address);
+
+        /// <summary>Writes a uint's four bytes from the address, lowest first.</summary>
+        void WriteUint(MemoryBank bank, ushort address, uint value);
+
         /// <summary>The four bytes from the address as a float's bits, lowest first.</summary>
         float ReadFloat(MemoryBank bank, ushort address);
 

@@ -59,9 +59,9 @@ namespace RPGFramework.Core.Store
             m_YAddress       = (ushort)y.Offset;
         }
 
-        uint ICountdownStore.Seconds => (uint)m_MemoryService.ReadInt(MemoryBank.Persistent, m_SecondsAddress);
+        uint ICountdownStore.Seconds => m_MemoryService.ReadUint(MemoryBank.Persistent, m_SecondsAddress);
 
-        void ICountdownStore.SetSeconds(uint seconds) => m_MemoryService.WriteInt(MemoryBank.Persistent, m_SecondsAddress, (int)seconds);
+        void ICountdownStore.SetSeconds(uint seconds) => m_MemoryService.WriteUint(MemoryBank.Persistent, m_SecondsAddress, seconds);
 
         bool ICountdownStore.IsShown => m_MemoryService.ReadBool(MemoryBank.Persistent, m_ShownAddress);
 

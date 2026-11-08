@@ -32,6 +32,14 @@ namespace RPGFramework.Core.Tests.Memory
         }
 
         [Test]
+        public void ThenAUintPastAnIntsLargestReadsBackTheSame()
+        {
+            m_Temp.WriteUint(12, 0xDEADBEEFu);
+
+            Assert.AreEqual(0xDEADBEEFu, m_Temp.ReadUint(12));
+        }
+
+        [Test]
         public void ThenAUlongReadsBackTheSame()
         {
             m_Temp.WriteUlong(8, 0xDEADBEEFCAFEF00DUL);

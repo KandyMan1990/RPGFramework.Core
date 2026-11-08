@@ -53,7 +53,7 @@ namespace RPGFramework.Core.Store
         {
             get
             {
-                uint seconds = (uint)m_MemoryService.ReadInt(MemoryBank.Persistent, m_Address);
+                uint seconds = m_MemoryService.ReadUint(MemoryBank.Persistent, m_Address);
 
                 return seconds;
             }
@@ -101,9 +101,9 @@ namespace RPGFramework.Core.Store
             uint seconds = (uint)m_Fraction;
             m_Fraction -= seconds;
 
-            uint playTime = (uint)m_MemoryService.ReadInt(MemoryBank.Persistent, m_Address);
+            uint playTime = m_MemoryService.ReadUint(MemoryBank.Persistent, m_Address);
 
-            m_MemoryService.WriteInt(MemoryBank.Persistent, m_Address, (int)(playTime + seconds));
+            m_MemoryService.WriteUint(MemoryBank.Persistent, m_Address, playTime + seconds);
 
             uint left = m_Countdown.Seconds;
 

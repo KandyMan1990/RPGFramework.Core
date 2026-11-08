@@ -26,6 +26,16 @@ namespace RPGFramework.Core.Memory
             BinaryPrimitives.WriteInt32LittleEndian(mem.AsSpan(address), value);
         }
 
+        internal static uint ReadUint(byte[] mem, ushort address)
+        {
+            return BinaryPrimitives.ReadUInt32LittleEndian(mem.AsSpan(address));
+        }
+
+        internal static void WriteUint(byte[] mem, ushort address, uint value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(mem.AsSpan(address), value);
+        }
+
         internal static ulong ReadUlong(byte[] mem, ushort address)
         {
             return BinaryPrimitives.ReadUInt64LittleEndian(mem.AsSpan(address));

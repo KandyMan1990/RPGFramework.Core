@@ -62,6 +62,18 @@
             MemoryEncoding.WriteInt(m_Bytes, address, value);
         }
 
+        public uint ReadUint(ushort address)
+        {
+            uint value = MemoryEncoding.ReadUint(m_Bytes, address);
+
+            return value;
+        }
+
+        public void WriteUint(ushort address, uint value)
+        {
+            MemoryEncoding.WriteUint(m_Bytes, address, value);
+        }
+
         public float ReadFloat(ushort address)
         {
             float value = System.BitConverter.Int32BitsToSingle(MemoryEncoding.ReadInt(m_Bytes, address));

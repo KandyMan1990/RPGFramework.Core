@@ -92,6 +92,16 @@ namespace RPGFramework.Core
             MemoryEncoding.WriteInt(GetBank(bank), address, value);
         }
 
+        uint IMemoryService.ReadUint(MemoryBank bank, ushort address)
+        {
+            return MemoryEncoding.ReadUint(GetBank(bank), address);
+        }
+
+        void IMemoryService.WriteUint(MemoryBank bank, ushort address, uint value)
+        {
+            MemoryEncoding.WriteUint(GetBank(bank), address, value);
+        }
+
         float IMemoryService.ReadFloat(MemoryBank bank, ushort address)
         {
             int raw = m_This.ReadInt(bank, address);
