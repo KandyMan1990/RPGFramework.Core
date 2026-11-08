@@ -27,6 +27,25 @@ namespace RPGFramework.Core.Tests.Dialogue
             return Task.FromResult<ISfxReference>(null);
         }
 
+        Task<ISfxReference> ISfxPlayer.PlayAsync(ulong nameHash, float volume, float pan, float startSeconds)
+        {
+            m_Played.Add(nameHash);
+
+            return Task.FromResult<ISfxReference>(null);
+        }
+
+        void ISfxPlayer.SetSoundVolume(ISfxReference sfxReference, float volume, float seconds)
+        {
+        }
+
+        void ISfxPlayer.SetSoundPan(ISfxReference sfxReference, float pan, float seconds)
+        {
+        }
+
+        void ISfxPlayer.SetAllSoundsVolume(float volume, float seconds)
+        {
+        }
+
         void ISfxPlayer.Pause(ISfxReference sfxReference)
         {
         }
