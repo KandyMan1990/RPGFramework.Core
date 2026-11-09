@@ -24,6 +24,16 @@ namespace RPGFramework.Core
     }
 
     /// <summary>
+    /// Ticked every frame, after Unity has animated, while registered with <see cref="PlayerLoop.UpdateManager" />, so
+    /// that what it does to a bone is what gets drawn.
+    /// </summary>
+    public interface ILateUpdatable
+    {
+        /// <summary>Called once a frame, in the order things registered.</summary>
+        void LateUpdate();
+    }
+
+    /// <summary>
     /// Switches between the game's modules: enters the first, and carries out each change the game's module router
     /// decides on as a module reports what happened.
     /// </summary>

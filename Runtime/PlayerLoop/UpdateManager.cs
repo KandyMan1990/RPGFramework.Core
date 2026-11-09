@@ -4,14 +4,16 @@ using Unity.Scripting.LifecycleManagement;
 namespace RPGFramework.Core.PlayerLoop
 {
     /// <summary>
-    /// Ticks what registers, once a frame and once a physics step, from the player loop. A change asked for during a
-    /// tick takes effect before the next, so a module that unregisters as it suspends gets no further tick.
+    /// Ticks what registers, once a frame, once a physics step and once a frame after animation, from the player loop.
+    /// A change asked for during a tick takes effect before the next, so a module that unregisters as it suspends gets
+    /// no further tick.
     /// </summary>
     [AutoStaticsCleanup]
     public static partial class UpdateManager
     {
         private static readonly UpdatableList<IUpdatable>      m_Updatables      = new UpdatableList<IUpdatable>();
         private static readonly UpdatableList<IFixedUpdatable> m_FixedUpdatables = new UpdatableList<IFixedUpdatable>();
+        private static readonly UpdatableList<ILateUpdatable>  m_LateUpdatables  = new UpdatableList<ILateUpdatable>();
 
         public static void RegisterUpdatable(IUpdatable updatable) => m_Updatables.Add(updatable);
 
@@ -20,6 +22,10 @@ namespace RPGFramework.Core.PlayerLoop
         public static void RegisterFixedUpdatable(IFixedUpdatable updatable) => m_FixedUpdatables.Add(updatable);
 
         public static void UnregisterFixedUpdatable(IFixedUpdatable updatable) => m_FixedUpdatables.Remove(updatable);
+
+        public static void RegisterLateUpdatable(ILateUpdatable updatable) => m_LateUpdatables.Add(updatable);
+
+        public static void UnregisterLateUpdatable(ILateUpdatable updatable) => m_LateUpdatables.Remove(updatable);
 
         internal static void UpdateListeners()
         {
@@ -45,10 +51,23 @@ namespace RPGFramework.Core.PlayerLoop
             }
         }
 
+        internal static void LateUpdateListeners()
+        {
+            m_LateUpdatables.Apply();
+
+            IReadOnlyList<ILateUpdatable> updatables = m_LateUpdatables.Items;
+
+            for (int i = 0; i < updatables.Count; i++)
+            {
+                updatables[i].LateUpdate();
+            }
+        }
+
         internal static void ClearListeners()
         {
             m_Updatables.Clear();
             m_FixedUpdatables.Clear();
+            m_LateUpdatables.Clear();
         }
     }
 }

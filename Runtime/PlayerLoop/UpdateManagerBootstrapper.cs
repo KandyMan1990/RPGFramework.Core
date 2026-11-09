@@ -6,8 +6,8 @@ using UnityEngine.PlayerLoop;
 namespace RPGFramework.Core.PlayerLoop
 {
     /// <summary>
-    /// Puts <see cref="UpdateManager" /> first in Unity's frame update and physics step as play begins — in the editor
-    /// and as a player starts — and takes it out again as play ends.
+    /// Puts <see cref="UpdateManager" /> first in Unity's frame update, its physics step and what follows its late
+    /// update as play begins — in the editor and as a player starts — and takes it out again as play ends.
     /// </summary>
     internal static partial class UpdateManagerBootstrapper
     {
@@ -18,8 +18,9 @@ namespace RPGFramework.Core.PlayerLoop
 
             PlayerLoopSystem update      = new PlayerLoopSystem { type = typeof(UpdateManager), updateDelegate = UpdateManager.UpdateListeners };
             PlayerLoopSystem fixedUpdate = new PlayerLoopSystem { type = typeof(UpdateManager), updateDelegate = UpdateManager.FixedUpdateListeners };
+            PlayerLoopSystem lateUpdate  = new PlayerLoopSystem { type = typeof(UpdateManager), updateDelegate = UpdateManager.LateUpdateListeners };
 
-            if (!TryInsertFirst(ref loop, typeof(Update), update) || !TryInsertFirst(ref loop, typeof(FixedUpdate), fixedUpdate))
+            if (!TryInsertFirst(ref loop, typeof(Update), update) || !TryInsertFirst(ref loop, typeof(FixedUpdate), fixedUpdate) || !TryInsertFirst(ref loop, typeof(PostLateUpdate), lateUpdate))
             {
                 Debug.LogWarning($"{nameof(UpdateManagerBootstrapper)} could not find Unity's update and physics phases, so nothing registered with {nameof(UpdateManager)} will tick");
                 return;
