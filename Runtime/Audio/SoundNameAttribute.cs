@@ -8,7 +8,7 @@ namespace RPGFramework.Core.Audio
     /// project's sound effect providers, <c>0</c> for none. Left out of a player build: only the editor reads it.
     /// </summary>
     [Conditional("UNITY_EDITOR")]
-    internal sealed class SoundNameAttribute : PropertyAttribute
+    public sealed class SoundNameAttribute : PropertyAttribute
     {
     }
 }

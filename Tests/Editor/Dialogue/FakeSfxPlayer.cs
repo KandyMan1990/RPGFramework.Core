@@ -27,7 +27,7 @@ namespace RPGFramework.Core.Tests.Dialogue
             return Task.FromResult<ISfxReference>(null);
         }
 
-        Task<ISfxReference> ISfxPlayer.PlayAsync(ulong nameHash, float volume, float pan, float startSeconds)
+        Task<ISfxReference> ISfxPlayer.PlayAsync(ulong nameHash, float volume, float pan, float startSeconds, int position)
         {
             m_Played.Add(nameHash);
 
