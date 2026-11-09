@@ -244,6 +244,8 @@ namespace RPGFramework.Core
             container.BindSingletonIfNotRegistered<IFrameClock, UnityFrameClock>();
             container.BindSingletonIfNotRegistered<ICountdownStore, CountdownStore>();
             container.BindSingletonIfNotRegistered<IPlayTimeStore, PlayTimeCounter>();
+            container.BindSingletonIfNotRegistered<IGamepadMotors, InputSystemGamepadMotors>();
+            container.BindSingletonIfNotRegistered<IVibrationService, VibrationService>();
             container.BindSingletonIfNotRegistered<ISettingsStore, SettingsStore>();
         }
     }
