@@ -92,8 +92,8 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `ICountdownStore` | the countdown's seconds left, counted down beside the play time whenever above zero, and whether it is shown; saved |
 | `ISettingsStore` | the player's language, music and sound effect volumes and message speeds; in the settings file |
 
-**Core binds** the input router, transitions, the save, settings and memory services, dialogue windows and the stores
-above, after your global installer and each only where it bound nothing, so binding one of their interfaces yourself
+**Core binds** the input router, transitions, the save, settings and memory services, dialogue windows, the vibration
+service and the stores above, after your global installer and each only where it bound nothing, so binding one of their interfaces yourself
 replaces Core's. **Your global installer binds**:
 
 - the two databases, and a module router;
@@ -249,6 +249,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 - **Name a style for what a thing is**, such as a location or a key item, rather than giving it a colour. Recolouring
   every location is then one edit.
 - **Windows have styles**, spoken, thought or transparent, and type at the player's message speed.
+- **A window can be sized to its text** at a point (`IDialogueWindow.FitToText`): one size for every page, lines breaking
+  where the author breaks them, kept on the screen.
 - **A question's answers are chosen like a menu's**, by key, pad or pointer: hovering one selects it, and a confirm
   press or a click answers. They take input only once the last answer has typed.
 - **RPG Framework > Dialogue > Dialogue Preview** types a line as the game will and lists any mistakes in its markup.
@@ -294,7 +296,7 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   `LoadGame` and `SaveGame`, each a sound's name hash, `0` for none. Your game picks them in a **System Sound Config**
   asset and binds it; the menus, the dialogue's questions and the debug room play them through the `ISfxPlayer`, so
   your game writes no audio code for them. A sound of your own — your menu's, an item's — is yours to pick and play the
-  same way: a `ulong` field your inspector offers by name, played with `ISfxPlayer.PlayAsync` when it is not `0`.
+  same way: a `ulong` field marked `[SoundName]`, which the inspector offers by name, played with `ISfxPlayer.PlayAsync` when it is not `0`.
 - **`IVibrationService`** runs the motors of the player's gamepad for a time, and does nothing without one.
 - **`UpdateManager`** ticks `IUpdatable` every frame, `IFixedUpdatable` every physics step and `ILateUpdatable` every
   frame after Unity has animated, so a module owns its own
