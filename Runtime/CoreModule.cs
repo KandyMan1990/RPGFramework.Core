@@ -60,6 +60,8 @@ namespace RPGFramework.Core
 
             InstallCoreBindings(core, core.m_GlobalContainer);
 
+            core.m_GlobalContainer.BuildNonLazy();
+
             // Before the game's own start-up, which may read a setting.
             core.m_CurrentResolver.Resolve<ISettingsLoader>().Load();
             core.m_CurrentResolver.Resolve<IInputBindingsLoader>().Load();
@@ -125,6 +127,7 @@ namespace RPGFramework.Core
             FindSceneInstaller(scene).InstallBindings(sceneContainer);
             FindModuleBindings(scene).Bind(sceneContainer);
             sceneContainer.SetFallback(m_GlobalContainer);
+            sceneContainer.BuildNonLazy();
 
             SetCurrentResolver(diContainer);
 
