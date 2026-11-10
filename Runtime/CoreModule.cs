@@ -27,6 +27,7 @@ namespace RPGFramework.Core
     internal sealed class CoreModule : ICoreModule, IModuleHost
     {
         private readonly IDIContainer         m_GlobalContainer;
+        private readonly IDIResolver          m_GlobalResolver;
         private readonly ModuleStack          m_Modules;
         private readonly byte                 m_InitialModuleId;
         private readonly AudioListenerHandOff m_AudioListeners;
@@ -35,7 +36,6 @@ namespace RPGFramework.Core
         private IModuleDatabase    m_ModuleDatabase;
         private IModuleRouter      m_Router;
         private ITransitionService m_Transitions;
-        private IDIResolver        m_CurrentResolver;
         private Task               m_Changing;
 
         private CoreModule(byte initialModuleId)
@@ -43,7 +43,7 @@ namespace RPGFramework.Core
             DIContainer diContainer = new DIContainer();
 
             m_GlobalContainer = diContainer;
-            m_CurrentResolver = diContainer;
+            m_GlobalResolver  = diContainer;
             m_Modules         = new ModuleStack(this);
             m_InitialModuleId = initialModuleId;
             m_AudioListeners  = new AudioListenerHandOff();
@@ -63,15 +63,15 @@ namespace RPGFramework.Core
             core.m_GlobalContainer.BuildNonLazy();
 
             // Before the game's own start-up, which may read a setting.
-            core.m_CurrentResolver.Resolve<ISettingsLoader>().Load();
-            core.m_CurrentResolver.Resolve<IInputBindingsLoader>().Load();
+            core.m_GlobalResolver.Resolve<ISettingsLoader>().Load();
+            core.m_GlobalResolver.Resolve<IInputBindingsLoader>().Load();
 
-            await globalInstaller.Bootstrap(core.m_CurrentResolver);
+            await globalInstaller.Bootstrap(core.m_GlobalResolver);
 
-            core.m_SceneDatabase  = core.m_CurrentResolver.Resolve<ISceneDatabase>();
-            core.m_ModuleDatabase = core.m_CurrentResolver.Resolve<IModuleDatabase>();
-            core.m_Router         = core.m_CurrentResolver.Resolve<IModuleRouter>();
-            core.m_Transitions    = core.m_CurrentResolver.Resolve<ITransitionService>();
+            core.m_SceneDatabase  = core.m_GlobalResolver.Resolve<ISceneDatabase>();
+            core.m_ModuleDatabase = core.m_GlobalResolver.Resolve<IModuleDatabase>();
+            core.m_Router         = core.m_GlobalResolver.Resolve<IModuleRouter>();
+            core.m_Transitions    = core.m_GlobalResolver.Resolve<ITransitionService>();
 
             return core;
         }
@@ -122,6 +122,7 @@ namespace RPGFramework.Core
             Scene        scene          = SceneManager.GetSceneByName(sceneName);
             DIContainer  diContainer    = new DIContainer();
             IDIContainer sceneContainer = diContainer;
+            IDIResolver  sceneResolver  = diContainer;
 
             sceneContainer.BindSingletonFromInstance<IModuleScene>(new ModuleScene(scene));
             FindSceneInstaller(scene).InstallBindings(sceneContainer);
@@ -129,10 +130,8 @@ namespace RPGFramework.Core
             sceneContainer.SetFallback(m_GlobalContainer);
             sceneContainer.BuildNonLazy();
 
-            SetCurrentResolver(diContainer);
-
-            IModule       module  = (IModule)m_CurrentResolver.Resolve(moduleType);
-            StackedModule stacked = new StackedModule(moduleId, module, scene, sceneContainer, diContainer);
+            IModule       module  = (IModule)sceneResolver.Resolve(moduleType);
+            StackedModule stacked = new StackedModule(moduleId, module, scene, sceneContainer);
 
             return stacked;
         }
@@ -147,11 +146,6 @@ namespace RPGFramework.Core
             }
 
             module.Container.Dispose();
-        }
-
-        void IModuleHost.MakeCurrent(StackedModule module)
-        {
-            SetCurrentResolver(module.Resolver);
         }
 
         Task IModuleHost.CoverAsync(ModuleChange change)
@@ -197,16 +191,6 @@ namespace RPGFramework.Core
             }
 
             throw new InvalidOperationException($"{nameof(CoreModule)}::{nameof(FindModuleBindings)} Scene [{scene.name}] has no component implementing {nameof(IModuleBindings)}");
-        }
-
-        // Global bindings resolve IDIResolver as the module on top's container, so whatever resolves later finds that
-        // module's bindings as well as the global ones.
-        private void SetCurrentResolver(IDIResolver resolver)
-        {
-            m_GlobalContainer.Unbind<IDIResolver>(m_CurrentResolver);
-            m_GlobalContainer.BindSingletonFromInstance(resolver);
-
-            m_CurrentResolver = resolver;
         }
 
         private void OnApplicationQuit()

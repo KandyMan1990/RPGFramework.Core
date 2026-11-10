@@ -13,16 +13,13 @@ namespace RPGFramework.Core
     internal interface IModuleHost
     {
         /// <summary>
-        /// Loads the module's scene — alone, unloading every other, or beside them — builds its container, makes it the
-        /// current resolver, and resolves the module.
+        /// Loads the module's scene — alone, unloading every other, or beside them — builds its container and resolves
+        /// the module.
         /// </summary>
         Task<StackedModule> LoadAsync(byte moduleId, bool alone);
 
         /// <summary>Disposes the module's container, and unloads its scene unless a load alone already has.</summary>
         Task UnloadAsync(StackedModule module, bool unloadScene);
-
-        /// <summary>Makes the module's container the current resolver again, once the one over it has gone.</summary>
-        void MakeCurrent(StackedModule module);
 
         /// <summary>
         /// Covers the screen as the change asks, completing once the change may touch its modules: once covered, or at
@@ -44,15 +41,13 @@ namespace RPGFramework.Core
         internal readonly IModule      Module;
         internal readonly Scene        Scene;
         internal readonly IDIContainer Container;
-        internal readonly IDIResolver  Resolver;
 
-        internal StackedModule(byte moduleId, IModule module, Scene scene, IDIContainer container, IDIResolver resolver)
+        internal StackedModule(byte moduleId, IModule module, Scene scene, IDIContainer container)
         {
             ModuleId  = moduleId;
             Module    = module;
             Scene     = scene;
             Container = container;
-            Resolver  = resolver;
         }
     }
 
@@ -131,10 +126,7 @@ namespace RPGFramework.Core
             m_Modules.Pop();
             await m_Host.UnloadAsync(closed, true);
 
-            StackedModule resumed = Top();
-
-            m_Host.MakeCurrent(resumed);
-            await resumed.Module.OnResumeAsync();
+            await Top().Module.OnResumeAsync();
         }
 
         private async Task ReplaceTopAsync(ModuleChange change)

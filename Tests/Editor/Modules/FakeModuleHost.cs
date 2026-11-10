@@ -34,7 +34,7 @@ namespace RPGFramework.Core.Tests.Modules
         {
             m_Log.Add($"load {moduleId} {(alone ? "alone" : "beside")}");
 
-            StackedModule stacked = new StackedModule(moduleId, new FakeModule(moduleId, m_Log), default, null, null);
+            StackedModule stacked = new StackedModule(moduleId, new FakeModule(moduleId, m_Log), default, null);
 
             return Task.FromResult(stacked);
         }
@@ -44,11 +44,6 @@ namespace RPGFramework.Core.Tests.Modules
             m_Log.Add($"unload {module.ModuleId} {(unloadScene ? "scene" : "container")}");
 
             return Task.CompletedTask;
-        }
-
-        void IModuleHost.MakeCurrent(StackedModule module)
-        {
-            m_Log.Add($"current {module.ModuleId}");
         }
 
         Task IModuleHost.CoverAsync(ModuleChange change)

@@ -22,7 +22,7 @@ namespace RPGFramework.Core.Tests.Modules
         [Test]
         public void ThenTheModuleIsNotToldItIsRevealed()
         {
-            Assert.AreEqual("cover, 1 exit, unload 1 scene, current 0, 0 resume, reveal overtaken", Stacks.Steps(m_Host));
+            Assert.AreEqual("cover, 1 exit, unload 1 scene, 0 resume, reveal overtaken", Stacks.Steps(m_Host));
         }
     }
 }

@@ -52,7 +52,7 @@ The router answers with a `ModuleChange`, which Core carries out:
 | `Clear` | every module exits, top first, and the next one's scene loads alone |
 
 Each loaded module gets a scene container built from its scene's `SceneInstallerMonoBehaviour`, falling back to the
-global one, and is resolved from it; `IDIResolver` in the global container is the top module's. A module finds its own
+global one, and is resolved from it; its `IDIResolver` is that container. A module finds its own
 objects through **`IModuleScene`**, bound in its container, rather than searching every scene, since others can be
 loaded beside it. A change says how the next module is entered — `ModuleEntries.NEW`, or `RETURN` to one a battle
 replaced, which carries on from what it kept — and the module gets it in `OnEnterAsync`.

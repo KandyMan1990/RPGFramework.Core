@@ -20,7 +20,7 @@ namespace RPGFramework.Core.Tests.Modules
         [Test]
         public void ThenItExitsAndUnloadsBeforeTheOneUnderResumes()
         {
-            Assert.AreEqual("cover, 1 exit, unload 1 scene, current 0, 0 resume, reveal, 0 revealed", Stacks.Steps(m_Host));
+            Assert.AreEqual("cover, 1 exit, unload 1 scene, 0 resume, reveal, 0 revealed", Stacks.Steps(m_Host));
         }
 
         [Test]
