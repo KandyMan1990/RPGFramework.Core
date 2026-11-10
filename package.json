@@ -1,6 +1,6 @@
 {
   "name": "com.rpgframework.core",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "displayName": "RPG Framework Core",
   "description": "Core functionality for the RPG Framework as well as home to the interfaces for other modules to implement or for other users to implement in cases of wanting to extend or replace parts of the framework",
   "unity": "6000.6",
@@ -15,7 +15,7 @@
   "dependencies": {
     "com.rpgframework.audio": "6.0.0",
     "com.rpgframework.core.sharedtypes": "0.3.0",
-    "com.rpgframework.di": "5.0.0",
+    "com.rpgframework.di": "6.0.0",
     "com.rpgframework.hashing": "2.0.2",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.mathematics": "1.4.0"

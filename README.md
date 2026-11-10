@@ -30,7 +30,7 @@ ICoreModule core = await CoreModuleFactory.Create(m_GlobalInstaller, SplashScree
 await core.StartAsync();
 ```
 
-`Create` builds the global container, binding Core's services and then your global installer's, and runs its
+`Create` builds the global container, binding your global installer's services and then Core's, and runs its
 `Bootstrap`. `StartAsync` enters the first module.
 
 **Modules are a stack.** The bottom one is where the game is — the title, a field — and a module can open over it, as
