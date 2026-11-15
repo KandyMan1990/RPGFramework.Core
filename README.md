@@ -8,7 +8,7 @@ battle, each in a scene of its own. It also owns what every module shares:
 - input routing and dialogue windows;
 - transitions, system sounds and the update loop.
 
-Requires Unity 6000.6 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
+Requires Unity 6000.7 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
 Audio snapshot), RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes. It works with any render
 pipeline: its transitions are drawn with UI Toolkit, though the Subtractive Transition needs URP (below).
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -33,6 +34,7 @@ namespace RPGFramework.Core.Editor
         void Watch(VisualElement owner, string variableName, Action changed);
     }
 
+    [NoAutoStaticsCleanup]
     internal static class VariableDefaultFields
     {
         private static Dictionary<string, IVariableDefaultField> m_ByName;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace RPGFramework.Core.Dialogue
@@ -23,6 +24,7 @@ namespace RPGFramework.Core.Dialogue
     /// The text produced carries no markup of any kind, so a character position in it is a character position on
     /// screen; colour, blinking and pauses are kept beside it by position.
     /// </summary>
+    [NoAutoStaticsCleanup]
     public static class DialogueMarkup
     {
         public const int MESSAGE_VARIABLE_COUNT = 8;

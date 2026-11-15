@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using RPGFramework.Core.SharedTypes;
+using Unity.Scripting.LifecycleManagement;
 
 namespace RPGFramework.Core.Memory
 {
     /// <summary>
     /// The variables Core itself requires of every game's map.
     /// </summary>
+    [NoAutoStaticsCleanup]
     public sealed class CoreVariables
 #if UNITY_EDITOR
         : IRequiredVariables
