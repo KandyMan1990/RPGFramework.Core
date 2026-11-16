@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace RPGFramework.Core.Audio
 {
-    [CreateAssetMenu(menuName = "RPG Framework/Audio/System Sound Config", fileName = "System Sound Config")]
+    // Numbered with the Audio menu's other entries, in name order.
+    [CreateAssetMenu(menuName = "RPG Framework/Audio/System Sound Config", fileName = "System Sound Config", order = 6)]
     public sealed class SystemSoundConfig : ScriptableObject, ISystemSoundConfig
     {
         [SerializeField]
