@@ -145,11 +145,12 @@ Core requires these:
 | `SongVolume` | Persistent | the volume the scripts last set the songs to, 0 to 1, under the player's; its default is a new game's |
 | `Money` | Persistent | the party's money; its default is what a new game starts with, and what it is called is your game's text |
 | `MoneyMaximum` | Session | the most money the party can hold; only its default is used, zero for no limit |
+| `MessageSpeedSlowest`, `MessageSpeedFastest` | Session | the characters a second dialogue types at with the player's message speed at 0 and at 1, in a straight line between; only their defaults are used, 22.43 and 52.34 as added, the slowest above zero and no faster than the fastest |
 | `Language` | Settings | the language the player chose, as its name's hash; leave its default at zero, which asks on a first launch |
 | `MusicVolume` | Settings | the player's music volume, 0 to 1, under which every song plays at its `SongVolume` |
 | `SfxVolume` | Settings | the player's sound effects' volume, 0 to 1 |
-| `BattleMessageSpeed` | Settings | how fast battle messages appear, 0 to 1; 0.5 is as authored |
-| `FieldMessageSpeed` | Settings | how fast the field's dialogue appears, 0 to 1; 0.5 is as authored |
+| `BattleMessageSpeed` | Settings | how fast battle messages appear, 0 the slowest to 1 the fastest |
+| `FieldMessageSpeed` | Settings | how fast the field's dialogue types, 0 to 1 across the range `MessageSpeedSlowest` to `MessageSpeedFastest` |
 
 Read and write Persistent, Session and Settings variables through **`IMemoryService`**, by bank and address. Temp
 memory belongs to whatever runs a script, so each script has its own.
@@ -248,7 +249,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
 
 - **Name a style for what a thing is**, such as a location or a key item, rather than giving it a colour. Recolouring
   every location is then one edit.
-- **Windows have styles**, spoken, thought or transparent, and type at the player's message speed.
+- **Windows have styles**, spoken, thought or transparent, and type at the player's message speed, within the range
+  your variable map sets (`MessageSpeedSlowest`, `MessageSpeedFastest`).
 - **A window can be sized to its text** at a point (`IDialogueWindow.FitToText`): one size for every page, lines breaking
   where the author breaks them, kept on the screen.
 - **A question's answers are chosen like a menu's**, by key, pad or pointer: hovering one selects it, and a confirm

@@ -14,8 +14,9 @@ namespace RPGFramework.Core.Memory
         /// A human-readable problem for every duplicate name, overlapping range, negative offset, missing name, count
         /// below one or element default outside its array, for a name scripts cannot use, for a record field that is
         /// misnamed, repeated or empty, for an id that is missing, shared or above <paramref name="lastVariableId" />, for
-        /// a required variable the map lacks or declares differently, and for a start module default none of
-        /// <paramref name="startModules" /> answers to. An empty list means the map is well formed.
+        /// a required variable the map lacks or declares differently, for a start module default none of
+        /// <paramref name="startModules" /> answers to, and for a message speed range whose slowest is not above zero
+        /// or is faster than its fastest. An empty list means the map is well formed.
         /// </summary>
         internal static string[] Validate(IReadOnlyList<VariableDefinition> variables, uint lastVariableId, RequiredVariable[] requiredVariables, IStartModule[] startModules)
         {
@@ -234,6 +235,12 @@ namespace RPGFramework.Core.Memory
                 }
             }
 
+            ValidateStartModule(variables, startModules, problems);
+            ValidateMessageSpeedRange(variables, problems);
+        }
+
+        private static void ValidateStartModule(IReadOnlyList<VariableDefinition> variables, IStartModule[] startModules, List<string> problems)
+        {
             if (!TryFind(variables, CoreVariables.CURRENT_MODULE, out VariableDefinition currentModule))
             {
                 return;
@@ -252,6 +259,30 @@ namespace RPGFramework.Core.Memory
             }
 
             problems.Add($"'{CoreVariables.CURRENT_MODULE}' defaults to module [{startModule}], which is not a module a game can begin in. Choose one in the Variable Map inspector");
+        }
+
+        // Equal ends are allowed, for a game that offers the player no choice.
+        private static void ValidateMessageSpeedRange(IReadOnlyList<VariableDefinition> variables, List<string> problems)
+        {
+            if (!TryFind(variables, CoreVariables.MESSAGE_SPEED_SLOWEST, out VariableDefinition slowestVariable) ||
+                !TryFind(variables, CoreVariables.MESSAGE_SPEED_FASTEST, out VariableDefinition fastestVariable) ||
+                slowestVariable.Width != VariableWidth.Float || fastestVariable.Width != VariableWidth.Float)
+            {
+                return;
+            }
+
+            float slowest = VariableDefaults.ToFloat(slowestVariable.DefaultValue);
+            float fastest = VariableDefaults.ToFloat(fastestVariable.DefaultValue);
+
+            if (slowest <= 0f)
+            {
+                problems.Add($"'{CoreVariables.MESSAGE_SPEED_SLOWEST}' defaults to {slowest} characters a second, but text must type at more than none");
+            }
+
+            if (slowest > fastest)
+            {
+                problems.Add($"'{CoreVariables.MESSAGE_SPEED_SLOWEST}' defaults to {slowest} characters a second, faster than the {fastest} of '{CoreVariables.MESSAGE_SPEED_FASTEST}'");
+            }
         }
 
         /// <summary>

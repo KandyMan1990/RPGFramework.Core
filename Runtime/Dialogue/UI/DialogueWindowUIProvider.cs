@@ -6,7 +6,6 @@ namespace RPGFramework.Core.Dialogue.UI
     [CreateAssetMenu(menuName = "RPG Framework/Dialogue/Dialogue Window UI Provider", fileName = "Dialogue Window UI Provider")]
     public sealed class DialogueWindowUIProvider : ScriptableObject, IDialogueWindowUIProvider
     {
-        [SerializeField] private float           m_TextSpeed;
         [SerializeField] private float           m_WindowSpeed;
         [SerializeField] private VisualTreeAsset m_DialogueWindow;
 
@@ -37,7 +36,6 @@ namespace RPGFramework.Core.Dialogue.UI
         }
         */
 
-        float IDialogueWindowUIProvider.TextSpeed   => m_TextSpeed;
         float IDialogueWindowUIProvider.WindowSpeed => m_WindowSpeed;
 
         DialogueTextStyles IDialogueWindowUIProvider.TextStyles => m_TextStyles;

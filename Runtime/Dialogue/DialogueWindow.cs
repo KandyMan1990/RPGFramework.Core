@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGFramework.Core.Dialogue.UI;
+using RPGFramework.Core.Store;
 using RPGFramework.Core.UI;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,8 +26,10 @@ namespace RPGFramework.Core.Dialogue
 
         private const string SAMPLE_ANSWER = "X";
 
+        private const float MIDDLE_MESSAGE_SPEED = 0.5f;
+
         private readonly IDialogueWindowUIProvider m_DialogueWindowUIProvider;
-        private readonly float                     m_TextSpeed;
+        private readonly IMessageSpeedStore        m_MessageSpeedStore;
         private readonly float                     m_WindowSpeed;
         private readonly DialogueTextStyles        m_TextStyles;
 
@@ -49,12 +52,12 @@ namespace RPGFramework.Core.Dialogue
         private IReadOnlyList<int>          m_MessageVariables;
         private DialogueWindowStyle         m_Style;
         private IVisualElementScheduledItem m_Ticker;
-        private float                       m_TextSpeedMultiplier;
+        private float                       m_CharactersPerSecond;
 
-        public DialogueWindow(IDialogueWindowUIProvider uiProvider)
+        public DialogueWindow(IDialogueWindowUIProvider uiProvider, IMessageSpeedStore messageSpeedStore)
         {
             m_DialogueWindowUIProvider = uiProvider;
-            m_TextSpeed                = uiProvider.TextSpeed;
+            m_MessageSpeedStore        = messageSpeedStore;
             m_WindowSpeed              = uiProvider.WindowSpeed;
             m_TextStyles               = uiProvider.TextStyles;
             m_Choices                  = Array.Empty<RPGUIButton>();
@@ -62,7 +65,7 @@ namespace RPGFramework.Core.Dialogue
             m_ChoiceTexts              = Array.Empty<string>();
             m_FitAnswers               = Array.Empty<string>();
             m_Chosen                   = NewChosen();
-            m_TextSpeedMultiplier      = 1f;
+            m_CharactersPerSecond      = messageSpeedStore.GetCharactersPerSecond(MIDDLE_MESSAGE_SPEED);
         }
 
         async Task IDialogueWindow.AnimateWindowClosedAsync()
@@ -244,7 +247,12 @@ namespace RPGFramework.Core.Dialogue
 
         void IDialogueWindow.SetMessageSpeed(float messageSpeed)
         {
-            m_TextSpeedMultiplier = math.pow(2f, 2f * messageSpeed - 1f);
+            m_CharactersPerSecond = m_MessageSpeedStore.GetCharactersPerSecond(messageSpeed);
+        }
+
+        void IDialogueWindow.SetCharactersPerSecond(float charactersPerSecond)
+        {
+            m_CharactersPerSecond = charactersPerSecond;
         }
 
         void IDialogueWindow.SetRect(RectInt rect)
@@ -437,16 +445,15 @@ namespace RPGFramework.Core.Dialogue
 
         private void Tick(TimerState timerState)
         {
-            float deltaTime           = timerState.deltaTime / 1000f;
-            float charactersPerSecond = m_TextSpeed          * m_TextSpeedMultiplier;
+            float deltaTime = timerState.deltaTime / 1000f;
 
-            m_TextView.Tick(deltaTime, charactersPerSecond);
+            m_TextView.Tick(deltaTime, m_CharactersPerSecond);
 
             for (int i = 0; i < m_ChoiceViews.Length; i++)
             {
                 DialogueTextView choiceView = m_ChoiceViews[i];
 
-                choiceView.Tick(deltaTime, charactersPerSecond);
+                choiceView.Tick(deltaTime, m_CharactersPerSecond);
             }
         }
 

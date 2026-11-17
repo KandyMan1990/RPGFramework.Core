@@ -70,6 +70,8 @@ namespace RPGFramework.Core.Tests.Dialogue
 
         void IDialogueWindow.SetMessageSpeed(float messageSpeed) { }
 
+        void IDialogueWindow.SetCharactersPerSecond(float charactersPerSecond) { }
+
         void IDialogueWindow.SetRect(RectInt rect) { }
 
         void IDialogueWindow.FitToText(Vector2Int position, string message, ReadOnlySpan<string> answers) { }

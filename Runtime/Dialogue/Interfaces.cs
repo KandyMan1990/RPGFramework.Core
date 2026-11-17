@@ -78,10 +78,19 @@ namespace RPGFramework.Core.Dialogue
         void SetMessageVariables(IReadOnlyList<int> variables);
 
         /// <summary>
-        /// How fast the text types, as the player's message speed setting: 0 is half the authored speed, 0.5 the
-        /// authored speed and 1 double it. Each step of the setting scales the speed by the same factor.
+        /// How fast the text types, as the player's message speed setting: 0 at the game's slowest,
+        /// <see cref="Memory.CoreVariables.MESSAGE_SPEED_SLOWEST" />, 1 at its fastest,
+        /// <see cref="Memory.CoreVariables.MESSAGE_SPEED_FASTEST" />, and in a straight line between them. Until it is
+        /// called, the text types at the middle of the range.
         /// </summary>
         void SetMessageSpeed(float messageSpeed);
+
+        /// <summary>
+        /// How fast the text types, in characters a second, whatever the player's message speed: for text timed to
+        /// something else, such as music. It applies at once, to text already typing. <see cref="SetMessageSpeed" />
+        /// gives the player's speed back.
+        /// </summary>
+        void SetCharactersPerSecond(float charactersPerSecond);
 
         /// <summary>Where the window sits on screen, and how big it is when open.</summary>
         void SetRect(RectInt rect);

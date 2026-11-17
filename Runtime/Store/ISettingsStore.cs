@@ -34,13 +34,16 @@ namespace RPGFramework.Core.Store
         /// <summary>Records the player's sound effects' volume, 0 to 1. It does not change the sound effects player's.</summary>
         void SetSfxVolume(float volume);
 
-        /// <summary>How fast battle messages appear, 0 to 1, 0.5 as authored.</summary>
+        /// <summary>How fast battle messages appear, 0 the slowest to 1 the fastest.</summary>
         float BattleMessageSpeed { get; }
 
         /// <summary>Records how fast battle messages appear, 0 to 1.</summary>
         void SetBattleMessageSpeed(float speed);
 
-        /// <summary>How fast the field's dialogue appears, 0 to 1, 0.5 as authored.</summary>
+        /// <summary>
+        /// How fast the field's dialogue types, 0 the game's slowest message speed to 1 its fastest
+        /// (<see cref="Dialogue.IDialogueWindow.SetMessageSpeed" />).
+        /// </summary>
         float FieldMessageSpeed { get; }
 
         /// <summary>Records how fast the field's dialogue appears, 0 to 1.</summary>

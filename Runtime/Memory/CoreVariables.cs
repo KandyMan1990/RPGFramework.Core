@@ -100,11 +100,26 @@ namespace RPGFramework.Core.Memory
         /// <summary>The player's sound effects' volume, 0 to 1.</summary>
         public const string SFX_VOLUME = "SfxVolume";
 
-        /// <summary>How fast battle messages appear, 0 to 1, as the player set it: 0.5 is as authored.</summary>
+        /// <summary>How fast battle messages appear, 0 the slowest to 1 the fastest, as the player set it.</summary>
         public const string BATTLE_MESSAGE_SPEED = "BattleMessageSpeed";
 
-        /// <summary>How fast the field's dialogue appears, 0 to 1, as the player set it: 0.5 is as authored.</summary>
+        /// <summary>
+        /// How fast the field's dialogue types, as the player set it: 0 at <see cref="MESSAGE_SPEED_SLOWEST" />, 1 at
+        /// <see cref="MESSAGE_SPEED_FASTEST" />, and in a straight line between them.
+        /// </summary>
         public const string FIELD_MESSAGE_SPEED = "FieldMessageSpeed";
+
+        /// <summary>
+        /// The characters a second dialogue types at with the player's message speed at 0, the slowest of the game's
+        /// range. Only its default is used, so every new game and load takes the current build's.
+        /// </summary>
+        public const string MESSAGE_SPEED_SLOWEST = "MessageSpeedSlowest";
+
+        /// <summary>
+        /// The characters a second dialogue types at with the player's message speed at 1, the fastest of the game's
+        /// range. Only its default is used, so every new game and load takes the current build's.
+        /// </summary>
+        public const string MESSAGE_SPEED_FASTEST = "MessageSpeedFastest";
 
         /// <summary>
         /// The player's own bindings, as the Input System's overrides: each record a binding's id and the control it is
@@ -118,7 +133,7 @@ namespace RPGFramework.Core.Memory
         /// <summary>An <see cref="INPUT_BINDINGS" /> record's control path, as UTF-8 text, zero after it.</summary>
         public const string INPUT_BINDING_PATH = "Path";
 
-        internal const int INPUT_BINDING_BYTES = 16;
+        internal const int INPUT_BINDING_BYTES      = 16;
         internal const int INPUT_BINDING_PATH_BYTES = 64;
 
 #if UNITY_EDITOR
@@ -126,29 +141,31 @@ namespace RPGFramework.Core.Memory
 
         private static readonly RequiredVariable[] m_Variables =
         {
-            new RequiredVariable(CURRENT_MODULE,       MemoryBank.Persistent, VariableWidth.Byte,  "The module the playthrough is in. Its default is the module a new game begins in"),
-            new RequiredVariable(LOADED_FROM_SAVE,     MemoryBank.Session,    VariableWidth.Bool,  "Set when a save is loaded, and cleared once the player is back where it was made. Its default is not used"),
-            new RequiredVariable(SAVE_ENABLED,         MemoryBank.Session,    VariableWidth.Bool,  "Whether the player can save from the party menu. Its default is the game's policy: false to save only where a script allows it, true to save anywhere"),
-            new RequiredVariable(PLAY_TIME,            MemoryBank.Persistent, VariableWidth.UInt,  "How long the playthrough has been played, in whole seconds. Counted by the framework"),
-            new RequiredVariable(COUNTDOWN,            MemoryBank.Persistent, VariableWidth.UInt,  "The countdown's seconds left, counted down whenever it is above zero. Set by scripts; its default is a new game's"),
-            new RequiredVariable(COUNTDOWN_SHOWN,      MemoryBank.Persistent, VariableWidth.Bool,  "Whether the countdown is on screen. Set by scripts; its default is a new game's"),
-            new RequiredVariable(COUNTDOWN_X,          MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, across, as a script last put it. Its default is not used"),
-            new RequiredVariable(COUNTDOWN_Y,          MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, down, as a script last put it. Its default is not used"),
-            new RequiredVariable(LOCATION_NAME,        MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in"),
-            new RequiredVariable(BATTLE_MUSIC,         MemoryBank.Persistent, VariableWidth.ULong, "The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a new game's; zero plays none"),
-            new RequiredVariable(SONG_VOLUME,          MemoryBank.Persistent, VariableWidth.Float, "The volume the songs play at, 0 to 1, as the scripts last set it, under the player's music volume. Its default is a new game's", VariableDefaults.FromFloat(1f)),
-            new RequiredVariable(MONEY,                MemoryBank.Persistent, VariableWidth.UInt,  "The party's money. Its default is what a new game starts with"),
-            new RequiredVariable(MONEY_MAXIMUM,        MemoryBank.Session,    VariableWidth.UInt,  "The most money the party can hold. Only its default is used: the game's own limit, zero for none"),
-            new RequiredVariable(LANGUAGE,             MemoryBank.Settings,   VariableWidth.ULong, "The language the player chose, as its name's hash. Leave its default at zero, which asks the player on a first launch"),
-            new RequiredVariable(MUSIC_VOLUME,         MemoryBank.Settings,   VariableWidth.Float, "The player's music volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),
-            new RequiredVariable(SFX_VOLUME,           MemoryBank.Settings,   VariableWidth.Float, "The player's sound effects' volume, 0 to 1. Its default is a first launch's", VariableDefaults.FromFloat(1f)),
-            new RequiredVariable(BATTLE_MESSAGE_SPEED, MemoryBank.Settings,   VariableWidth.Float, "How fast battle messages appear, 0 to 1, 0.5 as authored. Its default is a first launch's", VariableDefaults.FromFloat(0.5f)),
-            new RequiredVariable(FIELD_MESSAGE_SPEED,  MemoryBank.Settings,   VariableWidth.Float, "How fast the field's dialogue appears, 0 to 1, 0.5 as authored. Its default is a first launch's", VariableDefaults.FromFloat(0.5f)),
-            new RequiredVariable(INPUT_BINDINGS,       MemoryBank.Settings,   new[]
-                                 {
-                                     new VariableRecordField(INPUT_BINDING,      VariableWidth.Byte, INPUT_BINDING_BYTES,      0),
-                                     new VariableRecordField(INPUT_BINDING_PATH, VariableWidth.Byte, INPUT_BINDING_PATH_BYTES, 0)
-                                 },
+            new RequiredVariable(CURRENT_MODULE,        MemoryBank.Persistent, VariableWidth.Byte,  "The module the playthrough is in. Its default is the module a new game begins in"),
+            new RequiredVariable(LOADED_FROM_SAVE,      MemoryBank.Session,    VariableWidth.Bool,  "Set when a save is loaded, and cleared once the player is back where it was made. Its default is not used"),
+            new RequiredVariable(SAVE_ENABLED,          MemoryBank.Session,    VariableWidth.Bool,  "Whether the player can save from the party menu. Its default is the game's policy: false to save only where a script allows it, true to save anywhere"),
+            new RequiredVariable(PLAY_TIME,             MemoryBank.Persistent, VariableWidth.UInt,  "How long the playthrough has been played, in whole seconds. Counted by the framework"),
+            new RequiredVariable(COUNTDOWN,             MemoryBank.Persistent, VariableWidth.UInt,  "The countdown's seconds left, counted down whenever it is above zero. Set by scripts; its default is a new game's"),
+            new RequiredVariable(COUNTDOWN_SHOWN,       MemoryBank.Persistent, VariableWidth.Bool,  "Whether the countdown is on screen. Set by scripts; its default is a new game's"),
+            new RequiredVariable(COUNTDOWN_X,           MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, across, as a script last put it. Its default is not used"),
+            new RequiredVariable(COUNTDOWN_Y,           MemoryBank.Persistent, VariableWidth.Int,   "Where the countdown is shown, down, as a script last put it. Its default is not used"),
+            new RequiredVariable(LOCATION_NAME,         MemoryBank.Persistent, VariableWidth.ULong, "The place the player is in, as the hash of its localisation key. Written by the module the player is in"),
+            new RequiredVariable(BATTLE_MUSIC,          MemoryBank.Persistent, VariableWidth.ULong, "The track every battle plays, as its music asset's name hash, until a script sets another. Its default is a new game's; zero plays none"),
+            new RequiredVariable(SONG_VOLUME,           MemoryBank.Persistent, VariableWidth.Float, "The volume the songs play at, 0 to 1, as the scripts last set it, under the player's music volume. Its default is a new game's", VariableDefaults.FromFloat(1f)),
+            new RequiredVariable(MONEY,                 MemoryBank.Persistent, VariableWidth.UInt,  "The party's money. Its default is what a new game starts with"),
+            new RequiredVariable(MONEY_MAXIMUM,         MemoryBank.Session,    VariableWidth.UInt,  "The most money the party can hold. Only its default is used: the game's own limit, zero for none"),
+            new RequiredVariable(MESSAGE_SPEED_SLOWEST, MemoryBank.Session,    VariableWidth.Float, "The characters a second dialogue types at with the player's message speed at its slowest. Only its default is used: the game's own, above zero",                 VariableDefaults.FromFloat(22.5f)),
+            new RequiredVariable(MESSAGE_SPEED_FASTEST, MemoryBank.Session,    VariableWidth.Float, "The characters a second dialogue types at with the player's message speed at its fastest. Only its default is used: the game's own, no slower than the slowest", VariableDefaults.FromFloat(52.5f)),
+            new RequiredVariable(LANGUAGE,              MemoryBank.Settings,   VariableWidth.ULong, "The language the player chose, as its name's hash. Leave its default at zero, which asks the player on a first launch"),
+            new RequiredVariable(MUSIC_VOLUME,          MemoryBank.Settings,   VariableWidth.Float, "The player's music volume, 0 to 1. Its default is a first launch's",                                                        VariableDefaults.FromFloat(1f)),
+            new RequiredVariable(SFX_VOLUME,            MemoryBank.Settings,   VariableWidth.Float, "The player's sound effects' volume, 0 to 1. Its default is a first launch's",                                               VariableDefaults.FromFloat(1f)),
+            new RequiredVariable(BATTLE_MESSAGE_SPEED,  MemoryBank.Settings,   VariableWidth.Float, "How fast battle messages appear, 0 the slowest to 1 the fastest. Its default is a first launch's",                          VariableDefaults.FromFloat(0.5f)),
+            new RequiredVariable(FIELD_MESSAGE_SPEED,   MemoryBank.Settings,   VariableWidth.Float, "How fast the field's dialogue types, 0 the game's slowest message speed to 1 its fastest. Its default is a first launch's", VariableDefaults.FromFloat(0.5f)),
+            new RequiredVariable(INPUT_BINDINGS, MemoryBank.Settings, new[]
+                                                                      {
+                                                                          new VariableRecordField(INPUT_BINDING,      VariableWidth.Byte, INPUT_BINDING_BYTES,      0),
+                                                                          new VariableRecordField(INPUT_BINDING_PATH, VariableWidth.Byte, INPUT_BINDING_PATH_BYTES, 0)
+                                                                      },
                                  INPUT_BINDING_COUNT,
                                  "The player's own bindings, set on the Controls page: a binding's id and the control it is bound to instead. Its defaults are none")
         };
