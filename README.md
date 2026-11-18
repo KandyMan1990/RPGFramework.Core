@@ -233,7 +233,8 @@ them, since they belong to whoever is playing, not to a playthrough:
   play the cursor sound — focus your code sets is not a move.
 - **The cursor is drawn by USS.** Every element a scope links gets the class `rpg-selectable`: room at its left, and
   the hand drawn there while it has focus (`.rpg-selectable:focus` in `UIShared.uss`). Restyle both in your own
-  stylesheet — another image, size or place — and every cursor in the game follows.
+  stylesheet — another image, size or place — and every cursor in the game follows. **`rpg-greyed`** is a choice not
+  offered now, half see-through and still on the cursor's path, for any UI to add and your stylesheet to restyle.
 
 ## Dialogue
 
