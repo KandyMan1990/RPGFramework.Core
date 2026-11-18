@@ -306,6 +306,8 @@ You found a {KeyItem}sword{/KeyItem}!{Wait 1} You have {Var 0} gold.
   asset and binds it; the menus, the dialogue's questions and the debug room play them through the `ISfxPlayer`, so
   your game writes no audio code for them. A sound of your own — your menu's, an item's — is yours to pick and play the
   same way: a `ulong` field marked `[SoundName]`, which the inspector offers by name, played with `ISfxPlayer.PlayAsync` when it is not `0`.
+- **`[VariableName(VariableWidth.Bool)]`** marks a `string` as a variable's name, which the inspector and the UI Builder
+  offer as a list of the map's single variables of that width, outside Temp — as a menu entry's `when` is picked.
 - **`IVibrationService`** runs the motors of the player's gamepad for a time, and does nothing without one.
 - **`UpdateManager`** ticks `IUpdatable` every frame, `IFixedUpdatable` every physics step and `ILateUpdatable` every
   frame after Unity has animated, so a module owns its own
