@@ -224,10 +224,16 @@ them, since they belong to whoever is playing, not to a playthrough:
   digits each, and **`ClockBlink`** blinks a clock's colon once a second. **`CountdownLabel`** is the countdown on
   screen, shown while it is shown, which the field and a battle place; restyle it through `rpg-countdown`.
 - **`SelectionScope`** is for UI Toolkit screens you build yourself, such as a battle's commands. Over a root element,
-  it moves the cursor only between **`RPGUIButton`s' neighbours** (link them with `RPGUIButton.LinkColumn` and
-  `LinkRow`), by key, pad or pointer alike, and while its input is off lets nothing in it react at all. It plays no
-  sound: it raises `Moved` when the player moves the cursor, for your logic to play the cursor sound — focus your code
-  sets is not a move. A button's `Chosen` is a click or a submit.
+  **any elements you link in it take the cursor** — UI Toolkit's own `Label`s, `Button`s, or a `VisualElement` holding
+  a portrait and two labels — with nothing of the framework's to place in your layout. Link them with `LinkColumn` and
+  `LinkRow`, or one direction with `SetNeighbour`; the cursor moves only between those neighbours, by key, pad or
+  pointer alike, and a direction with none goes to the element, as a slider's row wants. `RegisterChosen` says what
+  choosing one does — a click on it or anything inside it, or a submit while it has focus. While its input is off
+  nothing in it reacts at all. It plays no sound: it raises `Moved` when the player moves the cursor, for your logic to
+  play the cursor sound — focus your code sets is not a move.
+- **The cursor is drawn by USS.** Every element a scope links gets the class `rpg-selectable`: room at its left, and
+  the hand drawn there while it has focus (`.rpg-selectable:focus` in `UIShared.uss`). Restyle both in your own
+  stylesheet — another image, size or place — and every cursor in the game follows.
 
 ## Dialogue
 

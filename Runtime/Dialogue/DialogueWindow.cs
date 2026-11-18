@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RPGFramework.Core.Dialogue.UI;
@@ -26,6 +26,8 @@ namespace RPGFramework.Core.Dialogue
 
         private const string SAMPLE_ANSWER = "X";
 
+        private const string UI_LABEL_CLASS = "rpg-ui-label";
+
         private const float MIDDLE_MESSAGE_SPEED = 0.5f;
 
         private readonly IDialogueWindowUIProvider m_DialogueWindowUIProvider;
@@ -43,7 +45,7 @@ namespace RPGFramework.Core.Dialogue
         private Label                       m_Text;
         private DialogueTextView            m_TextView;
         private VisualElement               m_UIInstance;
-        private RPGUIButton[]               m_Choices;
+        private Label[]                     m_Choices;
         private DialogueTextView[]          m_ChoiceViews;
         private string[]                    m_ChoiceTexts;
         private byte                        m_SelectedIndex;
@@ -60,7 +62,7 @@ namespace RPGFramework.Core.Dialogue
             m_MessageSpeedStore        = messageSpeedStore;
             m_WindowSpeed              = uiProvider.WindowSpeed;
             m_TextStyles               = uiProvider.TextStyles;
-            m_Choices                  = Array.Empty<RPGUIButton>();
+            m_Choices                  = Array.Empty<Label>();
             m_ChoiceViews              = Array.Empty<DialogueTextView>();
             m_ChoiceTexts              = Array.Empty<string>();
             m_FitAnswers               = Array.Empty<string>();
@@ -78,7 +80,7 @@ namespace RPGFramework.Core.Dialogue
                 m_Choices[i].RemoveFromHierarchy();
             }
 
-            m_Choices     = Array.Empty<RPGUIButton>();
+            m_Choices     = Array.Empty<Label>();
             m_ChoiceViews = Array.Empty<DialogueTextView>();
             m_ChoiceTexts = Array.Empty<string>();
 
@@ -216,7 +218,7 @@ namespace RPGFramework.Core.Dialogue
         {
             int length = choices.Length;
 
-            m_Choices       = new RPGUIButton[length];
+            m_Choices       = new Label[length];
             m_ChoiceViews   = new DialogueTextView[length];
             m_ChoiceTexts   = choices.ToArray();
             m_SelectedIndex = startingChoice;
@@ -224,20 +226,20 @@ namespace RPGFramework.Core.Dialogue
 
             for (byte i = 0; i < length; i++)
             {
-                RPGUIButton button = NewAnswerButton(string.Empty, m_Text);
+                Label answer = NewAnswer(string.Empty, m_Text);
 
                 byte index = i;
 
-                button.Chosen += () => Choose(index);
-                button.RegisterCallback<FocusInEvent, byte>(OnChoiceFocused, i);
-                button.SetEnabledAndVisible(false);
+                answer.RegisterCallback<FocusInEvent, byte>(OnChoiceFocused, i);
+                answer.SetEnabledAndVisible(false);
 
-                m_UIInstance.Add(button);
-                m_Choices[i]     = button;
-                m_ChoiceViews[i] = new DialogueTextView(button.Label);
+                m_UIInstance.Add(answer);
+                m_Selection.RegisterChosen(answer, () => Choose(index));
+                m_Choices[i]     = answer;
+                m_ChoiceViews[i] = new DialogueTextView(answer);
             }
 
-            RPGUIButton.LinkColumn(m_Choices, true);
+            m_Selection.LinkColumn(m_Choices, true);
         }
 
         void IDialogueWindow.SetMessageVariables(IReadOnlyList<int> variables)
@@ -306,18 +308,22 @@ namespace RPGFramework.Core.Dialogue
             return container[index];
         }
 
-        private static RPGUIButton NewAnswerButton(string text, Label label)
+        // Classed as the scope will class it, so the sample measured looks as an answer does.
+        private static Label NewAnswer(string text, Label label)
         {
-            RPGUIButton button = new RPGUIButton
-                                 {
-                                     text = text,
-                                     style =
-                                     {
-                                         fontSize = label.resolvedStyle.fontSize
-                                     }
-                                 };
+            Label answer = new Label
+                           {
+                               text = text,
+                               style =
+                               {
+                                   fontSize = label.resolvedStyle.fontSize
+                               }
+                           };
 
-            return button;
+            answer.AddToClassList(UI_LABEL_CLASS);
+            answer.AddToClassList(SelectionScope.SELECTABLE_CLASS);
+
+            return answer;
         }
 
         // Measures an unseen copy of the window, as measuring a label writes into what it draws from. A label measures
@@ -335,11 +341,11 @@ namespace RPGFramework.Core.Dialogue
 
             await Awaitable.NextFrameAsync();
 
-            RPGUIButton sample = null;
+            Label sample = null;
 
             if (m_FitAnswers.Length > 0)
             {
-                sample = NewAnswerButton(SAMPLE_ANSWER, label);
+                sample = NewAnswer(SAMPLE_ANSWER, label);
 
                 copy.Add(sample);
 
@@ -353,7 +359,7 @@ namespace RPGFramework.Core.Dialogue
             copy.RemoveFromHierarchy();
         }
 
-        private Vector2 MeasureMessage(VisualElement copy, Label label, RPGUIButton sample, Vector2 screen)
+        private Vector2 MeasureMessage(VisualElement copy, Label label, Label sample, Vector2 screen)
         {
             IResolvedStyle window = copy.resolvedStyle;
             IResolvedStyle text   = label.resolvedStyle;
@@ -386,7 +392,7 @@ namespace RPGFramework.Core.Dialogue
             return new Vector2(width + frameWidth, height + frameHeight);
         }
 
-        private void MeasureAnswers(RPGUIButton sample, float widest, out float width, out float height)
+        private void MeasureAnswers(Label sample, float widest, out float width, out float height)
         {
             width  = 0f;
             height = 0f;
@@ -396,13 +402,13 @@ namespace RPGFramework.Core.Dialogue
                 return;
             }
 
-            float textStart   = sample.Label.layout.x;
+            float textStart   = sample.resolvedStyle.borderLeftWidth + sample.resolvedStyle.paddingLeft;
             float rowHeight   = sample.layout.height + sample.resolvedStyle.marginTop + sample.resolvedStyle.marginBottom;
-            float lineHeight  = MeasureText(sample.Label, SAMPLE_ANSWER, widest).y;
+            float lineHeight  = MeasureText(sample, SAMPLE_ANSWER, widest).y;
 
             for (int i = 0; i < m_FitAnswers.Length; i++)
             {
-                Vector2 size = MeasureText(sample.Label, Parse(m_FitAnswers[i]).Text, widest - textStart);
+                Vector2 size = MeasureText(sample, Parse(m_FitAnswers[i]).Text, widest - textStart);
 
                 width   = math.max(width, textStart + size.x);
                 height += rowHeight + math.max(0f, size.y - lineHeight);

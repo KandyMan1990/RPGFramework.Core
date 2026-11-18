@@ -2,15 +2,18 @@
     --main-white: rgb(209, 209, 209);
 }
 
-.rpg-ui-button {
+/* Anything a selection scope links: room at its left for the cursor, drawn there while it has focus. */
+.rpg-selectable {
     flex-direction: row;
+    min-height: 64px;
+    padding-left: 72px;
+    background-position-x: left;
+    background-position-y: center;
+    background-size: 64px 64px;
+    background-repeat: no-repeat;
 }
 
-.rpg-ui-button-icon {
-    width: 64px;
-    height: 64px;
-    align-self: center;
-    margin-right: 8px;
+.rpg-selectable:focus {
     background-image: url("project://database/Packages/com.rpgframework.core/Runtime/UI/right.png?fileID=2800000&guid=5e7b180264754214a907ba761d020a48&type=3#right");
 }
 
