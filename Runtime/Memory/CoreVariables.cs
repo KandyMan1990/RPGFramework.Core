@@ -87,6 +87,27 @@ namespace RPGFramework.Core.Memory
         public const string MONEY_MAXIMUM = "MoneyMaximum";
 
         /// <summary>
+        /// Every playable character the game has, a record each from a new game on: who the record is
+        /// (<see cref="ROSTER_CHARACTER" />), whether they have joined (<see cref="ROSTER_JOINED" />), and the game's own
+        /// fields beside them — a level, HP, whatever its menus and battles show. Its count is the game's.
+        /// </summary>
+        public const string ROSTER = "Roster";
+
+        /// <summary>A <see cref="ROSTER" /> record's character, as its name's hash; zero for a record no one wears.</summary>
+        public const string ROSTER_CHARACTER = "Character";
+
+        /// <summary>Whether a <see cref="ROSTER" /> record's character is with the party now, and so may be put in it.</summary>
+        public const string ROSTER_JOINED = "Joined";
+
+        /// <summary>
+        /// Who is in the party, in order: each element a <see cref="ROSTER" /> record's index, 255 for an empty slot, and
+        /// slot 0 the leader. Its count is the game's party size.
+        /// </summary>
+        public const string PARTY = "Party";
+
+        internal const byte EMPTY_PARTY_SLOT = 255;
+
+        /// <summary>
         /// The language the player chose, as its name's hash; zero until they choose one, which a first launch asks for.
         /// </summary>
         public const string LANGUAGE = "Language";
@@ -138,6 +159,8 @@ namespace RPGFramework.Core.Memory
 
 #if UNITY_EDITOR
         private const int INPUT_BINDING_COUNT = 32;
+        private const int ROSTER_COUNT        = 8;
+        private const int PARTY_COUNT         = 3;
 
         private static readonly RequiredVariable[] m_Variables =
         {
@@ -154,6 +177,15 @@ namespace RPGFramework.Core.Memory
             new RequiredVariable(SONG_VOLUME,           MemoryBank.Persistent, VariableWidth.Float, "The volume the songs play at, 0 to 1, as the scripts last set it, under the player's music volume. Its default is a new game's", VariableDefaults.FromFloat(1f)),
             new RequiredVariable(MONEY,                 MemoryBank.Persistent, VariableWidth.UInt,  "The party's money. Its default is what a new game starts with"),
             new RequiredVariable(MONEY_MAXIMUM,         MemoryBank.Session,    VariableWidth.UInt,  "The most money the party can hold. Only its default is used: the game's own limit, zero for none"),
+            new RequiredVariable(PARTY,                 MemoryBank.Persistent, VariableWidth.Byte,  PARTY_COUNT, "Who is in the party, in order: each a Roster record's index, 255 for an empty slot, slot 0 the leader. Its count is the game's party size, and its defaults a new game's party", EMPTY_PARTY_SLOT),
+            new RequiredVariable(ROSTER, MemoryBank.Persistent, new[]
+                                                                {
+                                                                    new VariableRecordField(ROSTER_CHARACTER, VariableWidth.ULong, 1, 0),
+                                                                    new VariableRecordField(ROSTER_JOINED,    VariableWidth.Bool,  1, 0)
+                                                                },
+                                 ROSTER_COUNT,
+                                 true,
+                                 "Every playable character, a record each: who it is, whether they have joined, and the game's own fields beside them. Its count is the game's, and its defaults a new game's"),
             new RequiredVariable(MESSAGE_SPEED_SLOWEST, MemoryBank.Session,    VariableWidth.Float, "The characters a second dialogue types at with the player's message speed at its slowest. Only its default is used: the game's own, above zero",                 VariableDefaults.FromFloat(22.5f)),
             new RequiredVariable(MESSAGE_SPEED_FASTEST, MemoryBank.Session,    VariableWidth.Float, "The characters a second dialogue types at with the player's message speed at its fastest. Only its default is used: the game's own, no slower than the slowest", VariableDefaults.FromFloat(52.5f)),
             new RequiredVariable(LANGUAGE,              MemoryBank.Settings,   VariableWidth.ULong, "The language the player chose, as its name's hash. Leave its default at zero, which asks the player on a first launch"),
@@ -167,6 +199,7 @@ namespace RPGFramework.Core.Memory
                                                                           new VariableRecordField(INPUT_BINDING_PATH, VariableWidth.Byte, INPUT_BINDING_PATH_BYTES, 0)
                                                                       },
                                  INPUT_BINDING_COUNT,
+                                 false,
                                  "The player's own bindings, set on the Controls page: a binding's id and the control it is bound to instead. Its defaults are none")
         };
 

@@ -227,6 +227,7 @@ namespace RPGFramework.Core
             container.BindSingletonIfNotRegistered<IBattleMusicStore, BattleMusicStore>();
             container.BindSingletonIfNotRegistered<ISongVolumeStore, SongVolumeStore>();
             container.BindSingletonIfNotRegistered<IMoneyStore, MoneyStore>();
+            container.BindSingletonIfNotRegistered<IPartyStore, PartyStore>();
             container.BindSingletonIfNotRegistered<IMessageSpeedStore, MessageSpeedStore>();
             container.BindSingletonIfNotRegistered<IPausedMusicStore, PausedMusicStore>();
             container.BindSingletonIfNotRegistered<IFrameClock, UnityFrameClock>();

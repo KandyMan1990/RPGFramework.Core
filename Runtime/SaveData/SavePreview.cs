@@ -45,7 +45,7 @@ namespace RPGFramework.Core.SaveData
 
         /// <summary>
         /// A persistent value as this save holds it, named as scripts name it: a variable, an element of an array
-        /// (<c>Items[3]</c>), or a record's field (<c>Party[0].Level</c>, and <c>Party[0].Stats[2]</c> for a field that is
+        /// (<c>Items[3]</c>), or a record's field (<c>Roster[0].Level</c>, and <c>Roster[0].Stats[2]</c> for a field that is
         /// an array). A variable added to the map since the save was written reads its default, as it would once the
         /// save was loaded.
         /// </summary>

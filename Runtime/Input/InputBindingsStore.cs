@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using RPGFramework.Core.Memory;
 using RPGFramework.Core.SharedTypes;
@@ -27,8 +26,8 @@ namespace RPGFramework.Core.Input
             m_Count         = variable.Count;
             m_Offset        = variable.GetElementOffset(0);
             m_RecordSize    = variable.GetElementOffset(1) - m_Offset;
-            m_BindingOffset = FieldOffset(variable.Fields, CoreVariables.INPUT_BINDING);
-            m_PathOffset    = FieldOffset(variable.Fields, CoreVariables.INPUT_BINDING_PATH);
+            m_BindingOffset = variable.GetFieldOffset(CoreVariables.INPUT_BINDING);
+            m_PathOffset    = variable.GetFieldOffset(CoreVariables.INPUT_BINDING_PATH);
         }
 
         internal int Capacity => m_Count;
@@ -99,18 +98,6 @@ namespace RPGFramework.Core.Input
         private void Write(int index, int offset, byte value)
         {
             m_Memory.WriteByte(MemoryBank.Settings, (ushort)(m_Offset + index * m_RecordSize + offset), value);
-        }
-
-        private static int FieldOffset(IReadOnlyList<VariableRecordField> fields, string name)
-        {
-            int offset = 0;
-
-            for (int i = 0; i < fields.Count && fields[i].Name != name; i++)
-            {
-                offset += fields[i].ByteCount;
-            }
-
-            return offset;
         }
     }
 }

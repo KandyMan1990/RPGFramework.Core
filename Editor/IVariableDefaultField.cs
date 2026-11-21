@@ -14,7 +14,10 @@ namespace RPGFramework.Core.Editor
     /// </summary>
     public interface IVariableDefaultField
     {
-        /// <summary>The name of the variable whose value this draws.</summary>
+        /// <summary>
+        /// The name of the variable whose value this draws, or of a record's field as scripts write it,
+        /// <c>Roster.Character</c>, for each record's own value of it.
+        /// </summary>
         string VariableName { get; }
 
         /// <summary>The field shown in place of the variable's number, writing the value as it changes.</summary>

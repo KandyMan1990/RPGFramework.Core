@@ -6,6 +6,7 @@
         "RPGFramework.DI",
         "RPGFramework.Core.SharedTypes",
         "RPGFramework.Hashing",
+        "RPGFramework.Localisation",
         "Unity.InputSystem",
         "Unity.Mathematics"
     ],

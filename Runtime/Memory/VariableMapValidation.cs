@@ -171,9 +171,11 @@ namespace RPGFramework.Core.Memory
 
         private static void ValidateRequiredRecord(VariableDefinition variable, RequiredVariable required, List<string> problems)
         {
-            if (variable.Bank != required.Bank || !variable.IsRecord || variable.Count != required.Count)
+            if (variable.Bank != required.Bank || !variable.IsRecord || (!required.CountIsTheGames && variable.Count != required.Count))
             {
-                problems.Add($"'{required.Name}' is declared as {variable.Bank} {(variable.IsRecord ? $"{variable.Count} record(s)" : "values")}, but the framework reads it as {required.Bank} {required.Count} record(s)");
+                string wanted = required.CountIsTheGames ? "records" : $"{required.Count} record(s)";
+
+                problems.Add($"'{required.Name}' is declared as {variable.Bank} {(variable.IsRecord ? $"{variable.Count} record(s)" : "values")}, but the framework reads it as {required.Bank} {wanted}");
                 return;
             }
 
@@ -224,14 +226,14 @@ namespace RPGFramework.Core.Memory
                     problems.Add($"'{required.Name}' is declared as {variable.Bank} {variable.Width}, but the framework reads it as {required.Bank} {required.Width}");
                 }
 
-                if (variable.Count != 1)
+                if (!required.CountIsTheGames && variable.Count != 1)
                 {
                     problems.Add($"'{required.Name}' is declared as an array of {variable.Count}, but the framework reads it as a single value");
                 }
 
                 if (variable.IsRecord)
                 {
-                    problems.Add($"'{required.Name}' is declared as a record, but the framework reads it as a single {required.Width}");
+                    problems.Add($"'{required.Name}' is declared as a record, but the framework reads it as {(required.CountIsTheGames ? $"an array of {required.Width}" : $"a single {required.Width}")}");
                 }
             }
 

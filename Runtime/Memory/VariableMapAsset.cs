@@ -169,7 +169,7 @@ namespace RPGFramework.Core.Memory
                 }
                 else
                 {
-                    Allocate(required.Name, required.Bank, required.Width, 1, required.Description, required.DefaultValue);
+                    Allocate(required.Name, required.Bank, required.Width, required.Count, required.Description, required.DefaultValue);
                 }
 
                 added++;

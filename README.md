@@ -8,8 +8,8 @@ battle, each in a scene of its own. It also owns what every module shares:
 - input routing and dialogue windows;
 - transitions, system sounds and the update loop.
 
-Requires Unity 6000.7 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio (the music a battle pauses is an
-Audio snapshot), RPGFramework.DI, RPGFramework.Hashing and RPGFramework.Core.SharedTypes. It works with any render
+Requires Unity 6000.7 or newer, the Input System, Unity.Mathematics, RPGFramework.Audio, RPGFramework.DI,
+RPGFramework.Hashing, RPGFramework.Localisation and RPGFramework.Core.SharedTypes. It works with any render
 pipeline: its transitions are drawn with UI Toolkit, though the Subtractive Transition needs URP (below).
 
 ---
@@ -87,6 +87,7 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `IBattleMusicStore` | the track every battle plays, as its music asset's name hash; saved |
 | `ISongVolumeStore` | the volume the songs play at, as the scripts last set it, under the player's music volume; saved |
 | `IMoneyStore` | changes the party's money, holding it between none and the game's maximum |
+| `IPartyStore` | who is in the party, in order, and each roster record's character and whether they have joined |
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
 | `ICountdownStore` | the countdown's seconds left, counted down beside the play time whenever above zero, and whether it is shown; saved |
@@ -145,12 +146,22 @@ Core requires these:
 | `SongVolume` | Persistent | the volume the scripts last set the songs to, 0 to 1, under the player's; its default is a new game's |
 | `Money` | Persistent | the party's money; its default is what a new game starts with, and what it is called is your game's text |
 | `MoneyMaximum` | Session | the most money the party can hold; only its default is used, zero for no limit |
+| `Roster` | Persistent | a record for every playable character: `Character`, its name's hash, zero for a record no one wears, and `Joined`, whether they are with the party now; your own fields beside them, and as many records as your game has |
+| `Party` | Persistent | who is in the party, in order: each a `Roster` record's index, 255 for an empty slot, slot 0 the leader; as many slots as your party has, its defaults a new game's party |
 | `MessageSpeedSlowest`, `MessageSpeedFastest` | Session | the characters a second dialogue types at with the player's message speed at 0 and at 1, in a straight line between; only their defaults are used, 22.43 and 52.34 as added, the slowest above zero and no faster than the fastest |
 | `Language` | Settings | the language the player chose, as its name's hash; leave its default at zero, which asks on a first launch |
 | `MusicVolume` | Settings | the player's music volume, 0 to 1, under which every song plays at its `SongVolume` |
 | `SfxVolume` | Settings | the player's sound effects' volume, 0 to 1 |
 | `BattleMessageSpeed` | Settings | how fast battle messages appear, 0 the slowest to 1 the fastest |
 | `FieldMessageSpeed` | Settings | how fast the field's dialogue types, 0 to 1 across the range `MessageSpeedSlowest` to `MessageSpeedFastest` |
+
+**The party** is those two variables. A record holds everything your game keeps of a character — a level, HP,
+experience, whatever its menus and battles show — as fields you add beside `Character` and `Joined`, so a save keeps
+them and a save slot can show them by name (`Roster[0].Level`). A character is named by its name's hash: list your
+characters in a **Character Database** (Create > RPG Framework > Core > Character Database), each with the key of the
+name a player reads and a portrait, and the Variable Map offers their names for each record's `Character`. Author a
+record for every playable character in the map's defaults, mark who has joined, and set `Party` to a new game's
+party; a character who leaves keeps their record. Code reads it through `IPartyStore`.
 
 Read and write Persistent, Session and Settings variables through **`IMemoryService`**, by bank and address. Temp
 memory belongs to whatever runs a script, so each script has its own.
@@ -167,7 +178,7 @@ memory belongs to whatever runs a script, so each script has its own.
   `GetUnusedSaveFileName` list the slots, `save000.sav` to `save255.sav`.
 - **Previews:** `ReadPreview` reads a save without loading it, so a save menu can show each slot's location, play time
   or any other saved value with the game in progress untouched. `SavePreview.Read` and `ReadNumber` take a value's
-  name as scripts write it: `Money`, `Items[3]`, `Party[0].Level`.
+  name as scripts write it: `Money`, `Items[3]`, `Roster[0].Level`.
 - **Files are checksummed and written safely**: a write that is cut short leaves the previous file whole.
 - **A save records its layout**, so it still loads after the variable map has changed: a variable added since takes its
   default, a renamed or moved one keeps its value, and a deleted one is dropped.

@@ -17,6 +17,7 @@ namespace RPGFramework.Core.Memory
         internal readonly string                Description;
         internal readonly ulong                 DefaultValue;
         internal readonly int                   Count;
+        internal readonly bool                  CountIsTheGames;
         internal readonly VariableRecordField[] Fields;
 
         public RequiredVariable(string        name,
@@ -25,27 +26,46 @@ namespace RPGFramework.Core.Memory
                                 string        description,
                                 ulong         defaultValue = 0)
         {
-            Name         = name;
-            Bank         = bank;
-            Width        = width;
-            Description  = description;
-            DefaultValue = defaultValue;
-            Count        = 1;
-            Fields       = null;
+            Name            = name;
+            Bank            = bank;
+            Width           = width;
+            Description     = description;
+            DefaultValue    = defaultValue;
+            Count           = 1;
+            CountIsTheGames = false;
+            Fields          = null;
         }
 
         /// <summary>
-        /// <paramref name="count" /> records of <paramref name="fields" />, each field's default zero, read by field name.
+        /// An array of <paramref name="width" /> values whose length is the game's, added at <paramref name="count" />, every
+        /// element at <paramref name="defaultValue" />.
         /// </summary>
-        internal RequiredVariable(string name, MemoryBank bank, VariableRecordField[] fields, int count, string description)
+        internal RequiredVariable(string name, MemoryBank bank, VariableWidth width, int count, string description, ulong defaultValue)
         {
-            Name         = name;
-            Bank         = bank;
-            Width        = default;
-            Description  = description;
-            DefaultValue = 0;
-            Count        = count;
-            Fields       = fields;
+            Name            = name;
+            Bank            = bank;
+            Width           = width;
+            Description     = description;
+            DefaultValue    = defaultValue;
+            Count           = count;
+            CountIsTheGames = true;
+            Fields          = null;
+        }
+
+        /// <summary>
+        /// <paramref name="count" /> records of <paramref name="fields" />, each field's default zero, read by field name. A
+        /// game may add fields of its own, and, when <paramref name="countIsTheGames" />, have any number of records.
+        /// </summary>
+        internal RequiredVariable(string name, MemoryBank bank, VariableRecordField[] fields, int count, bool countIsTheGames, string description)
+        {
+            Name            = name;
+            Bank            = bank;
+            Width           = default;
+            Description     = description;
+            DefaultValue    = 0;
+            Count           = count;
+            CountIsTheGames = countIsTheGames;
+            Fields          = fields;
         }
     }
 

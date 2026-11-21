@@ -4,7 +4,7 @@ namespace RPGFramework.Core.Editor
 {
     /// <summary>
     /// One value in the persistent bank: its variable, by name and permanent id, the element of an array or the record,
-    /// and for a record the field, by its id, and the field's element — as a script reads it, <c>Party[2].hp</c> — with
+    /// and for a record the field, by its id, and the field's element — as a script reads it, <c>Roster[2].Hp</c> — with
     /// its width and what a new game starts it at.
     /// </summary>
     public readonly struct PersistentValue
@@ -21,6 +21,12 @@ namespace RPGFramework.Core.Editor
         /// <summary>The variable is this one value, neither an array nor a record, so a package's picker for it applies.</summary>
         public bool IsWholeVariable { get; }
 
+        /// <summary>
+        /// The name a package's picker for this value answers to: the variable's, for a whole variable, or a record's field
+        /// as scripts write it, <c>Roster.Character</c>; null for an array's element, which no picker stands for.
+        /// </summary>
+        public string PickerName { get; }
+
         internal int Offset { get; }
 
         internal PersistentValue(VariableDefinition variable, string label, int index, VariableRecordField field, int fieldIndex, int offset, ulong defaultValue)
@@ -34,6 +40,7 @@ namespace RPGFramework.Core.Editor
             Width           = field == null ? variable.Width : field.Width;
             Default         = defaultValue;
             IsWholeVariable = field == null && variable.Count == 1;
+            PickerName      = IsWholeVariable ? variable.Name : field != null ? variable.Name + "." + field.Name : null;
             Offset          = offset;
         }
     }

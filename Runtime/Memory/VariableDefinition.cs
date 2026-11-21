@@ -200,6 +200,22 @@ namespace RPGFramework.Core.Memory
             return elementOffset;
         }
 
+        /// <summary>
+        /// Where a record's field starts within each record, the field named as scripts name it, for code that reads a field
+        /// the map's validation guarantees.
+        /// </summary>
+        internal int GetFieldOffset(string fieldName)
+        {
+            int fieldOffset = 0;
+
+            for (int i = 0; i < m_Fields.Length && m_Fields[i].Name != fieldName; i++)
+            {
+                fieldOffset += m_Fields[i].ByteCount;
+            }
+
+            return fieldOffset;
+        }
+
 #if UNITY_EDITOR
         /// <summary>
         /// Find a record's field by the name scripts use, and where it starts within each record.

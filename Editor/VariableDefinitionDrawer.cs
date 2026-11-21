@@ -394,7 +394,7 @@ namespace RPGFramework.Core.Editor
 
             foreach (int record in records)
             {
-                section.Add(BuildRecord(fields, elementDefaults, record, count, records, rebuild));
+                section.Add(BuildRecord(variable, fields, elementDefaults, record, count, records, rebuild));
             }
 
             int next = 0;
@@ -417,8 +417,11 @@ namespace RPGFramework.Core.Editor
             return section;
         }
 
-        private static VisualElement BuildRecord(SerializedProperty fields, SerializedProperty elementDefaults, int record, int count, SortedSet<int> records, Action rebuild)
+        private static VisualElement BuildRecord(SerializedProperty variable, SerializedProperty fields, SerializedProperty elementDefaults, int record, int count, SortedSet<int> records, Action rebuild)
         {
+            string                variableName = variable.FindPropertyRelative(NAME).stringValue;
+            IVariableValueContext context      = new MapDefaults(variable.serializedObject);
+
             VisualElement box    = MakeBox();
             VisualElement header = MakeRow();
 
@@ -465,9 +468,11 @@ namespace RPGFramework.Core.Editor
                     string             label   = fieldCount > 1 ? $"{fieldName}[{fieldIndex}]" : fieldName;
                     SerializedProperty entry   = FindElementDefault(elementDefaults, record, fieldName, fieldIndex);
 
-                    VisualElement value = entry != null
-                                              ? CreateTyped(entry.FindPropertyRelative(ELEMENT_VALUE), fieldWidth, label)
-                                              : new VariableValueField(label, fieldWidth, fallback, bits => SetElementDefault(elementDefaults, record, fieldName, element, bits));
+                    // A package's picker for a record's field is found by the path scripts write, Roster.Character.
+                    string        picker = $"{variableName}.{fieldName}";
+                    VisualElement value  = entry != null
+                                               ? CreateTyped(entry.FindPropertyRelative(ELEMENT_VALUE), fieldWidth, label, picker, context)
+                                               : new VariableValueField(label, fieldWidth, fallback, bits => SetElementDefault(elementDefaults, record, fieldName, element, bits), picker, context);
 
                     box.Add(value);
                 }
@@ -628,6 +633,11 @@ namespace RPGFramework.Core.Editor
         private static VisualElement CreateTyped(SerializedProperty defaultValue, VariableWidth width, string label)
         {
             return new VariableValueField(label, width, defaultValue.ulongValue, bits => Write(defaultValue, bits));
+        }
+
+        private static VisualElement CreateTyped(SerializedProperty defaultValue, VariableWidth width, string label, string picker, IVariableValueContext context)
+        {
+            return new VariableValueField(label, width, defaultValue.ulongValue, bits => Write(defaultValue, bits), picker, context);
         }
 
         public static void Write(SerializedProperty defaultValue, ulong bits)
