@@ -87,7 +87,7 @@ Modules talk through **stores**, small services that hold one thing for another 
 | `IBattleMusicStore` | the track every battle plays, as its music asset's name hash; saved |
 | `ISongVolumeStore` | the volume the songs play at, as the scripts last set it, under the player's music volume; saved |
 | `IMoneyStore` | changes the party's money, holding it between none and the game's maximum |
-| `IPartyStore` | who is in the party, in order, and each roster record's character and whether they have joined |
+| `IPartyStore` | who is in the party, in order, and each roster record's character and whether they have joined; adds to, removes from and sets the party, and has a character join or leave |
 | `IPausedMusicStore` | the music a battle paused, for the module it returns to to resume |
 | `IPlayTimeStore` | how long the playthrough has been played, in seconds, counted from leaving the title until back at it |
 | `ICountdownStore` | the countdown's seconds left, counted down beside the play time whenever above zero, and whether it is shown; saved |
@@ -162,7 +162,9 @@ them and a save slot can show them by name (`Roster[0].Level`). A character is n
 characters in a **Character Database** (Create > RPG Framework > Core > Character Database), each with the key of the
 name a player reads and a portrait, and the Variable Map offers their names for each record's `Character`. Author a
 record for every playable character in the map's defaults, mark who has joined, and set `Party` to a new game's
-party; a character who leaves keeps their record. Code reads it through `IPartyStore`.
+party; a character who leaves keeps their record, and leaves the party too. Code reads and changes it through
+`IPartyStore`, as Field's party opcodes do. A character no record names, joining, takes the first record no one wears
+(`Character` zero), so leave spare records for characters a game adds later.
 
 Read and write Persistent, Session and Settings variables through **`IMemoryService`**, by bank and address. Temp
 memory belongs to whatever runs a script, so each script has its own.

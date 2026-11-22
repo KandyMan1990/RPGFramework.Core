@@ -17,9 +17,13 @@ namespace RPGFramework.Core.Editor
 
         VisualElement IVariableDefaultField.Create(ulong value, Action<ulong> write, IVariableValueContext context)
         {
-            List<string> names = CharacterNames.Gather();
+            IReadOnlyList<string> characters = ((ICharacterNames)new CharacterNames()).Names;
+            List<string>          names      = new List<string>(characters.Count + 1) { ProviderNames.NONE };
 
-            names.Insert(0, ProviderNames.NONE);
+            for (int i = 0; i < characters.Count; i++)
+            {
+                names.Add(characters[i]);
+            }
 
             int chosen = value == 0 ? 0 : ProviderNames.IndexOfHash(names, value);
 

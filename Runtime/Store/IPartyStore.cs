@@ -30,6 +30,24 @@ namespace RPGFramework.Core.Store
 
         /// <summary>The party slot a character is in; -1 for a character not in the party.</summary>
         int FindSlot(ulong character);
+
+        /// <summary>
+        /// Puts a character in the first empty slot, joining them too; nothing more for one in the party already. With
+        /// no slot empty, they still join.
+        /// </summary>
+        void AddToParty(ulong character);
+
+        /// <summary>Takes a character out of the party, their slot left empty.</summary>
+        void RemoveFromParty(ulong character);
+
+        /// <summary>Fills the party's slots in order with <paramref name="characters" />, each joining, and empties the rest.</summary>
+        void SetParty(ulong[] characters);
+
+        /// <summary>
+        /// A character joins, or leaves and so leaves the party too, their record kept either way. One no record names
+        /// takes the first record no one wears.
+        /// </summary>
+        void SetJoined(ulong character, bool joined);
     }
 
     /// <summary>
@@ -78,7 +96,104 @@ namespace RPGFramework.Core.Store
         {
             int record = FindRecord(character);
 
+            return record < 0 ? -1 : SlotOf(record);
+        }
+
+        void IPartyStore.AddToParty(ulong character)
+        {
+            int record = Join(character);
+
+            if (record < 0 || SlotOf(record) >= 0)
+            {
+                return;
+            }
+
+            int empty = SlotOf(-1);
+
+            if (empty >= 0)
+            {
+                WriteSlot(empty, record);
+            }
+        }
+
+        void IPartyStore.RemoveFromParty(ulong character)
+        {
+            int record = FindRecord(character);
+
+            LeaveParty(record);
+        }
+
+        void IPartyStore.SetParty(ulong[] characters)
+        {
+            for (int slot = 0; slot < m_PartySize; slot++)
+            {
+                WriteSlot(slot, slot < characters.Length ? Join(characters[slot]) : -1);
+            }
+        }
+
+        void IPartyStore.SetJoined(ulong character, bool joined)
+        {
+            if (joined)
+            {
+                Join(character);
+                return;
+            }
+
+            int record = FindRecord(character);
+
+            if (record < 0)
+            {
+                return;
+            }
+
+            m_MemoryService.WriteBool(MemoryBank.Persistent, (ushort)(RecordAt(record) + m_JoinedOffset), false);
+
+            LeaveParty(record);
+        }
+
+        // The record a character joins with, taking the first no one wears when none names them; -1 when none is free.
+        private int Join(ulong character)
+        {
+            int record = FindRecord(character);
+
+            for (int free = 0; free < m_RosterSize && record < 0; free++)
+            {
+                if (CharacterOf(free) == 0)
+                {
+                    record = free;
+
+                    m_MemoryService.WriteUlong(MemoryBank.Persistent, (ushort)(RecordAt(record) + m_CharacterOffset), character);
+                }
+            }
+
+            if (record < 0)
+            {
+#if UNITY_EDITOR
+                UnityEngine.Debug.LogWarning($"{CoreVariables.ROSTER} has no record for character {character:X16} to join with, as every record is worn: give the roster more records");
+#endif
+                return -1;
+            }
+
+            m_MemoryService.WriteBool(MemoryBank.Persistent, (ushort)(RecordAt(record) + m_JoinedOffset), true);
+
+            return record;
+        }
+
+        private void LeaveParty(int record)
+        {
             for (int slot = 0; slot < m_PartySize && record >= 0; slot++)
+            {
+                if (RecordInSlot(slot) == record)
+                {
+                    WriteSlot(slot, -1);
+                }
+            }
+        }
+
+        // The first slot holding the record, -1 matching an empty slot.
+        private int SlotOf(int record)
+        {
+            for (int slot = 0; slot < m_PartySize; slot++)
             {
                 if (RecordInSlot(slot) == record)
                 {
@@ -87,6 +202,11 @@ namespace RPGFramework.Core.Store
             }
 
             return -1;
+        }
+
+        private void WriteSlot(int slot, int record)
+        {
+            m_MemoryService.WriteByte(MemoryBank.Persistent, (ushort)(m_PartyOffset + slot), record < 0 ? CoreVariables.EMPTY_PARTY_SLOT : (byte)record);
         }
 
         private int RecordInSlot(int slot)
