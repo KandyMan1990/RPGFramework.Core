@@ -105,7 +105,8 @@ namespace RPGFramework.Core.Memory
         /// </summary>
         public const string PARTY = "Party";
 
-        internal const byte EMPTY_PARTY_SLOT = 255;
+        /// <summary>What a <see cref="PARTY" /> slot holds while it is empty, in place of a record's index.</summary>
+        public const byte EMPTY_PARTY_SLOT = 255;
 
         /// <summary>
         /// The language the player chose, as its name's hash; zero until they choose one, which a first launch asks for.

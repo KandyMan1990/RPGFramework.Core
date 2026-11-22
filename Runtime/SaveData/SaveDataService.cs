@@ -43,6 +43,13 @@ namespace RPGFramework.Core.SaveData
         /// loaded — without beginning it.
         /// </summary>
         SavePreview ReadPreview(string filename);
+
+        /// <summary>
+        /// The playthrough in progress as a save made now would hold it, read as a save's preview is, so what shows a
+        /// save's values — the party, a record's field by name — shows the game's own. A copy: read it again after a
+        /// change.
+        /// </summary>
+        SavePreview PreviewPlaythrough();
     }
 
     /// <summary>
@@ -147,6 +154,11 @@ namespace RPGFramework.Core.SaveData
             SavePreview preview = new SavePreview(filename, m_SaveStorage.GetLastWriteTime(filename), bank, m_VariableMap, state);
 
             return preview;
+        }
+
+        SavePreview ISaveDataService.PreviewPlaythrough()
+        {
+            return new SavePreview(m_CurrentFileName, DateTime.Now, m_MemoryBankAccess.Copy(MemoryBank.Persistent), m_VariableMap, SaveState.Loadable);
         }
 
         string[] ISaveDataService.GetListOfSaveFiles()

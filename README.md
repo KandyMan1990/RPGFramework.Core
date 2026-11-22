@@ -98,6 +98,7 @@ service and the stores above, after your global installer and each only where it
 replaces Core's. **Your global installer binds**:
 
 - the two databases, and a module router;
+- your **Character Database**, as `ICharacterDatabase`, which the menus show each party member's name and portrait from;
 - your **variable map**, as `IVariableMap`, `IMemoryServiceArgs` and `ITempMemoryArgs`;
 - a **Transition Config** (Create > RPG Framework > Transitions), as `ITransitionConfig`: the panel the transitions
   draw on — Core's **`TransitionPanelSettings`**, which sorts above its own — and the transitions used when none is
@@ -178,7 +179,9 @@ memory belongs to whatever runs a script, so each script has its own.
   `GetUnusedSaveFileName` list the slots, `save000.sav` to `save255.sav`.
 - **Previews:** `ReadPreview` reads a save without loading it, so a save menu can show each slot's location, play time
   or any other saved value with the game in progress untouched. `SavePreview.Read` and `ReadNumber` take a value's
-  name as scripts write it: `Money`, `Items[3]`, `Roster[0].Level`.
+  name as scripts write it: `Money`, `Items[3]`, `Roster[0].Level`. `PreviewPlaythrough` reads the game in progress
+  the same way, as a save made now would hold it, so a menu shows the playthrough's values as a save slot shows a
+  save's.
 - **Files are checksummed and written safely**: a write that is cut short leaves the previous file whole.
 - **A save records its layout**, so it still loads after the variable map has changed: a variable added since takes its
   default, a renamed or moved one keeps its value, and a deleted one is dropped.
